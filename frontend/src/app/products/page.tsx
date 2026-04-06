@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 
 import { useFavorites } from "@/components/favorites-provider";
 import { ProductCard } from "@/components/product-card";
@@ -81,7 +80,6 @@ function ChevronIcon() {
 }
 
 export default function ProductsPage() {
-  const searchParams = useSearchParams();
   const { favoriteIds, hasHydrated } = useFavorites();
   const [selectedCategory, setSelectedCategory] =
     useState<Product["category"][number] | "all">("all");
@@ -89,24 +87,36 @@ export default function ProductsPage() {
     useState<Product["brand"] | "all">("all");
   const [selectedBadge, setSelectedBadge] =
     useState<Product["badge"] | "all">("all");
-
-  const query = searchParams.get("q")?.trim().toLowerCase() ?? "";
-  const favoritesOnly = searchParams.get("favorites") === "1";
+  const [query, setQuery] = useState("");
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
 
   useEffect(() => {
-    const categoryParam = searchParams.get("category");
+    const syncFiltersFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      const categoryParam = params.get("category");
 
-    if (
-      categoryParam === "face" ||
-      categoryParam === "body" ||
-      categoryParam === "hair"
-    ) {
-      setSelectedCategory(categoryParam);
-      return;
-    }
+      setQuery(params.get("q")?.trim().toLowerCase() ?? "");
+      setFavoritesOnly(params.get("favorites") === "1");
 
-    setSelectedCategory("all");
-  }, [searchParams]);
+      if (
+        categoryParam === "face" ||
+        categoryParam === "body" ||
+        categoryParam === "hair"
+      ) {
+        setSelectedCategory(categoryParam);
+        return;
+      }
+
+      setSelectedCategory("all");
+    };
+
+    syncFiltersFromUrl();
+    window.addEventListener("popstate", syncFiltersFromUrl);
+
+    return () => {
+      window.removeEventListener("popstate", syncFiltersFromUrl);
+    };
+  }, []);
 
   const filteredProducts = useMemo(
     () =>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ProductCard } from "@/components/product-card";
 import { getProductBadgeLabel, products } from "@/data/products";
+import type { Product } from "@/data/products";
 
 const RECENTLY_VIEWED_STORAGE_KEY = "brami-recently-viewed";
 
@@ -39,7 +40,7 @@ export function RecentlyViewedSection() {
     () =>
       recentlyViewedIds
         .map((id) => products.find((product) => product.id === id))
-        .filter((product) => Boolean(product)),
+        .filter((product): product is Product => product !== undefined),
     [recentlyViewedIds],
   );
 
@@ -269,4 +270,3 @@ export function RecentlyViewedSection() {
     </section>
   );
 }
-

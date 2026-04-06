@@ -69,14 +69,15 @@ const termsSections = [
   },
 ];
 
-export default function TermsPage({
+export default async function TermsPage({
   searchParams,
 }: {
-  searchParams?: { from?: string; step?: string };
+  searchParams?: Promise<{ from?: string; step?: string }>;
 }) {
-  const showBackButton = searchParams?.from === "cart";
+  const resolvedSearchParams = await searchParams;
+  const showBackButton = resolvedSearchParams?.from === "cart";
   const backHref =
-    searchParams?.step === "delivery" ? "/cart?step=delivery" : "/cart";
+    resolvedSearchParams?.step === "delivery" ? "/cart?step=delivery" : "/cart";
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fbf8fd_0%,_#f3edf7_45%,_#efe6f6_100%)]">

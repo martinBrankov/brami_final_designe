@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import type { HTMLInputTypeAttribute } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useCart } from "@/components/cart-provider";
 import { products } from "@/data/products";
@@ -21,6 +21,22 @@ const initialAddress = {
 };
 
 type AddressField = keyof typeof initialAddress;
+type DeliveryFieldConfig = [
+  key: AddressField,
+  label: string,
+  type: HTMLInputTypeAttribute,
+  autoComplete: string,
+  placeholder: string,
+  required: boolean,
+];
+
+const deliveryFields: DeliveryFieldConfig[] = [
+  ["fullName", "Име и фамилия", "text", "name", "Например: Мария Иванова", true],
+  ["phone", "Телефон", "tel", "tel", "Например: 0888 123 456", true],
+  ["email", "Имейл", "email", "email", "Например: maria@example.com", true],
+  ["city", "Град", "text", "address-level2", "Например: София", true],
+  ["postcode", "Пощенски код", "text", "postal-code", "Например: 1000", true],
+];
 
 function formatPrice(value: number) {
   return `${value.toFixed(2)} лв.`;
@@ -89,16 +105,22 @@ function StepMarker({
 }
 
 export default function CartPage() {
-  const searchParams = useSearchParams();
   const { items, updateQuantity, removeItem, clearCart } = useCart();
-  const initialStep = searchParams.get("step") === "delivery" ? 1 : 0;
-  const [currentStep, setCurrentStep] = useState(initialStep);
+  const [currentStep, setCurrentStep] = useState(0);
   const [address, setAddress] = useState(initialAddress);
   const [touchedFields, setTouchedFields] = useState<Partial<Record<AddressField, boolean>>>({});
   const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false);
   const [showPoliciesError, setShowPoliciesError] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [orderId, setOrderId] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("step") === "delivery") {
+      setCurrentStep(1);
+    }
+  }, []);
 
   const cartItems = useMemo(
     () =>
@@ -373,13 +395,7 @@ export default function CartPage() {
                   </p>
 
                   <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                    {[
-                      ["fullName", "Име и фамилия", "text", "name", "Например: Мария Иванова", true],
-                      ["phone", "Телефон", "tel", "tel", "Например: 0888 123 456", true],
-                      ["email", "Имейл", "email", "email", "Например: maria@example.com", true],
-                      ["city", "Град", "text", "address-level2", "Например: София", true],
-                      ["postcode", "Пощенски код", "text", "postal-code", "Например: 1000", true],
-                    ].map(([key, label, type, autoComplete, placeholder, required]) => (
+                    {deliveryFields.map(([key, label, type, autoComplete, placeholder, required]) => (
                       <label key={key} className="flex flex-col gap-2 text-sm font-medium text-[#432855]">
                         <span>
                           {label}
