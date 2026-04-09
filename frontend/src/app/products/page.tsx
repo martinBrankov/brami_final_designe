@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { useFavorites } from "@/components/favorites-provider";
@@ -80,6 +81,8 @@ function ChevronIcon() {
 }
 
 export default function ProductsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { favoriteIds, hasHydrated } = useFavorites();
   const [selectedCategory, setSelectedCategory] =
     useState<Product["category"][number] | "all">("all");
@@ -91,32 +94,22 @@ export default function ProductsPage() {
   const [favoritesOnly, setFavoritesOnly] = useState(false);
 
   useEffect(() => {
-    const syncFiltersFromUrl = () => {
-      const params = new URLSearchParams(window.location.search);
-      const categoryParam = params.get("category");
+    const categoryParam = searchParams.get("category");
 
-      setQuery(params.get("q")?.trim().toLowerCase() ?? "");
-      setFavoritesOnly(params.get("favorites") === "1");
+    setQuery(searchParams.get("q")?.trim().toLowerCase() ?? "");
+    setFavoritesOnly(searchParams.get("favorites") === "1");
 
-      if (
-        categoryParam === "face" ||
-        categoryParam === "body" ||
-        categoryParam === "hair"
-      ) {
-        setSelectedCategory(categoryParam);
-        return;
-      }
+    if (
+      categoryParam === "face" ||
+      categoryParam === "body" ||
+      categoryParam === "hair"
+    ) {
+      setSelectedCategory(categoryParam);
+      return;
+    }
 
-      setSelectedCategory("all");
-    };
-
-    syncFiltersFromUrl();
-    window.addEventListener("popstate", syncFiltersFromUrl);
-
-    return () => {
-      window.removeEventListener("popstate", syncFiltersFromUrl);
-    };
-  }, []);
+    setSelectedCategory("all");
+  }, [searchParams]);
 
   const filteredProducts = useMemo(
     () =>
@@ -154,26 +147,60 @@ export default function ProductsPage() {
     ],
   );
 
+  const hasActiveFilters =
+    query.length > 0 ||
+    favoritesOnly ||
+    selectedCategory !== "all" ||
+    selectedBrand !== "all" ||
+    selectedBadge !== "all";
+
+  function handleClearFilters() {
+    if (!hasActiveFilters) {
+      return;
+    }
+
+    setSelectedCategory("all");
+    setSelectedBrand("all");
+    setSelectedBadge("all");
+    setQuery("");
+    setFavoritesOnly(false);
+    router.push("/products");
+  }
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fbf8fd_0%,_#f3edf7_45%,_#efe6f6_100%)]">
       <section className="w-full px-6 pb-0 pt-12 sm:px-10 sm:pb-0 sm:pt-16 lg:px-14">
-        <div className="mb-3">
-          <h1 className="font-serif text-4xl text-[#432855] sm:text-5xl">
+        <div className="mb-3 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="font-serif text-4xl text-[#432855] sm:text-5xl">
             {"\u041f\u0440\u043e\u0434\u0443\u043a\u0442 \u043b\u0438\u0441\u0442"}
-          </h1>
-          <p className="mt-3 max-w-2xl text-lg text-[#6b587f]">
+            </h1>
+            <p className="mt-3 max-w-2xl text-lg text-[#6b587f]">
             {"\u0420\u0430\u0437\u0433\u043b\u0435\u0434\u0430\u0439 \u043f\u043e\u0434\u0431\u0440\u0430\u043d\u0438\u0442\u0435 \u0444\u043e\u0440\u043c\u0443\u043b\u0438 \u0437\u0430 \u043b\u0438\u0446\u0435, \u0442\u044f\u043b\u043e \u0438 \u043a\u043e\u0441\u0430."}
-          </p>
-          {query ? (
-            <p className="mt-3 text-sm font-medium text-[#8f72a7]">
-              {"\u0420\u0435\u0437\u0443\u043b\u0442\u0430\u0442\u0438 \u0437\u0430:"} &quot;{query}&quot;
             </p>
-          ) : null}
-          {favoritesOnly ? (
-            <p className="mt-2 text-sm font-medium text-[#8f72a7]">
-              {"\u041f\u043e\u043a\u0430\u0437\u0430\u043d\u0438 \u0441\u0430 \u0441\u0430\u043c\u043e \u043b\u044e\u0431\u0438\u043c\u0438\u0442\u0435 \u043f\u0440\u043e\u0434\u0443\u043a\u0442\u0438."}
-            </p>
-          ) : null}
+            {query ? (
+              <p className="mt-3 text-sm font-medium text-[#8f72a7]">
+                {"\u0420\u0435\u0437\u0443\u043b\u0442\u0430\u0442\u0438 \u0437\u0430:"} &quot;{query}&quot;
+              </p>
+            ) : null}
+            {favoritesOnly ? (
+              <p className="mt-2 text-sm font-medium text-[#8f72a7]">
+                {"\u041f\u043e\u043a\u0430\u0437\u0430\u043d\u0438 \u0441\u0430 \u0441\u0430\u043c\u043e \u043b\u044e\u0431\u0438\u043c\u0438\u0442\u0435 \u043f\u0440\u043e\u0434\u0443\u043a\u0442\u0438."}
+              </p>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={handleClearFilters}
+            disabled={!hasActiveFilters}
+            className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition sm:px-5 ${
+              hasActiveFilters
+                ? "border border-[#d2c0dd] bg-white text-[#432855] hover:border-[#bca5cc] hover:bg-[#faf7fc]"
+                : "cursor-not-allowed border border-[#e6deec] bg-[#f7f3fa] text-[#b9adc5]"
+            }`}
+          >
+            Изчисти филтрите
+          </button>
         </div>
       </section>
 

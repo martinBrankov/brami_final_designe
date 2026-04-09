@@ -4,9 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  type CSSProperties,
   useDeferredValue,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type FormEvent,
 } from "react";
@@ -140,8 +142,18 @@ function PhoneIcon() {
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isPhoneLandscapeMenuLayout, setIsPhoneLandscapeMenuLayout] =
+    useState(false);
+  const [searchViewportHeight, setSearchViewportHeight] = useState<number | null>(
+    null,
+  );
+  const [isMobileSearchViewport, setIsMobileSearchViewport] = useState(false);
+  const [desktopSearchResultsMaxHeight, setDesktopSearchResultsMaxHeight] =
+    useState<number | null>(null);
   const [searchValue, setSearchValue] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(true);
+  const searchDialogRef = useRef<HTMLDivElement | null>(null);
+  const searchResultsRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const { itemCount } = useCart();
   const { favoriteCount } = useFavorites();
@@ -184,6 +196,45 @@ export function Navbar() {
     };
   }, [isSearchOpen]);
 
+  useEffect(() => {
+    if (!isSearchOpen) {
+      return;
+    }
+
+    const updateSearchViewport = () => {
+      setSearchViewportHeight(window.visualViewport?.height ?? window.innerHeight);
+      setIsMobileSearchViewport(window.innerWidth < 640);
+    };
+
+    updateSearchViewport();
+    window.addEventListener("resize", updateSearchViewport);
+    window.visualViewport?.addEventListener("resize", updateSearchViewport);
+    window.visualViewport?.addEventListener("scroll", updateSearchViewport);
+
+    return () => {
+      window.removeEventListener("resize", updateSearchViewport);
+      window.visualViewport?.removeEventListener("resize", updateSearchViewport);
+      window.visualViewport?.removeEventListener("scroll", updateSearchViewport);
+    };
+  }, [isSearchOpen]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(
+      "(orientation: landscape) and (max-width: 932px) and (pointer: coarse) and (hover: none)",
+    );
+
+    const updateMenuLayout = () => {
+      setIsPhoneLandscapeMenuLayout(mediaQuery.matches);
+    };
+
+    updateMenuLayout();
+    mediaQuery.addEventListener("change", updateMenuLayout);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateMenuLayout);
+    };
+  }, []);
+
   const searchResults = useMemo(() => {
     const query = deferredSearchValue.trim().toLowerCase();
 
@@ -202,6 +253,50 @@ export function Navbar() {
       });
   }, [deferredSearchValue]);
 
+  useEffect(() => {
+    if (!isSearchOpen || isMobileSearchViewport) {
+      setDesktopSearchResultsMaxHeight(null);
+      return;
+    }
+
+    const updateDesktopResultsHeight = () => {
+      const dialogElement = searchDialogRef.current;
+      const resultsElement = searchResultsRef.current;
+
+      if (!dialogElement || !resultsElement) {
+        setDesktopSearchResultsMaxHeight(null);
+        return;
+      }
+
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+      const dialogRect = dialogElement.getBoundingClientRect();
+      const resultsRect = resultsElement.getBoundingClientRect();
+      const dialogPaddingBottom = Number.parseFloat(
+        window.getComputedStyle(dialogElement).paddingBottom,
+      );
+      const maxDialogHeight = Math.max(viewportHeight - 160, 0);
+      const resultsOffsetTop = resultsRect.top - dialogRect.top;
+      const availableHeight =
+        maxDialogHeight - resultsOffsetTop - dialogPaddingBottom;
+
+      setDesktopSearchResultsMaxHeight(
+        availableHeight > 0 ? availableHeight : null,
+      );
+    };
+
+    updateDesktopResultsHeight();
+    window.addEventListener("resize", updateDesktopResultsHeight);
+    window.visualViewport?.addEventListener("resize", updateDesktopResultsHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateDesktopResultsHeight);
+      window.visualViewport?.removeEventListener(
+        "resize",
+        updateDesktopResultsHeight,
+      );
+    };
+  }, [isMobileSearchViewport, isSearchOpen, searchResults.length]);
+
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -210,6 +305,65 @@ export function Navbar() {
     router.push(query ? `/products?q=${encodeURIComponent(query)}` : "/products");
     setIsSearchOpen(false);
   }
+
+  function handleSearchClear() {
+    setSearchValue("");
+    setShowSearchResults(true);
+  }
+
+  function handleSearchClose() {
+    handleSearchClear();
+    setIsSearchOpen(false);
+  }
+
+  const menuDrawerClassName = `relative z-10 flex h-full w-[208px] shrink-0 flex-col border-r border-[#e9deef] bg-[#fdfdfd] px-4 py-5 shadow-[0_24px_80px_rgba(67,40,85,0.18)] sm:w-[218px] sm:px-5 sm:py-6${
+    isPhoneLandscapeMenuLayout ? " w-[416px] px-5 sm:w-[436px]" : ""
+  }`;
+  const menuHeaderClassName = `mb-8 flex items-center justify-between${
+    isPhoneLandscapeMenuLayout ? " hidden" : ""
+  }`;
+  const floatingCloseButtonClassName = `absolute right-5 top-5 z-20 h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#f1e8f5]${
+    isPhoneLandscapeMenuLayout ? " flex" : " hidden"
+  }`;
+  const menuContentClassName = `flex flex-1 flex-col${
+    isPhoneLandscapeMenuLayout ? " grid grid-cols-[156px_1fr] gap-6" : ""
+  }`;
+  const quickLinksColumnClassName = `order-2 mt-auto w-full pt-8${
+    isPhoneLandscapeMenuLayout
+      ? " order-1 mt-0 flex flex-col justify-start border-r border-[#ece3f2] pr-4 pt-0"
+      : ""
+  }`;
+  const quickLinksLogoClassName = isPhoneLandscapeMenuLayout ? "flex" : "hidden";
+  const quickLinksBodyClassName = isPhoneLandscapeMenuLayout ? "pt-5" : "";
+  const quickLinksListClassName = `mt-4 flex w-full gap-3${
+    isPhoneLandscapeMenuLayout ? " flex-col" : ""
+  }`;
+  const quickLinkLabelClassName = `text-left text-[11px] font-medium leading-4 text-[#5f4b74]${
+    isPhoneLandscapeMenuLayout ? " pl-0.5" : ""
+  }`;
+  const quickLinkItemClassName = `flex w-12 flex-col items-center${
+    isPhoneLandscapeMenuLayout ? " w-full flex-row gap-3" : ""
+  }`;
+  const emailBlockClassName = `mt-5 w-full border-b border-t border-[#ece3f2] pb-[1.35rem] pt-4 text-sm leading-6 text-[#5f4b74]${
+    isPhoneLandscapeMenuLayout ? " hidden" : ""
+  }`;
+  const menuNavClassName = `relative order-1 flex flex-col${
+    isPhoneLandscapeMenuLayout ? " order-2 pl-2 pt-[30px]" : ""
+  }`;
+  const hasSearchQuery = deferredSearchValue.trim().length > 0;
+  const searchDialogClassName =
+    "relative flex h-auto w-[min(720px,100%)] flex-col overflow-hidden rounded-[28px] border border-[#e6dcef] bg-[#fdfdfd] p-5 shadow-[0_24px_80px_rgba(67,40,85,0.18)] sm:max-h-[calc(100dvh-10rem)] sm:p-6";
+  const searchResultsWrapperClassName = "mt-5";
+  const searchDialogStyle: CSSProperties | undefined =
+    hasSearchQuery && isMobileSearchViewport && searchViewportHeight
+      ? { maxHeight: `${Math.max(searchViewportHeight - 32, 0)}px` }
+      : undefined;
+  const searchResultsStyle: CSSProperties | undefined =
+    hasSearchQuery && isMobileSearchViewport && searchViewportHeight
+      ? { maxHeight: `${Math.max(searchViewportHeight - 160, 0)}px` }
+      : desktopSearchResultsMaxHeight
+        ? { maxHeight: `${desktopSearchResultsMaxHeight}px` }
+        : undefined;
 
   return (
     <>
@@ -241,7 +395,7 @@ export function Navbar() {
           <div className="ml-auto flex items-center gap-0.5 sm:-mr-1 sm:gap-2">
             <button
               type="button"
-              aria-label="Търси продукти"
+              aria-label="Р СћРЎР‰РЎР‚РЎРѓР С‘ Р С—РЎР‚Р С•Р Т‘РЎС“Р С”РЎвЂљР С‘"
               onClick={() => setIsSearchOpen(true)}
               className="flex h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#e9ddf3] sm:h-12 sm:w-12"
             >
@@ -250,7 +404,7 @@ export function Navbar() {
 
             <Link
               href="/products?favorites=1"
-              aria-label="Любими продукти"
+              aria-label="Р вЂєРЎР‹Р В±Р С‘Р СР С‘ Р С—РЎР‚Р С•Р Т‘РЎС“Р С”РЎвЂљР С‘"
               className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#e9ddf3] sm:h-12 sm:w-12"
             >
               <HeartIcon />
@@ -283,55 +437,71 @@ export function Navbar() {
             type="button"
             aria-label="Затвори търсенето"
             className="absolute inset-0"
-            onClick={() => setIsSearchOpen(false)}
+            onClick={handleSearchClose}
           />
-          <div className="relative flex h-full items-start justify-center overflow-hidden pt-12 sm:pt-16">
+          <div className="relative flex h-full items-start justify-center overflow-hidden pt-0 sm:pt-16">
             <div
-              className="relative flex max-h-[calc(100vh-8rem)] w-[min(720px,100%)] flex-col overflow-hidden rounded-[28px] border border-[#e6dcef] bg-[#fdfdfd] p-5 shadow-[0_24px_80px_rgba(67,40,85,0.18)] sm:max-h-[calc(100vh-10rem)] sm:p-6"
+              ref={searchDialogRef}
+              className={searchDialogClassName}
+              style={searchDialogStyle}
             >
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <h2 className="font-serif text-3xl text-[#432855]">
+              <div className="mb-4 hidden items-center justify-between gap-4 sm:flex">
+                <h2 className="hidden font-serif text-3xl text-[#432855] sm:block">
                   Търси продукти
                 </h2>
                 <button
                   type="button"
                   aria-label="Затвори търсенето"
-                  onClick={() => setIsSearchOpen(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#f1e8f5]"
+                  onClick={handleSearchClose}
+                  className="ml-auto flex h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#f1e8f5]"
                 >
                   <span className="text-2xl leading-none">{"\u00d7"}</span>
                 </button>
               </div>
-
-              <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3 sm:flex-row">
-                <input
-                  value={searchValue}
-                  onChange={(event) => {
-                    setSearchValue(event.target.value);
-                    setShowSearchResults(true);
-                  }}
-                  autoFocus
-                  placeholder="Въведи име на продукт"
-                  className="-mx-2 min-h-12 w-[calc(100%)] flex-1 self-center rounded-[24px] border border-[#ddd3e4] bg-[#faf7fc] px-4 text-[#432855] outline-none transition focus:border-[#9f79ac] sm:mx-0 sm:h-12 sm:w-auto"
-                />
+              <form onSubmit={handleSearchSubmit} className="flex items-center gap-3 sm:flex-col sm:items-stretch">
+                <div className="relative flex-1">
+                  <input
+                    value={searchValue}
+                    onChange={(event) => {
+                      setSearchValue(event.target.value);
+                      setShowSearchResults(true);
+                    }}
+                    autoFocus
+                    placeholder="Търси по име на продукт"
+                    className="min-h-12 w-full rounded-[24px] border border-[#ddd3e4] bg-[#faf7fc] pl-4 pr-14 text-[#432855] outline-none transition focus:border-[#9f79ac] sm:h-12"
+                  />
+                  <button
+                    type="submit"
+                    aria-label="Търси"
+                    className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#ddd3e4] bg-[#faf7fc] text-[#6f5587] transition hover:border-[#cdbad9] hover:bg-[#f4edf8] hover:text-[#432855] sm:hidden"
+                  >
+                    <SearchIcon />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Затвори търсенето"
+                  onClick={handleSearchClear}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#ddd3e4] bg-[#faf7fc] text-[#6f5587] transition hover:border-[#cdbad9] hover:bg-[#f4edf8] hover:text-[#432855] sm:hidden"
+                >
+                  <span className="text-[1.35rem] leading-none">{"\u00d7"}</span>
+                </button>
                 <button
                   type="submit"
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-white"
+                  className="hidden h-12 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-white sm:inline-flex"
                 >
                   Търси
                 </button>
               </form>
 
               {showSearchResults && deferredSearchValue.trim() ? (
-                <div className="mt-5">
+                <div className={searchResultsWrapperClassName}>
                   {searchResults.length ? (
                     <>
-                      <p className="text-sm font-medium text-[#8f72a7]">
-                        Намерени продукти
-                      </p>
                       <div
-                        className="mt-3 overflow-y-auto pr-1"
-                        style={{ maxHeight: "calc(100vh - 20rem)" }}
+                        ref={searchResultsRef}
+                        className="overflow-y-auto pr-3 [scrollbar-gutter:stable]"
+                        style={searchResultsStyle}
                       >
                         <div className="space-y-3">
                           {searchResults.map((product) => {
@@ -341,7 +511,7 @@ export function Navbar() {
                               <Link
                                 key={product.id}
                                 href={`/products/${product.id}`}
-                                onClick={() => setIsSearchOpen(false)}
+                                onClick={handleSearchClose}
                                 className="flex items-center gap-3 rounded-[22px] border border-[#e6dcef] bg-[#faf7fc] p-3 transition hover:border-[#cbb7d8] hover:bg-white"
                               >
                                 <div className="overflow-hidden rounded-[16px] border border-[#ece3f2] bg-white">
@@ -396,8 +566,8 @@ export function Navbar() {
             className="absolute inset-0"
             onClick={() => setIsMenuOpen(false)}
           />
-          <div className="relative flex h-full w-[208px] shrink-0 flex-col border-r border-[#e9deef] bg-[#fdfdfd] px-4 py-5 shadow-[0_24px_80px_rgba(67,40,85,0.18)] landscape:w-[416px] landscape:px-5 sm:w-[218px] sm:px-5 sm:py-6 sm:landscape:w-[436px]">
-            <div className="mb-8 flex items-center justify-between landscape:hidden">
+          <div className={menuDrawerClassName}>
+            <div className={menuHeaderClassName}>
               <Image src={logo} alt="Brami" className="h-auto w-[86px]" />
               <button
                 type="button"
@@ -413,29 +583,29 @@ export function Navbar() {
               type="button"
               aria-label="Close menu"
               onClick={() => setIsMenuOpen(false)}
-              className="absolute right-5 top-5 hidden h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#f1e8f5] landscape:flex"
+              className={floatingCloseButtonClassName}
             >
               <span className="text-2xl leading-none">{"\u00d7"}</span>
             </button>
 
-            <div className="flex flex-1 flex-col landscape:grid landscape:grid-cols-[156px_1fr] landscape:gap-6">
-              <div className="order-2 mt-auto w-full pt-8 landscape:order-1 landscape:mt-0 landscape:flex landscape:flex-col landscape:justify-start landscape:border-r landscape:border-[#ece3f2] landscape:pr-4 landscape:pt-0">
-                <div className="hidden landscape:flex">
+            <div className={menuContentClassName}>
+              <div className={quickLinksColumnClassName}>
+                <div className={quickLinksLogoClassName}>
                   <Image src={logo} alt="Brami" className="h-auto w-[86px]" />
                 </div>
 
-                <div className="landscape:pt-5">
+                <div className={quickLinksBodyClassName}>
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8f72a7]">
                     Бързи връзки
                   </p>
-                  <div className="mt-4 flex w-full gap-3 landscape:flex-col">
+                  <div className={quickLinksListClassName}>
                     {quickLinks.map((item) => {
                       const iconClassName =
                         "flex h-12 w-12 items-center justify-center rounded-full border border-[#d8cae3] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(247,241,251,0.98)_100%)] text-[#432855] shadow-[0_10px_24px_rgba(67,40,85,0.14)] transition hover:border-[#cbb7d8] hover:bg-white";
                       const content = (
                         <>
                           <span className={iconClassName}>{item.icon}</span>
-                            <span className="text-left text-[11px] font-medium leading-4 text-[#5f4b74] landscape:pl-0.5">
+                            <span className={quickLinkLabelClassName}>
                               {item.label}
                             </span>
                         </>
@@ -447,7 +617,7 @@ export function Navbar() {
                             key={item.label}
                             href={item.href}
                             aria-label={item.label}
-                            className="flex w-12 flex-col items-center landscape:w-full landscape:flex-row landscape:gap-3"
+                            className={quickLinkItemClassName}
                           >
                             {content}
                           </a>
@@ -460,14 +630,14 @@ export function Navbar() {
                           href={item.href}
                           aria-label={item.label}
                           onClick={() => setIsMenuOpen(false)}
-                          className="flex w-12 flex-col items-center landscape:w-full landscape:flex-row landscape:gap-3"
+                          className={quickLinkItemClassName}
                         >
                           {content}
                         </Link>
                       );
                     })}
                   </div>
-                  <div className="mt-5 w-full border-b border-t border-[#ece3f2] pb-[1.35rem] pt-4 text-sm leading-6 text-[#5f4b74] landscape:hidden">
+                  <div className={emailBlockClassName}>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8f72a7]">
                       Имейл
                     </p>
@@ -481,7 +651,7 @@ export function Navbar() {
                 </div>
               </div>
 
-                <nav className="relative order-1 flex flex-col landscape:order-2 landscape:pt-[30px] landscape:pl-2">
+                <nav className={menuNavClassName}>
                   {navItems.map((item) => (
                     <Link
                       key={item.href}
