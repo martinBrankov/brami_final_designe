@@ -1,4 +1,11 @@
 import Link from "next/link";
+import {
+  SectionIntro,
+  contentSectionClassName,
+  contentSectionInnerClassName,
+  pageSectionClassName,
+  sectionActionClassName,
+} from "@/components/section-intro";
 
 const termsSections = [
   {
@@ -81,31 +88,26 @@ export default async function TermsPage({
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fbf8fd_0%,_#f3edf7_45%,_#efe6f6_100%)]">
-      <section className="px-6 pb-0 pt-12 sm:px-10 sm:pt-16 lg:px-14">
-        <div className="mb-8 flex items-start justify-between gap-4">
-          <div className="max-w-4xl">
-          <h1 className="font-serif text-4xl text-[#432855] sm:text-5xl">
-            Общи условия
-          </h1>
-          <p className="mt-3 max-w-3xl text-lg leading-8 text-[#6b587f]">
-            Тук ще откриете основните правила за използване на сайта,
-            подаването на поръчки, плащането, доставката и правата на
-            потребителите.
-          </p>
-          </div>
-          {showBackButton ? (
-            <Link
-              href={backHref}
-              className="inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-[#d8d0de] bg-white px-5 text-sm font-semibold text-[#432855] transition hover:bg-[#faf7fc]"
-            >
-              Обратно към количката
-            </Link>
-          ) : null}
+      <section className={pageSectionClassName}>
+        <div className="mb-8">
+          <SectionIntro
+            title="Общи условия"
+            titleAs="h1"
+            size="page"
+            description="Тук ще откриете основните правила за използване на сайта, подаването на поръчки, плащането, доставката и правата на потребителите."
+            action={
+              showBackButton ? (
+                <Link href={backHref} className={sectionActionClassName}>
+                  Обратно към количката
+                </Link>
+              ) : null
+            }
+          />
         </div>
       </section>
 
-      <section className="w-full border-y border-[#d8d0de] bg-white">
-        <div className="px-6 py-8 sm:px-10 lg:px-14">
+      <section className={contentSectionClassName}>
+        <div className={contentSectionInnerClassName}>
           {termsSections.map((section, index) => (
             <article
               key={section.title}

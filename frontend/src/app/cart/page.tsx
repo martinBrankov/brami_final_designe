@@ -6,6 +6,12 @@ import type { HTMLInputTypeAttribute } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import { useCart } from "@/components/cart-provider";
+import {
+  SectionIntro,
+  pageSectionClassName,
+  sectionActionClassName,
+  sectionPrimaryButtonClassName,
+} from "@/components/section-intro";
 import { products } from "@/data/products";
 
 const steps = ["Количка", "Доставка", "Потвърждение"];
@@ -270,16 +276,16 @@ export default function CartPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fbf8fd_0%,_#f3edf7_45%,_#efe6f6_100%)]">
-      <section className="w-full px-6 pb-12 pt-12 sm:px-10 sm:pt-16 lg:px-14">
+      <section className={`${pageSectionClassName} pb-12`}>
         <div className="mx-auto max-w-6xl">
-          <h1 className="font-serif text-4xl text-[#432855] sm:text-5xl">
-            Количка
-          </h1>
-          <p className="mt-3 text-lg text-[#6b587f]">
-            Завърши поръчката в 3 стъпки: продукти, доставка и потвърждение.
-          </p>
+          <SectionIntro
+            title="Количка"
+            titleAs="h1"
+            size="page"
+            description="Завърши поръчката в 3 стъпки: продукти, доставка и потвърждение."
+          />
 
-          <div className="mt-8 flex flex-col gap-4 rounded-[28px] border border-[#d8d0de] bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="mt-8 flex flex-col gap-4 border-y border-[#d8d0de] bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-6">
             {steps.map((step, index) => (
               <div key={step} className="flex items-center gap-4">
                 <StepMarker
@@ -299,7 +305,7 @@ export default function CartPage() {
               orderId ? "grid-cols-1" : "lg:grid-cols-[minmax(0,1fr)_340px]"
             }`}
           >
-            <div className="rounded-[32px] border border-[#d8d0de] bg-white p-5 shadow-[0_24px_70px_rgba(67,40,85,0.08)] sm:p-7">
+            <div className="border-y border-[#d8d0de] bg-white px-5 py-6 sm:px-7 sm:py-7">
               {currentStep === 0 ? (
                 <div>
                   <h2 className="font-serif text-3xl text-[#432855]">Продукти в количката</h2>
@@ -311,62 +317,131 @@ export default function CartPage() {
                         return (
                           <article
                             key={item.product.id}
-                            className="flex flex-col gap-4 rounded-[24px] border border-[#e4dbea] bg-[#faf7fc] p-4 sm:flex-row"
+                            className="border-b border-[#e4dbea] py-4 last:border-b-0"
                           >
-                            <div className="overflow-hidden rounded-[20px] border border-[#ece3f2] bg-white sm:w-[140px]">
-                              {productImage ? (
-                                <Image
-                                  src={productImage}
-                                  alt={item.product.name}
-                                  className="aspect-square w-full object-cover"
-                                />
-                              ) : (
-                                <div className="aspect-square w-full bg-[#f3edf7]" />
-                              )}
-                            </div>
-
-                            <div className="flex min-w-0 flex-1 flex-col justify-between gap-4">
-                              <div>
-                                <Link
-                                  href={`/products/${item.product.id}`}
-                                  className="font-serif text-2xl text-[#432855] transition hover:text-[#6c3f8d]"
-                                >
-                                  {item.product.name}
-                                </Link>
-                                <p className="mt-2 text-sm text-[#6b587f]">{item.product.packaging}</p>
-                                <p className="mt-3 text-lg font-semibold text-[#432855]">
-                                  {item.product.price}
+                            <div className="grid grid-cols-[92px_minmax(0,1fr)] grid-rows-[auto_auto_auto] gap-x-4 gap-y-3 md:hidden">
+                              <div className="col-span-2 row-start-1 min-w-0">
+                                <div className="flex items-start justify-between gap-3">
+                                  <Link
+                                    href={`/products/${item.product.id}`}
+                                    className="block min-w-0 flex-1 line-clamp-2 font-serif text-[1.25rem] leading-7 text-[#432855] transition hover:text-[#6c3f8d]"
+                                  >
+                                    {item.product.name}
+                                  </Link>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeItem(item.product.id)}
+                                    aria-label="Премахни продукт"
+                                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[1.2rem] leading-none text-[#8f72a7] transition hover:bg-[#f2e8f6] hover:text-[#432855]"
+                                  >
+                                    {"\u00d7"}
+                                  </button>
+                                </div>
+                                <p className="mt-1 text-sm text-[#6b587f]">
+                                  {item.product.packaging}
                                 </p>
                               </div>
 
-                              <div className="flex flex-wrap items-center gap-3">
-                                <div className="inline-flex items-center rounded-full border border-[#ddd3e4] bg-white p-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                                    className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-[#432855] transition hover:bg-[#f2e8f6]"
-                                  >
-                                    −
-                                  </button>
-                                  <span className="min-w-10 text-center text-sm font-semibold text-[#432855]">
-                                    {item.quantity}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                                    className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-[#432855] transition hover:bg-[#f2e8f6]"
-                                  >
-                                    +
-                                  </button>
+                              <div className="col-start-1 row-start-2 w-[92px] shrink-0 overflow-hidden rounded-[18px] border border-[#ece3f2] bg-[#fcf9ff]">
+                                {productImage ? (
+                                  <Image
+                                    src={productImage}
+                                    alt={item.product.name}
+                                    className="aspect-square w-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="aspect-square w-full bg-[#f3edf7]" />
+                                )}
+                              </div>
+
+                              <div className="col-start-2 row-start-2 flex min-w-0 flex-col justify-between self-stretch">
+                                <p className="text-lg font-semibold text-[#432855]">
+                                  {item.product.price}
+                                </p>
+                                <div className="mt-3 flex flex-col items-start gap-2">
+                                  <div className="inline-flex items-center rounded-full border border-[#ddd3e4] bg-white p-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                      className="flex h-8 w-8 items-center justify-center rounded-full text-xl text-[#432855] transition hover:bg-[#f2e8f6]"
+                                    >
+                                      −
+                                    </button>
+                                    <span className="min-w-8 text-center text-sm font-semibold text-[#432855]">
+                                      {item.quantity}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                      className="flex h-8 w-8 items-center justify-center rounded-full text-xl text-[#432855] transition hover:bg-[#f2e8f6]"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="hidden min-w-0 items-start gap-4 md:flex">
+                              <div className="w-[140px] shrink-0 overflow-hidden rounded-[18px] border border-[#ece3f2] bg-[#fcf9ff]">
+                                {productImage ? (
+                                  <Image
+                                    src={productImage}
+                                    alt={item.product.name}
+                                    className="aspect-square w-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="aspect-square w-full bg-[#f3edf7]" />
+                                )}
+                              </div>
+
+                              <div className="flex min-w-0 flex-1 flex-col justify-between">
+                                <div>
+                                  <div className="flex items-start justify-between gap-3">
+                                    <Link
+                                      href={`/products/${item.product.id}`}
+                                      className="block min-w-0 flex-1 line-clamp-2 font-serif text-2xl leading-8 text-[#432855] transition hover:text-[#6c3f8d]"
+                                    >
+                                      {item.product.name}
+                                    </Link>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeItem(item.product.id)}
+                                      aria-label="Премахни продукт"
+                                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[1.35rem] leading-none text-[#8f72a7] transition hover:bg-[#f2e8f6] hover:text-[#432855]"
+                                    >
+                                      {"\u00d7"}
+                                    </button>
+                                  </div>
+                                  <p className="mt-1 text-sm text-[#6b587f]">
+                                    {item.product.packaging}
+                                  </p>
+                                  <p className="mt-2 text-lg font-semibold text-[#432855]">
+                                    {item.product.price}
+                                  </p>
                                 </div>
 
-                                <button
-                                  type="button"
-                                  onClick={() => removeItem(item.product.id)}
-                                  className="text-sm font-medium text-[#8f72a7] transition hover:text-[#432855]"
-                                >
-                                  Премахни
-                                </button>
+                                <div className="mt-4 flex flex-wrap items-center gap-2">
+                                  <div className="inline-flex items-center rounded-full border border-[#ddd3e4] bg-white p-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                      className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-[#432855] transition hover:bg-[#f2e8f6]"
+                                    >
+                                      −
+                                    </button>
+                                    <span className="min-w-10 text-center text-sm font-semibold text-[#432855]">
+                                      {item.quantity}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                      className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-[#432855] transition hover:bg-[#f2e8f6]"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </article>
@@ -374,11 +449,11 @@ export default function CartPage() {
                       })}
                     </div>
                   ) : (
-                    <div className="mt-6 rounded-[24px] border border-dashed border-[#d8d0de] bg-[#faf7fc] p-8 text-center">
+                    <div className="mt-6 border border-dashed border-[#d8d0de] bg-[#faf7fc] p-8 text-center">
                       <p className="text-lg text-[#6b587f]">Количката е празна.</p>
                       <Link
                         href="/products"
-                        className="mt-5 inline-flex h-11 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-white"
+                        className={`mt-5 ${sectionPrimaryButtonClassName}`}
                       >
                         Към продуктите
                       </Link>
@@ -541,7 +616,7 @@ export default function CartPage() {
                   <h2 className="font-serif text-3xl text-[#432855]">Потвърждение</h2>
 
                   {orderId ? (
-                    <div className="mt-6 rounded-[24px] border border-[#d7ead8] bg-[#f5fbf5] p-6">
+                    <div className="mt-6 border border-[#d7ead8] bg-[#f5fbf5] p-6">
                       <p className="text-lg font-semibold text-[#305439]">
                         Поръчката е изпратена успешно.
                       </p>
@@ -553,13 +628,13 @@ export default function CartPage() {
                       </p>
                       <Link
                         href="/products"
-                        className="mt-5 inline-flex h-11 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-white"
+                        className={`mt-5 ${sectionPrimaryButtonClassName}`}
                       >
                         Продължи към продуктите
                       </Link>
                     </div>
                   ) : (
-                    <div className="mt-6 rounded-[24px] border border-[#e4dbea] bg-[#faf7fc] p-6">
+                    <div className="mt-6 border border-[#e4dbea] bg-[#faf7fc] p-6">
                       <p className="text-[#6b587f]">
                         Провери обобщението вдясно и изпрати поръчката. След кратко изчакване ще получиш индивидуален номер.
                       </p>
@@ -573,7 +648,7 @@ export default function CartPage() {
                   <button
                     type="button"
                     onClick={() => setCurrentStep((step) => Math.max(0, step - 1))}
-                    className="inline-flex h-11 items-center justify-center rounded-full border border-[#d8d0de] bg-white px-5 text-sm font-semibold text-[#432855] transition hover:bg-[#faf7fc]"
+                    className={sectionActionClassName}
                   >
                     Назад
                   </button>
@@ -584,7 +659,7 @@ export default function CartPage() {
                     type="button"
                     onClick={() => setCurrentStep(1)}
                     disabled={!cartItems.length}
-                    className="inline-flex h-11 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    className={`${sectionPrimaryButtonClassName} disabled:cursor-not-allowed disabled:opacity-50`}
                   >
                     Към доставка
                   </button>
@@ -594,7 +669,7 @@ export default function CartPage() {
                   <button
                     type="button"
                     onClick={handleAddressStepContinue}
-                    className="inline-flex h-11 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    className={`${sectionPrimaryButtonClassName} disabled:cursor-not-allowed disabled:opacity-50`}
                   >
                     Към потвърждение
                   </button>
@@ -605,7 +680,7 @@ export default function CartPage() {
                     type="button"
                     onClick={handleSubmitOrder}
                     disabled={isSubmittingOrder || !cartItems.length || !isAddressValid}
-                    className="inline-flex h-11 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    className={`${sectionPrimaryButtonClassName} disabled:cursor-not-allowed disabled:opacity-50`}
                   >
                     {isSubmittingOrder ? "Изпращаме..." : "Изпрати поръчката"}
                   </button>
@@ -614,7 +689,7 @@ export default function CartPage() {
             </div>
 
             {!orderId ? (
-              <aside className="rounded-[32px] border border-[#d8d0de] bg-white p-5 shadow-[0_24px_70px_rgba(67,40,85,0.08)] sm:p-6">
+              <aside className="border-y border-[#d8d0de] bg-white px-5 py-6 sm:px-6">
                 <h2 className="font-serif text-3xl text-[#432855]">Обобщение</h2>
                 <div className="mt-5 space-y-3 text-[#5f4b73]">
                   <div className="flex items-center justify-between gap-4">
@@ -632,7 +707,7 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 space-y-3 rounded-[24px] bg-[#faf7fc] p-4">
+                <div className="mt-6 space-y-3 border border-[#ece3f2] bg-[#faf7fc] p-4">
                   {cartItems.length ? (
                     cartItems.map((item) => (
                       <div key={item.product.id} className="flex items-start justify-between gap-3">

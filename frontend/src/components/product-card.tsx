@@ -114,7 +114,7 @@ export function ProductCard({
       >
         <div className="relative overflow-hidden border-b border-[#e5e0e8] bg-[linear-gradient(180deg,#f2f2f6_0%,#e8e8ee_100%)]">
           <span
-            className={`absolute z-20 inline-flex rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] font-semibold text-white ${
+            className={`absolute z-20 inline-flex rounded-full bg-[linear-gradient(100deg,#d4b082_0%,#bf9464_100%)] font-semibold text-white ${
               compact
                 ? "left-2.5 top-2.5 px-2 py-0.5 text-[10px] sm:left-3 sm:top-3 sm:px-2.5 sm:py-1 sm:text-[11px]"
                 : "left-4 top-4 px-3 py-1 text-xs"

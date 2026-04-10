@@ -30,6 +30,8 @@ export type Product = {
   id: number;
   name: string;
   category: ("hair" | "body" | "face")[];
+  // Audience tags used by the product-list filter: women, men, unisex.
+  audience: ("women" | "men" | "unisex")[];
   brand: "brami" | "vodica" | "other";
   badge: "bestseller" | "sale" | "new" | "favorite" | "featured";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,6 +48,7 @@ type ProductJson = {
   id: number;
   name: string;
   category: string[];
+  audience?: string[];
   brand: string;
   badge: string;
   imageSrc: unknown[];
@@ -61,6 +64,11 @@ const allowedCategories = new Set<Product["category"][number]>([
   "hair",
   "body",
   "face",
+]);
+const allowedAudiences = new Set<Product["audience"][number]>([
+  "women",
+  "men",
+  "unisex",
 ]);
 
 const allowedBrands = new Set<Product["brand"]>(["brami", "vodica", "other"]);
@@ -155,6 +163,19 @@ function parseCategory(category: string[]): Product["category"] {
   );
 }
 
+function parseAudience(audience?: string[]): Product["audience"] {
+  if (!Array.isArray(audience)) {
+    return ["unisex"];
+  }
+
+  const parsedAudience = audience.filter(
+    (item): item is Product["audience"][number] =>
+      allowedAudiences.has(item as Product["audience"][number]),
+  );
+
+  return parsedAudience.length ? parsedAudience : ["unisex"];
+}
+
 function parseBrand(brand: string): Product["brand"] {
   return allowedBrands.has(brand as Product["brand"])
     ? (brand as Product["brand"])
@@ -195,6 +216,7 @@ function parseProduct(product: ProductJson): Product {
     id: product.id,
     name: fixMojibake(product.name),
     category: parseCategory(product.category),
+    audience: parseAudience(product.audience),
     brand: parseBrand(product.brand),
     badge: parseBadge(product.badge),
     imageSrc: parseImageSrc(product.imageSrc),

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { ProductCard } from "@/components/product-card";
+import { SectionIntro } from "@/components/section-intro";
 import { getProductBadgeLabel, products } from "@/data/products";
 
 function ArrowIcon({ direction }: { direction: "left" | "right" }) {
@@ -241,11 +242,7 @@ export function BestsellersSection() {
     <section className="w-full bg-[#f5f7fb] py-10">
       <div className="flex w-full flex-col gap-3 px-6 sm:px-10 lg:px-14">
         <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="mt-2 font-serif text-3xl leading-tight text-[#432855] sm:text-4xl">
-              Най-продавани продукти
-            </h2>
-          </div>
+          <SectionIntro title="Най-продавани продукти" />
           {isOverflowing ? (
             <div className="hidden items-center gap-3 lg:flex">
               <button
@@ -277,12 +274,16 @@ export function BestsellersSection() {
             }`}
           >
             {featuredProducts.map((product, index) => (
-              <div key={product.id} data-card-index={index} className="snap-start">
+              <div
+                key={product.id}
+                data-card-index={index}
+                className="snap-start w-full max-w-[168px] shrink-0 min-[640px]:w-[198px] min-[640px]:max-w-[198px]"
+              >
                 <ProductCard
                   product={product}
                   badge={getProductBadgeLabel(product.badge)}
                   compact
-                  className="w-[168px] shrink-0 sm:w-[198px]"
+                  className="w-full max-w-[168px] min-[640px]:w-[198px] min-[640px]:max-w-[198px]"
                 />
               </div>
             ))}

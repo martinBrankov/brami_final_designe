@@ -7,6 +7,11 @@ import { useFavorites } from "@/components/favorites-provider";
 import { ProductCard } from "@/components/product-card";
 import { RecentlyViewedSection } from "@/components/recently-viewed-section";
 import {
+  SectionIntro,
+  pageSectionClassName,
+  sectionActionClassName,
+} from "@/components/section-intro";
+import {
   getProductBadgeLabel,
   products,
   type Product,
@@ -22,20 +27,27 @@ const categoryOptions: Array<{
   { value: "hair", label: "Коса" },
 ];
 
-const brandOptions: Array<{
-  value: Product["brand"] | "all";
+const audienceOptions: Array<{
+  value: Product["audience"][number];
   label: string;
 }> = [
-  { value: "all", label: "Всички" },
+  { value: "women", label: "За жени" },
+  { value: "men", label: "За мъже" },
+  { value: "unisex", label: "Унисекс" },
+];
+
+const brandOptions: Array<{
+  value: Product["brand"];
+  label: string;
+}> = [
   { value: "brami", label: "Brami" },
   { value: "vodica", label: "Vodica" },
 ];
 
 const badgeOptions: Array<{
-  value: Product["badge"] | "all";
+  value: Product["badge"];
   label: string;
 }> = [
-  { value: "all", label: "Всички" },
   { value: "bestseller", label: "Най-продавани" },
   { value: "sale", label: "Отстъпка" },
   { value: "new", label: getProductBadgeLabel("new") },
@@ -86,10 +98,15 @@ export function ProductsPageContent() {
   const { favoriteIds, hasHydrated } = useFavorites();
   const [selectedCategory, setSelectedCategory] =
     useState<Product["category"][number] | "all">("all");
-  const [selectedBrand, setSelectedBrand] =
-    useState<Product["brand"] | "all">("all");
-  const [selectedBadge, setSelectedBadge] =
-    useState<Product["badge"] | "all">("all");
+  const [selectedAudiences, setSelectedAudiences] = useState<
+    Product["audience"][number][]
+  >([]);
+  const [selectedBrands, setSelectedBrands] = useState<Product["brand"][]>([]);
+  const [selectedBadges, setSelectedBadges] = useState<Product["badge"][]>([]);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [expandedFilter, setExpandedFilter] = useState<
+    "brand" | "audience" | "badge" | null
+  >("brand");
   const [query, setQuery] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
 
@@ -105,10 +122,9 @@ export function ProductsPageContent() {
       categoryParam === "hair"
     ) {
       setSelectedCategory(categoryParam);
-      return;
+    } else {
+      setSelectedCategory("all");
     }
-
-    setSelectedCategory("all");
   }, [searchParams]);
 
   const filteredProducts = useMemo(
@@ -117,10 +133,13 @@ export function ProductsPageContent() {
         const categoryMatches =
           selectedCategory === "all" ||
           product.category.includes(selectedCategory);
+        const audienceMatches =
+          selectedAudiences.length === 0 ||
+          selectedAudiences.some((audience) => product.audience.includes(audience));
         const brandMatches =
-          selectedBrand === "all" || product.brand === selectedBrand;
+          selectedBrands.length === 0 || selectedBrands.includes(product.brand);
         const badgeMatches =
-          selectedBadge === "all" || product.badge === selectedBadge;
+          selectedBadges.length === 0 || selectedBadges.includes(product.badge);
         const queryMatches =
           !query ||
           product.name.toLowerCase().includes(query) ||
@@ -130,6 +149,7 @@ export function ProductsPageContent() {
 
         return (
           categoryMatches &&
+          audienceMatches &&
           brandMatches &&
           badgeMatches &&
           queryMatches &&
@@ -141,8 +161,9 @@ export function ProductsPageContent() {
       favoritesOnly,
       hasHydrated,
       query,
-      selectedBadge,
-      selectedBrand,
+      selectedAudiences,
+      selectedBadges,
+      selectedBrands,
       selectedCategory,
     ],
   );
@@ -151,8 +172,9 @@ export function ProductsPageContent() {
     query.length > 0 ||
     favoritesOnly ||
     selectedCategory !== "all" ||
-    selectedBrand !== "all" ||
-    selectedBadge !== "all";
+    selectedAudiences.length > 0 ||
+    selectedBrands.length > 0 ||
+    selectedBadges.length > 0;
 
   function handleClearFilters() {
     if (!hasActiveFilters) {
@@ -160,24 +182,42 @@ export function ProductsPageContent() {
     }
 
     setSelectedCategory("all");
-    setSelectedBrand("all");
-    setSelectedBadge("all");
+    setSelectedAudiences([]);
+    setSelectedBrands([]);
+    setSelectedBadges([]);
     setQuery("");
     setFavoritesOnly(false);
     router.push("/products");
   }
 
+  function toggleSelection<T extends string>(
+    value: T,
+    selectedValues: T[],
+    setSelectedValues: React.Dispatch<React.SetStateAction<T[]>>,
+  ) {
+    setSelectedValues((currentValues) =>
+      currentValues.includes(value)
+        ? currentValues.filter((item) => item !== value)
+        : [...currentValues, value],
+    );
+  }
+
+  function toggleFilterSection(section: "brand" | "audience" | "badge") {
+    setExpandedFilter((currentSection) =>
+      currentSection === section ? null : section,
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fbf8fd_0%,_#f3edf7_45%,_#efe6f6_100%)]">
-      <section className="w-full px-6 pb-0 pt-12 sm:px-10 sm:pb-0 sm:pt-16 lg:px-14">
-        <div className="mb-3 flex items-start justify-between gap-4">
-          <div>
-            <h1 className="font-serif text-4xl text-[#432855] sm:text-5xl">
-            Продукт лист
-            </h1>
-            <p className="mt-3 max-w-2xl text-lg text-[#6b587f]">
-            Разгледай подбраните формули за лице, тяло и коса.
-            </p>
+      <section className={pageSectionClassName}>
+        <div className="mb-3">
+          <SectionIntro
+            title="Продукт лист"
+            titleAs="h1"
+            size="page"
+            description="Разгледай подбраните формули за лице, тяло и коса."
+          >
             {query ? (
               <p className="mt-3 text-sm font-medium text-[#8f72a7]">
                 Резултати за: &quot;{query}&quot;
@@ -188,19 +228,7 @@ export function ProductsPageContent() {
                 Показани са само любимите продукти.
               </p>
             ) : null}
-          </div>
-          <button
-            type="button"
-            onClick={handleClearFilters}
-            disabled={!hasActiveFilters}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition sm:px-5 ${
-              hasActiveFilters
-                ? "border border-[#d2c0dd] bg-white text-[#432855] hover:border-[#bca5cc] hover:bg-[#faf7fc]"
-                : "cursor-not-allowed border border-[#e6deec] bg-[#f7f3fa] text-[#b9adc5]"
-            }`}
-          >
-            Изчисти филтрите
-          </button>
+          </SectionIntro>
         </div>
       </section>
 
@@ -227,58 +255,194 @@ export function ProductsPageContent() {
               ))}
             </div>
 
-            <div className="mt-3 flex w-full max-w-[400px] items-center overflow-hidden rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] text-[#432855]">
-              <div className="flex h-11 shrink-0 items-center gap-2 px-3 text-xs font-semibold uppercase tracking-[0.06em] sm:h-12 sm:px-5 sm:text-sm">
-                <FilterIcon />
-                <span>Филтри</span>
-              </div>
-
-              <div className="h-5 w-px shrink-0 bg-[#ddd3e4] sm:h-6" />
-
-              <label className="relative min-w-0 flex-[0.85]">
-                <select
-                  value={selectedBrand}
-                  onChange={(event) =>
-                    setSelectedBrand(
-                      event.target.value as Product["brand"] | "all",
-                    )
-                  }
-                  className="h-11 w-full appearance-none bg-transparent px-3 pr-8 text-xs font-medium text-[#432855] outline-none sm:h-12 sm:px-5 sm:pr-10 sm:text-sm"
+            <div className="mt-3 w-full max-w-[400px] overflow-hidden rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] text-[#432855]">
+              <button
+                type="button"
+                onClick={() => setIsFiltersOpen((currentValue) => !currentValue)}
+                className={`flex w-full items-center justify-between px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.06em] sm:px-5 sm:text-sm ${
+                  isFiltersOpen ? "border-b border-[#ddd3e4]" : ""
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <FilterIcon />
+                  <span>Филтри</span>
+                </span>
+                <span
+                  className={`text-[#6b587f] transition ${
+                    isFiltersOpen ? "rotate-180" : ""
+                  }`}
                 >
-                  {brandOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-[#6b587f] sm:right-4">
                   <ChevronIcon />
                 </span>
-              </label>
+              </button>
 
-              <div className="h-5 w-px shrink-0 bg-[#ddd3e4] sm:h-6" />
+              {isFiltersOpen ? (
+                <>
+                  <div className="border-b border-[#ddd3e4] last:border-b-0">
+                    <button
+                      type="button"
+                      onClick={() => toggleFilterSection("brand")}
+                      className="flex w-full items-center justify-between px-4 py-3 text-left sm:px-5"
+                    >
+                      <span>
+                        <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8f72a7]">
+                          Марка
+                        </span>
+                        <span className="mt-1 block text-sm font-medium">
+                          {selectedBrands.length
+                            ? `${selectedBrands.length} избрани`
+                            : "Избери марки"}
+                        </span>
+                      </span>
+                      <span
+                        className={`text-[#6b587f] transition ${
+                          expandedFilter === "brand" ? "rotate-180" : ""
+                        }`}
+                      >
+                        <ChevronIcon />
+                      </span>
+                    </button>
+                    {expandedFilter === "brand" ? (
+                      <div className="space-y-3 border-t border-[#ece3f2] px-4 py-4 sm:px-5">
+                        {brandOptions.map((option) => (
+                          <label
+                            key={option.value}
+                            className="flex items-center gap-3 text-sm font-medium"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedBrands.includes(option.value)}
+                              onChange={() =>
+                                toggleSelection(
+                                  option.value,
+                                  selectedBrands,
+                                  setSelectedBrands,
+                                )
+                              }
+                              className="h-4 w-4 rounded border-[#bca5cc] text-[#432855] accent-[#432855]"
+                            />
+                            <span>{option.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
 
-              <label className="relative min-w-0 flex-[1.15]">
-                <select
-                  value={selectedBadge}
-                  onChange={(event) =>
-                    setSelectedBadge(
-                      event.target.value as Product["badge"] | "all",
-                    )
-                  }
-                  className="h-11 w-full appearance-none bg-transparent px-3 pr-8 text-xs font-medium text-[#432855] outline-none sm:h-12 sm:px-5 sm:pr-10 sm:text-sm"
-                >
-                  {badgeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-[#6b587f] sm:right-4">
-                  <ChevronIcon />
-                </span>
-              </label>
+                  <div className="border-b border-[#ddd3e4] last:border-b-0">
+                    <button
+                      type="button"
+                      onClick={() => toggleFilterSection("audience")}
+                      className="flex w-full items-center justify-between px-4 py-3 text-left sm:px-5"
+                    >
+                      <span>
+                        <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8f72a7]">
+                          За кого
+                        </span>
+                        <span className="mt-1 block text-sm font-medium">
+                          {selectedAudiences.length
+                            ? `${selectedAudiences.length} избрани`
+                            : "Избери аудитория"}
+                        </span>
+                      </span>
+                      <span
+                        className={`text-[#6b587f] transition ${
+                          expandedFilter === "audience" ? "rotate-180" : ""
+                        }`}
+                      >
+                        <ChevronIcon />
+                      </span>
+                    </button>
+                    {expandedFilter === "audience" ? (
+                      <div className="space-y-3 border-t border-[#ece3f2] px-4 py-4 sm:px-5">
+                        {audienceOptions.map((option) => (
+                          <label
+                            key={option.value}
+                            className="flex items-center gap-3 text-sm font-medium"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedAudiences.includes(option.value)}
+                              onChange={() =>
+                                toggleSelection(
+                                  option.value,
+                                  selectedAudiences,
+                                  setSelectedAudiences,
+                                )
+                              }
+                              className="h-4 w-4 rounded border-[#bca5cc] text-[#432855] accent-[#432855]"
+                            />
+                            <span>{option.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => toggleFilterSection("badge")}
+                      className="flex w-full items-center justify-between px-4 py-3 text-left sm:px-5"
+                    >
+                      <span>
+                        <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8f72a7]">
+                          Етикет
+                        </span>
+                        <span className="mt-1 block text-sm font-medium">
+                          {selectedBadges.length
+                            ? `${selectedBadges.length} избрани`
+                            : "Избери етикети"}
+                        </span>
+                      </span>
+                      <span
+                        className={`text-[#6b587f] transition ${
+                          expandedFilter === "badge" ? "rotate-180" : ""
+                        }`}
+                      >
+                        <ChevronIcon />
+                      </span>
+                    </button>
+                    {expandedFilter === "badge" ? (
+                      <div className="space-y-3 border-t border-[#ece3f2] px-4 py-4 sm:px-5">
+                        {badgeOptions.map((option) => (
+                          <label
+                            key={option.value}
+                            className="flex items-center gap-3 text-sm font-medium"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedBadges.includes(option.value)}
+                              onChange={() =>
+                                toggleSelection(
+                                  option.value,
+                                  selectedBadges,
+                                  setSelectedBadges,
+                                )
+                              }
+                              className="h-4 w-4 rounded border-[#bca5cc] text-[#432855] accent-[#432855]"
+                            />
+                            <span>{option.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </>
+              ) : null}
             </div>
+
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              disabled={!hasActiveFilters}
+              className={`mt-3 ${sectionActionClassName} ${
+                hasActiveFilters
+                  ? ""
+                  : "cursor-not-allowed border-[#e6deec] bg-[#f7f3fa] text-[#b9adc5] hover:bg-[#f7f3fa]"
+              }`}
+            >
+              Изчисти филтрите
+            </button>
           </div>
 
           {favoritesOnly && hasHydrated && !favoriteIds.length ? (

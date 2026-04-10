@@ -162,8 +162,8 @@ export function Navbar() {
   const navItems = [
     { href: "/", label: "Начало" },
     { href: "/products", label: "Продукти" },
-    { href: "/contact", label: "Контакти" },
     { href: "/about", label: "За нас" },
+    { href: "/contact", label: "Контакти" },
   ];
   const quickLinks = [
     {
@@ -481,7 +481,7 @@ export function Navbar() {
                 <button
                   type="button"
                   aria-label="Затвори търсенето"
-                  onClick={handleSearchClear}
+                  onClick={handleSearchClose}
                   className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#ddd3e4] bg-[#faf7fc] text-[#6f5587] transition hover:border-[#cdbad9] hover:bg-[#f4edf8] hover:text-[#432855] sm:hidden"
                 >
                   <span className="text-[1.35rem] leading-none">{"\u00d7"}</span>
