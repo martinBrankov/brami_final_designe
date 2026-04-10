@@ -284,8 +284,11 @@ export default function CartPage() {
             size="page"
             description="Завърши поръчката в 3 стъпки: продукти, доставка и потвърждение."
           />
-
-          <div className="mt-8 flex flex-col gap-4 border-y border-[#d8d0de] bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-6">
+        </div>
+      </section>
+      <section className="w-full border-y border-y-[#d8d0de] bg-white">
+        <div className="px-6 py-8 sm:px-10 lg:px-14">
+          <div className="mt-8 flex flex-col gap-4 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-6">
             {steps.map((step, index) => (
               <div key={step} className="flex items-center gap-4">
                 <StepMarker
@@ -305,7 +308,7 @@ export default function CartPage() {
               orderId ? "grid-cols-1" : "lg:grid-cols-[minmax(0,1fr)_340px]"
             }`}
           >
-            <div className="border-y border-[#d8d0de] bg-white px-5 py-6 sm:px-7 sm:py-7">
+            <div className="bg-white px-5 py-6 sm:px-7 sm:py-7">
               {currentStep === 0 ? (
                 <div>
                   <h2 className="font-serif text-3xl text-[#432855]">Продукти в количката</h2>
@@ -643,7 +646,48 @@ export default function CartPage() {
                 </div>
               ) : null}
 
-              <div className="mt-8 flex flex-wrap gap-3">
+            </div>
+
+            {!orderId ? (
+              <aside className="border-y border-[#d8d0de] bg-white px-5 py-6 sm:px-6">
+                <h2 className="font-serif text-3xl text-[#432855]">Обобщение</h2>
+                <div className="mt-5 space-y-3 text-[#5f4b73]">
+                  <div className="flex items-center justify-between gap-4">
+                    <span>Продукти</span>
+                    <span className="font-medium text-[#432855]">{formatPrice(subtotal)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span>Доставка</span>
+                    <span className="font-medium text-[#432855]">{formatPrice(shipping)}</span>
+                  </div>
+                  <div className="h-px bg-[#e4dbea]" />
+                  <div className="flex items-center justify-between gap-4 text-lg font-semibold text-[#432855]">
+                    <span>Общо</span>
+                    <span>{formatPrice(total)}</span>
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-3 border border-[#ece3f2] bg-[#faf7fc] p-4">
+                  {cartItems.length ? (
+                    cartItems.map((item) => (
+                      <div key={item.product.id} className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-[#432855]">{item.product.name}</p>
+                          <p className="text-sm text-[#8f72a7]">{item.quantity} x {formatPrice(item.unitPrice)}</p>
+                        </div>
+                        <span className="whitespace-nowrap text-sm font-semibold text-[#432855]">
+                          {formatPrice(item.totalPrice)}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-[#6b587f]">Няма добавени продукти.</p>
+                  )}
+                </div>
+              </aside>
+            ) : null}
+
+            <div className="mt-8 flex flex-wrap gap-3">
                 {currentStep > 0 && !orderId ? (
                   <button
                     type="button"
@@ -686,46 +730,6 @@ export default function CartPage() {
                   </button>
                 ) : null}
               </div>
-            </div>
-
-            {!orderId ? (
-              <aside className="border-y border-[#d8d0de] bg-white px-5 py-6 sm:px-6">
-                <h2 className="font-serif text-3xl text-[#432855]">Обобщение</h2>
-                <div className="mt-5 space-y-3 text-[#5f4b73]">
-                  <div className="flex items-center justify-between gap-4">
-                    <span>Продукти</span>
-                    <span className="font-medium text-[#432855]">{formatPrice(subtotal)}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <span>Доставка</span>
-                    <span className="font-medium text-[#432855]">{formatPrice(shipping)}</span>
-                  </div>
-                  <div className="h-px bg-[#e4dbea]" />
-                  <div className="flex items-center justify-between gap-4 text-lg font-semibold text-[#432855]">
-                    <span>Общо</span>
-                    <span>{formatPrice(total)}</span>
-                  </div>
-                </div>
-
-                <div className="mt-6 space-y-3 border border-[#ece3f2] bg-[#faf7fc] p-4">
-                  {cartItems.length ? (
-                    cartItems.map((item) => (
-                      <div key={item.product.id} className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-medium text-[#432855]">{item.product.name}</p>
-                          <p className="text-sm text-[#8f72a7]">{item.quantity} x {formatPrice(item.unitPrice)}</p>
-                        </div>
-                        <span className="whitespace-nowrap text-sm font-semibold text-[#432855]">
-                          {formatPrice(item.totalPrice)}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-[#6b587f]">Няма добавени продукти.</p>
-                  )}
-                </div>
-              </aside>
-            ) : null}
           </div>
         </div>
       </section>
