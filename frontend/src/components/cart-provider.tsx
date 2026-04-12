@@ -5,13 +5,24 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 
+import { CartNotification } from "@/components/cart-notification";
+import { products } from "@/data/products";
+
 type CartItem = {
   productId: number;
   quantity: number;
+};
+
+type CartNotificationState = {
+  productId: number;
+  productName: string;
+  productImage?: (typeof products)[number]["imageSrc"][number];
+  key: number;
 };
 
 type CartContextValue = {
@@ -29,6 +40,8 @@ const STORAGE_KEY = "brami-cart";
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hasHydrated, setHasHydrated] = useState(false);
+  const [notification, setNotification] = useState<CartNotificationState | null>(null);
+  const notificationTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     try {
@@ -66,6 +79,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [hasHydrated, items]);
 
+  useEffect(
+    () => () => {
+      if (notificationTimeoutRef.current) {
+        window.clearTimeout(notificationTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
   const value = useMemo<CartContextValue>(() => {
     function addItem(productId: number, quantity = 1) {
       setItems((currentItems) => {
@@ -81,6 +103,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
             : item,
         );
       });
+
+      const product = products.find((entry) => entry.id === productId);
+
+      if (product) {
+        if (notificationTimeoutRef.current) {
+          window.clearTimeout(notificationTimeoutRef.current);
+        }
+
+        setNotification({
+          productId,
+          productName: product.name,
+          productImage: product.imageSrc[0],
+          key: Date.now(),
+        });
+
+        notificationTimeoutRef.current = window.setTimeout(() => {
+          setNotification(null);
+          notificationTimeoutRef.current = null;
+        }, 3200);
+      }
     }
 
     function removeItem(productId: number) {
@@ -116,7 +158,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
   }, [items]);
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+      {notification ? (
+        <CartNotification
+          key={notification.key}
+          productName={notification.productName}
+          productImage={notification.productImage}
+          onClose={() => {
+            if (notificationTimeoutRef.current) {
+              window.clearTimeout(notificationTimeoutRef.current);
+              notificationTimeoutRef.current = null;
+            }
+
+            setNotification(null);
+          }}
+        />
+      ) : null}
+    </CartContext.Provider>
+  );
 }
 
 export function useCart() {

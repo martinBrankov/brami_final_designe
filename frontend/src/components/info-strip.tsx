@@ -80,9 +80,9 @@ export function InfoStrip({
             <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d0de] bg-white/80">
               <Icon />
             </div>
-            <div className="text-base leading-5">
-              <p className="font-semibold">{title}</p>
-              <p className="text-[#6b587f]">{text}</p>
+            <div className="flex flex-wrap items-baseline gap-x-1.5 text-[0.95rem] leading-5 sm:block sm:text-base">
+              <p className="font-semibold whitespace-nowrap">{title}</p>
+              <p className="text-[#6b587f] whitespace-nowrap">{text}</p>
             </div>
           </div>
         ))}
