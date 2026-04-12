@@ -220,7 +220,7 @@ export function Navbar() {
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(
-      "(orientation: landscape) and (max-width: 932px) and (pointer: coarse) and (hover: none)",
+      "(orientation: landscape) and (max-width: 932px)",
     );
 
     const updateMenuLayout = () => {
@@ -316,10 +316,10 @@ export function Navbar() {
     setIsSearchOpen(false);
   }
 
-  const menuDrawerClassName = `relative z-10 flex h-full w-[208px] shrink-0 flex-col border-r border-[#e9deef] bg-[#fdfdfd] px-4 py-5 shadow-[0_24px_80px_rgba(67,40,85,0.18)] sm:w-[218px] sm:px-5 sm:py-6${
-    isPhoneLandscapeMenuLayout ? " w-[416px] px-5 sm:w-[436px]" : ""
+  const menuDrawerClassName = `relative z-10 flex h-full w-[208px] shrink-0 flex-col border-r border-[#e9deef] bg-[#fdfdfd] px-4 pb-5 pt-3 shadow-[0_24px_80px_rgba(67,40,85,0.18)] sm:w-[218px] sm:px-5 sm:pb-6 sm:pt-4${
+    isPhoneLandscapeMenuLayout ? " w-[416px] px-5 pb-4 pt-2.5 sm:w-[436px] sm:pt-3" : ""
   }`;
-  const menuHeaderClassName = `mb-8 flex items-center justify-between${
+  const menuHeaderClassName = `mb-6 flex items-center justify-between${
     isPhoneLandscapeMenuLayout ? " hidden" : ""
   }`;
   const floatingCloseButtonClassName = `absolute right-5 top-5 z-20 h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#f1e8f5]${
@@ -328,21 +328,21 @@ export function Navbar() {
   const menuContentClassName = `flex flex-1 flex-col${
     isPhoneLandscapeMenuLayout ? " grid grid-cols-[156px_1fr] gap-6" : ""
   }`;
-  const quickLinksColumnClassName = `order-2 mt-auto w-full pt-8${
+  const quickLinksColumnClassName = `order-2 w-full pt-6 text-left${
     isPhoneLandscapeMenuLayout
-      ? " order-1 mt-0 flex flex-col justify-start border-r border-[#ece3f2] pr-4 pt-0"
+      ? " order-1 mt-0 flex flex-col items-start justify-start self-start border-r border-[#ece3f2] pr-4 pt-0 text-left"
       : ""
   }`;
-  const quickLinksLogoClassName = isPhoneLandscapeMenuLayout ? "flex" : "hidden";
-  const quickLinksBodyClassName = isPhoneLandscapeMenuLayout ? "pt-5" : "";
-  const quickLinksListClassName = `mt-4 flex w-full gap-3${
-    isPhoneLandscapeMenuLayout ? " flex-col" : ""
-  }`;
+  const quickLinksLogoClassName = isPhoneLandscapeMenuLayout ? "flex items-start justify-start" : "hidden";
+  const quickLinksBodyClassName = isPhoneLandscapeMenuLayout ? "w-full pt-3 text-left" : "";
+  const quickLinksListClassName = `mt-4 flex w-full flex-col items-start gap-3 text-left`;
   const quickLinkLabelClassName = `text-left text-[11px] font-medium leading-4 text-[#5f4b74]${
     isPhoneLandscapeMenuLayout ? " pl-0.5" : ""
   }`;
-  const quickLinkItemClassName = `flex w-12 flex-col items-center${
-    isPhoneLandscapeMenuLayout ? " w-full flex-row gap-3" : ""
+  const quickLinkItemClassName = `flex flex-col items-start${
+    isPhoneLandscapeMenuLayout
+      ? " w-full flex-row items-center justify-start gap-3 self-start"
+      : " w-full justify-start text-left"
   }`;
   const emailBlockClassName = `mt-5 w-full border-b border-t border-[#ece3f2] pb-[1.35rem] pt-4 text-sm leading-6 text-[#5f4b74]${
     isPhoneLandscapeMenuLayout ? " hidden" : ""

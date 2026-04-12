@@ -8,13 +8,14 @@ import { useEffect, useMemo, useState } from "react";
 import { CartStepper } from "@/components/cart-stepper";
 import { useCart } from "@/components/cart-provider";
 import { IconCircleButton } from "@/components/icon-circle-button";
+import { ProductCarouselSection } from "@/components/product-carousel-section";
 import {
   SectionIntro,
   pageSectionClassName,
   sectionActionClassName,
   sectionPrimaryButtonClassName,
 } from "@/components/section-intro";
-import { products } from "@/data/products";
+import { getProductsByIds, products } from "@/data/products";
 
 const initialAddress = {
   fullName: "",
@@ -108,6 +109,14 @@ function formatPhoneInput(value: string) {
   return groups.join(" ");
 }
 
+function scrollToPageTop() {
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  });
+}
+
 export default function CartPage() {
   const { items, updateQuantity, removeItem, clearCart } = useCart();
   const [currentStep, setCurrentStep] = useState(0);
@@ -155,6 +164,18 @@ export default function CartPage() {
   const subtotal = cartItems.reduce((total, item) => total + item.totalPrice, 0);
   const shipping = cartItems.length ? 7.99 : 0;
   const total = subtotal + shipping;
+  const relatedCartProducts = useMemo(() => {
+    if (!cartItems.length) {
+      return [];
+    }
+
+    const cartProductIds = new Set(cartItems.map((item) => item.product.id));
+    const relatedIds = Array.from(
+      new Set(cartItems.flatMap((item) => item.product.relatedProductIds)),
+    ).filter((id) => !cartProductIds.has(id));
+
+    return getProductsByIds(relatedIds);
+  }, [cartItems]);
 
   useEffect(() => {
     if (!cartItems.length && !orderId) {
@@ -293,6 +314,7 @@ export default function CartPage() {
     }
 
     setCurrentStep(2);
+    scrollToPageTop();
     await handleSubmitOrder();
   }
 
@@ -303,6 +325,9 @@ export default function CartPage() {
 
     if (step <= 1) {
       setCurrentStep(step);
+      if (step === 1) {
+        scrollToPageTop();
+      }
       return;
     }
 
@@ -315,6 +340,7 @@ export default function CartPage() {
     }
 
     setCurrentStep(2);
+    scrollToPageTop();
   }
 
   async function handleSubmitOrder() {
@@ -337,7 +363,7 @@ export default function CartPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fbf8fd_0%,_#f3edf7_45%,_#efe6f6_100%)]">
-      <section className={`${pageSectionClassName} pb-12`}>
+      <section className={`${pageSectionClassName} pb-6 sm:pb-12`}>
         <div className="mx-auto max-w-6xl">
           <SectionIntro
             title="Количка"
@@ -345,7 +371,7 @@ export default function CartPage() {
             size="page"
             description="Завърши поръчката в 3 стъпки: продукти, доставка и потвърждение."
           />
-          <div className="mt-8">
+          <div className="mt-5 sm:mt-8">
             <CartStepper
               currentStep={currentStep}
               orderCompleted={Boolean(orderId)}
@@ -932,7 +958,10 @@ export default function CartPage() {
                 {currentStep === 0 && cartItems.length ? (
                   <button
                     type="button"
-                    onClick={() => setCurrentStep(1)}
+                    onClick={() => {
+                      setCurrentStep(1);
+                      scrollToPageTop();
+                    }}
                     className={`w-full justify-center sm:w-auto ${sectionPrimaryButtonClassName} disabled:cursor-not-allowed disabled:opacity-50`}
                   >
                     Към доставка
@@ -973,6 +1002,13 @@ export default function CartPage() {
           </div>
         </div>
       </section>
+
+      {relatedCartProducts.length ? (
+        <ProductCarouselSection
+          title="Свързани продукти"
+          products={relatedCartProducts}
+        />
+      ) : null}
     </main>
   );
 }

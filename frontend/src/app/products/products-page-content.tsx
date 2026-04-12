@@ -21,10 +21,10 @@ const categoryOptions: Array<{
   value: Product["category"][number] | "all";
   label: string;
 }> = [
-  { value: "all", label: "Всички" },
-  { value: "face", label: "Лице" },
-  { value: "body", label: "Тяло" },
-  { value: "hair", label: "Коса" },
+  { value: "all", label: "ВСИЧКИ" },
+  { value: "face", label: "ЛИЦЕ" },
+  { value: "body", label: "ТЯЛО" },
+  { value: "hair", label: "КОСА" },
 ];
 
 const audienceOptions: Array<{
@@ -441,7 +441,7 @@ export function ProductsPageContent() {
                   : "cursor-not-allowed border-[#e6deec] bg-[#f7f3fa] text-[#b9adc5] hover:bg-[#f7f3fa]"
               }`}
             >
-              Изчисти филтрите
+              ИЗЧИСТИ ФИЛТРИТЕ
             </button>
           </div>
 

@@ -60,16 +60,16 @@ export function CartStepper({
 }) {
   return (
     <div className="pb-2">
-      <div className="flex flex-col gap-2 sm:hidden">
+      <div className="flex flex-col gap-1.5 sm:hidden">
         {steps.map((step, index) => {
           const isComplete = index < currentStep || (index === 2 && orderCompleted);
 
           return (
-            <div key={step} className="flex items-stretch gap-3">
+            <div key={step} className="flex items-stretch gap-2.5">
               <div className="flex w-9 shrink-0 flex-col items-center">
-                <div className="h-9 w-px" />
+                <div className="h-7 w-px" />
                 {index < steps.length - 1 ? (
-                  <span className="mt-1 h-6 w-px bg-[#ddd3e4]" />
+                  <span className="mt-0.5 h-4 w-px bg-[#ddd3e4]" />
                 ) : null}
               </div>
               <div className="-ml-12">

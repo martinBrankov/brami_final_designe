@@ -14,6 +14,37 @@ type ProductCardProps = {
   compact?: boolean;
 };
 
+const BGN_SUFFIX = "лв.";
+const EURO_SYMBOL = "€";
+
+function parseBgnPrice(price: string) {
+  const bgnMatch = price.match(/\/(\d+[.,]?\d*)лв\.?/i);
+
+  if (bgnMatch) {
+    return Number.parseFloat(bgnMatch[1].replace(",", "."));
+  }
+
+  return 0;
+}
+
+function parseEuroPrice(price: string) {
+  const euroMatch = price.match(/€\s?(\d+[.,]?\d*)/i);
+
+  if (euroMatch) {
+    return Number.parseFloat(euroMatch[1].replace(",", "."));
+  }
+
+  return 0;
+}
+
+function formatBgnPrice(price: number) {
+  return `${price.toFixed(2)} ${BGN_SUFFIX}`;
+}
+
+function formatEuroPrice(price: number) {
+  return `${EURO_SYMBOL}${price.toFixed(2)}`;
+}
+
 function StarRow({
   rating,
   compact = false,
@@ -83,6 +114,12 @@ export function ProductCard({
   const productImage = product.imageSrc[0];
   const detailsHref = `/products/${product.id}`;
   const favorite = isFavorite(product.id);
+  const currentPriceEuro = parseEuroPrice(product.price);
+  const currentPriceBgn = parseBgnPrice(product.price);
+  const oldPriceEuro =
+    product.badge === "sale" && currentPriceEuro ? currentPriceEuro / 0.8 : null;
+  const oldPriceBgn =
+    product.badge === "sale" && currentPriceBgn ? currentPriceBgn / 0.8 : null;
 
   return (
     <article
@@ -210,15 +247,26 @@ export function ProductCard({
               </div>
             ))}
           </div>
-          <p
-            className={`font-semibold text-[#432855] ${
-              compact
-                ? "my-1.5 text-[1.05rem] sm:my-2 sm:text-[1.25rem]"
-                : "my-3 text-[1.6rem]"
-            }`}
-          >
-            {product.price}
-          </p>
+          <div className={compact ? "my-1.5 sm:my-2" : "my-3"}>
+            <p
+              className={`font-semibold text-[#432855] ${
+                compact ? "text-[1.05rem] sm:text-[1.25rem]" : "text-[1.6rem]"
+              }`}
+            >
+              {currentPriceEuro && currentPriceBgn
+                ? `${formatEuroPrice(currentPriceEuro)} / ${formatBgnPrice(currentPriceBgn)}`
+                : product.price}
+            </p>
+            {oldPriceEuro && oldPriceBgn ? (
+              <p
+                className={`mt-1 font-medium text-[#8f7a9d] line-through ${
+                  compact ? "text-xs sm:text-sm" : "text-lg"
+                }`}
+              >
+                {`${formatEuroPrice(oldPriceEuro)} / ${formatBgnPrice(oldPriceBgn)}`}
+              </p>
+            ) : null}
+          </div>
         </div>
       </Link>
 

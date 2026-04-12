@@ -5,11 +5,13 @@ import { notFound } from "next/navigation";
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import { FavoriteToggleButton } from "@/components/favorite-toggle-button";
 import { InfoStrip } from "@/components/info-strip";
+import { ProductCarouselSection } from "@/components/product-carousel-section";
 import { ProductDetailTabs } from "@/components/product-detail-tabs";
 import { RecentlyViewedTracker } from "@/components/recently-viewed-tracker";
 import {
   getProductBadgeLabel,
   getProductById,
+  getProductsByIds,
   products,
 } from "@/data/products";
 
@@ -152,6 +154,9 @@ export default async function ProductDetailPage({
     product.badge === "sale" && currentPriceBgn
       ? currentPriceBgn / 0.8
       : null;
+  const relatedProducts = getProductsByIds(product.relatedProductIds).filter(
+    (relatedProduct) => relatedProduct.id !== product.id,
+  );
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fbf8fd_0%,_#f3edf7_45%,_#efe6f6_100%)]">
@@ -296,6 +301,11 @@ export default async function ProductDetailPage({
         productName={product.name}
         description={product.description}
         comments={product.comments}
+      />
+
+      <ProductCarouselSection
+        title="Свързани продукти"
+        products={relatedProducts}
       />
 
       <InfoStrip className="border-b-0 bg-transparent" />

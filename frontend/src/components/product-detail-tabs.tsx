@@ -195,7 +195,11 @@ export function ProductDetailTabs({
         </div>
       </div>
 
-      <div className="px-6 py-8 sm:px-10 lg:px-14">
+      <div
+        className={`px-6 sm:px-10 lg:px-14 ${
+          activeTab === "description" ? "py-8" : "pb-8 pt-0"
+        }`}
+      >
         {activeTab === "description" ? (
           <div className="space-y-5">
             <h2 className="font-serif text-[1.9rem] leading-tight text-[#432855] sm:text-[2.2rem]">

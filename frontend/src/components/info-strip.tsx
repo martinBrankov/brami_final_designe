@@ -74,15 +74,18 @@ export function InfoStrip({
 }: InfoStripProps) {
   return (
     <section className={`w-full border-b border-[#d8d0de] bg-white/55 ${className}`}>
-      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-center sm:gap-10 lg:px-14">
+      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-4 px-6 py-4 lg:px-14">
         {items.map(({ icon: Icon, title, text }) => (
-          <div key={`${title}-${text}`} className="flex items-center gap-3 text-[#4B2E6F]">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d0de] bg-white/80">
+          <div
+            key={`${title}-${text}`}
+            className="flex items-center gap-3 text-[#4B2E6F]"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d8d0de] bg-white/80">
               <Icon />
             </div>
-            <div className="flex flex-wrap items-baseline gap-x-1.5 text-[0.95rem] leading-5 sm:block sm:text-base">
-              <p className="font-semibold whitespace-nowrap">{title}</p>
-              <p className="text-[#6b587f] whitespace-nowrap">{text}</p>
+            <div className="min-w-0 text-[0.95rem] leading-5 sm:text-base">
+              <p className="font-semibold">{title}</p>
+              <p className="text-[#6b587f]">{text}</p>
             </div>
           </div>
         ))}

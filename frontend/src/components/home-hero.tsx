@@ -27,9 +27,9 @@ export function HomeHero() {
               </Link>
               <Link
                 href="/about"
-                className={`${sectionActionClassName} bg-white/78`}
+                className={`${sectionActionClassName} bg-white/90`}
               >
-                Научи повече
+                НАУЧИ ПОВЕЧЕ
               </Link>
             </div>
           </SectionIntro>

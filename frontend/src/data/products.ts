@@ -42,6 +42,7 @@ export type Product = {
   rating: number;
   comments: Comment[];
   description: string;
+  relatedProductIds: number[];
 };
 
 type ProductJson = {
@@ -58,6 +59,7 @@ type ProductJson = {
   rating: number;
   comments: Comment[];
   description: string;
+  relatedProductIds?: number[];
 };
 
 const allowedCategories = new Set<Product["category"][number]>([
@@ -211,6 +213,14 @@ function parseCheckboxInfo(checkboxInfo?: string[]): string[] {
   return checkboxInfo.map((item) => fixMojibake(item));
 }
 
+function parseRelatedProductIds(relatedProductIds?: number[]): number[] {
+  if (!Array.isArray(relatedProductIds)) {
+    return [];
+  }
+
+  return relatedProductIds.filter((id): id is number => Number.isInteger(id));
+}
+
 function parseProduct(product: ProductJson): Product {
   return {
     id: product.id,
@@ -226,6 +236,7 @@ function parseProduct(product: ProductJson): Product {
     rating: product.rating,
     comments: parseComments(product.comments),
     description: fixMojibake(product.description),
+    relatedProductIds: parseRelatedProductIds(product.relatedProductIds),
   };
 }
 
@@ -252,4 +263,10 @@ export function getProductBadgeLabel(badge: Product["badge"]): string {
 
 export function getProductById(id: number): Product | undefined {
   return products.find((product) => product.id === id);
+}
+
+export function getProductsByIds(ids: number[]): Product[] {
+  return ids
+    .map((id) => getProductById(id))
+    .filter((product): product is Product => product !== undefined);
 }

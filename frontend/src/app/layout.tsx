@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { CartProvider } from "@/components/cart-provider";
+import { BottomBar } from "@/components/bottom-bar";
 import { CookieConsentBanner } from "@/components/cookie-consent-banner";
 import { FavoritesProvider } from "@/components/favorites-provider";
 import { Navbar } from "@/components/navbar";
@@ -37,7 +38,8 @@ export default function RootLayout({
         <CartProvider>
           <FavoritesProvider>
             <Navbar />
-            {children}
+            <div className="flex-1">{children}</div>
+            <BottomBar />
             <CookieConsentBanner />
           </FavoritesProvider>
         </CartProvider>
