@@ -1,0 +1,57 @@
+
+> brami-monorepo@1.0.0 dev
+> concurrently -n frontend,backend -c magenta,cyan "npm run dev --workspace frontend" "npm run dev --workspace backend"
+
+[backend] 
+[backend] > brami-order-mailer@1.0.0 dev
+[backend] > node scripts/dev.js
+[backend] 
+[frontend] 
+[frontend] > frontend@0.1.0 dev
+[frontend] > next dev
+[frontend] 
+[backend] [backend] Port 4001 is already in use. Reusing the existing backend process.
+[backend] npm run dev --workspace backend exited with code 0
+[frontend]    ▲ Next.js 15.5.9
+[frontend]    - Local:        http://localhost:3000
+[frontend]    - Network:      http://192.168.0.178:3000
+[frontend] 
+[frontend]  ✓ Starting...
+[frontend]  ✓ Ready in 2.8s
+[frontend]  ○ Compiling /products/[id] ...
+[frontend]  ✓ Compiled /products/[id] in 3.7s (770 modules)
+[frontend]  ✓ Compiled in 745ms (294 modules)
+[frontend]  GET /products/6 200 in 5849ms
+[frontend]  ○ Compiling / ...
+[frontend]  ✓ Compiled / in 805ms (766 modules)
+[frontend]  GET / 200 in 1379ms
+[frontend]  GET / 200 in 58ms
+[frontend]  ○ Compiling /products ...
+[frontend]  ✓ Compiled /products in 1093ms (776 modules)
+[frontend]  GET /products 200 in 1370ms
+[frontend]  GET /products/5 200 in 154ms
+[frontend]  GET /products/5 200 in 400ms
+[frontend]  ✓ Compiled in 1435ms (790 modules)
+[frontend]  ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[frontend]  GET /products/5 200 in 833ms
+[frontend]  GET /products/5 200 in 489ms
+[frontend]  GET /products/5 200 in 233ms
+[frontend]  GET /products/5 200 in 271ms
+[frontend]  GET /products/5 200 in 212ms
+[frontend]  GET /products 200 in 107ms
+[frontend]  GET /products/12 200 in 74ms
+[frontend]  GET /products/12 200 in 318ms
+[frontend]  GET /products 200 in 40ms
+[frontend]  GET /products/6 200 in 90ms
+[frontend]  GET /products/6 200 in 206ms
+[frontend]  GET / 200 in 78ms
+[frontend]  GET / 200 in 173ms
+[frontend]  ○ Compiling /about ...
+[frontend]  ✓ Compiled /about in 946ms (790 modules)
+[frontend]  GET /about 200 in 1212ms
+[frontend]  GET /about 200 in 348ms
+[frontend]  ○ Compiling /cart ...
+[frontend]  ✓ Compiled /cart in 1153ms (801 modules)
+[frontend]  GET /cart 200 in 1423ms
+[frontend]  GET /products 200 in 85ms
+[frontend]  GET /products/8 200 in 146ms

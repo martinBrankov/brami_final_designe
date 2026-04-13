@@ -116,10 +116,11 @@ export function ProductCard({
   const favorite = isFavorite(product.id);
   const currentPriceEuro = parseEuroPrice(product.price);
   const currentPriceBgn = parseBgnPrice(product.price);
+  const isOnSale = product.badge === "sale";
   const oldPriceEuro =
-    product.badge === "sale" && currentPriceEuro ? currentPriceEuro / 0.8 : null;
+    isOnSale && currentPriceEuro ? currentPriceEuro / 0.8 : null;
   const oldPriceBgn =
-    product.badge === "sale" && currentPriceBgn ? currentPriceBgn / 0.8 : null;
+    isOnSale && currentPriceBgn ? currentPriceBgn / 0.8 : null;
 
   return (
     <article
@@ -223,29 +224,39 @@ export function ProductCard({
               compact ? "min-h-[20px] sm:min-h-[22px]" : "min-h-[28px]"
             }`}
           >
-            {product.checkboxInfo.slice(0, 1).map((item) => (
-              <div
-                key={item}
-                className={`flex items-center text-[#6d4a86] ${
-                  compact ? "gap-1.5" : "gap-2"
+            {isOnSale && oldPriceEuro && oldPriceBgn ? (
+              <p
+                className={`font-medium text-[#8f7a9d] line-through ${
+                  compact ? "text-xs sm:text-sm" : "text-lg"
                 }`}
               >
-                <span
-                  className={`flex shrink-0 items-center justify-center rounded-full bg-[#efe7f4] text-[#6c3f8d] ${
-                    compact ? "h-3.5 w-3.5 sm:h-4 sm:w-4" : "h-5 w-5"
+                {`${formatEuroPrice(oldPriceEuro)} / ${formatBgnPrice(oldPriceBgn)}`}
+              </p>
+            ) : (
+              product.checkboxInfo.slice(0, 1).map((item) => (
+                <div
+                  key={item}
+                  className={`flex items-center text-[#6d4a86] ${
+                    compact ? "gap-1.5" : "gap-2"
                   }`}
                 >
-                  <CheckIcon compact={compact} />
-                </span>
-                <span
-                  className={`${
-                    compact ? "text-[11px] sm:text-[13px]" : "text-sm"
-                  } font-medium`}
-                >
-                  {item}
-                </span>
-              </div>
-            ))}
+                  <span
+                    className={`flex shrink-0 items-center justify-center rounded-full bg-[#efe7f4] text-[#6c3f8d] ${
+                      compact ? "h-3.5 w-3.5 sm:h-4 sm:w-4" : "h-5 w-5"
+                    }`}
+                  >
+                    <CheckIcon compact={compact} />
+                  </span>
+                  <span
+                    className={`${
+                      compact ? "text-[11px] sm:text-[13px]" : "text-sm"
+                    } font-medium`}
+                  >
+                    {item}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
           <div className={compact ? "my-1.5 sm:my-2" : "my-3"}>
             <p
@@ -257,15 +268,6 @@ export function ProductCard({
                 ? `${formatEuroPrice(currentPriceEuro)} / ${formatBgnPrice(currentPriceBgn)}`
                 : product.price}
             </p>
-            {oldPriceEuro && oldPriceBgn ? (
-              <p
-                className={`mt-1 font-medium text-[#8f7a9d] line-through ${
-                  compact ? "text-xs sm:text-sm" : "text-lg"
-                }`}
-              >
-                {`${formatEuroPrice(oldPriceEuro)} / ${formatBgnPrice(oldPriceBgn)}`}
-              </p>
-            ) : null}
           </div>
         </div>
       </Link>

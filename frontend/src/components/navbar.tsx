@@ -325,25 +325,27 @@ export function Navbar() {
   const floatingCloseButtonClassName = `absolute right-5 top-5 z-20 h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#f1e8f5]${
     isPhoneLandscapeMenuLayout ? " flex" : " hidden"
   }`;
-  const menuContentClassName = `flex flex-1 flex-col${
-    isPhoneLandscapeMenuLayout ? " grid grid-cols-[156px_1fr] gap-6" : ""
-  }`;
+  const menuContentClassName = isPhoneLandscapeMenuLayout
+    ? "grid flex-1 grid-cols-[156px_1fr] items-start justify-items-start gap-6"
+    : "flex flex-1 flex-col";
   const quickLinksColumnClassName = `order-2 w-full pt-6 text-left${
     isPhoneLandscapeMenuLayout
       ? " order-1 mt-0 flex flex-col items-start justify-start self-start border-r border-[#ece3f2] pr-4 pt-0 text-left"
       : ""
   }`;
   const quickLinksLogoClassName = isPhoneLandscapeMenuLayout ? "flex items-start justify-start" : "hidden";
-  const quickLinksBodyClassName = isPhoneLandscapeMenuLayout ? "w-full pt-3 text-left" : "";
+  const quickLinksBodyClassName = isPhoneLandscapeMenuLayout
+    ? "flex w-full flex-col items-start pt-3 text-left"
+    : "";
   const quickLinksListClassName = `mt-4 flex w-full flex-col items-start gap-3 text-left`;
-  const quickLinkLabelClassName = `text-left text-[11px] font-medium leading-4 text-[#5f4b74]${
-    isPhoneLandscapeMenuLayout ? " pl-0.5" : ""
-  }`;
-  const quickLinkItemClassName = `flex flex-col items-start${
+  const quickLinkLabelClassName = "text-left text-[11px] font-medium leading-4 text-[#5f4b74]";
+  const quickLinkItemClassName = `flex items-center text-left${
     isPhoneLandscapeMenuLayout
-      ? " w-full flex-row items-center justify-start gap-3 self-start"
-      : " w-full justify-start text-left"
+      ? " w-full justify-start gap-2.5 self-start py-1"
+      : " w-full gap-3 justify-start"
   }`;
+  const quickLinkIconClassName =
+    "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#d8cae3] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(247,241,251,0.98)_100%)] text-[#432855] shadow-[0_8px_18px_rgba(67,40,85,0.12)] transition hover:border-[#cbb7d8] hover:bg-white";
   const emailBlockClassName = `mt-5 w-full border-b border-t border-[#ece3f2] pb-[1.35rem] pt-4 text-sm leading-6 text-[#5f4b74]${
     isPhoneLandscapeMenuLayout ? " hidden" : ""
   }`;
@@ -600,14 +602,10 @@ export function Navbar() {
                   </p>
                   <div className={quickLinksListClassName}>
                     {quickLinks.map((item) => {
-                      const iconClassName =
-                        "flex h-12 w-12 items-center justify-center rounded-full border border-[#d8cae3] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(247,241,251,0.98)_100%)] text-[#432855] shadow-[0_10px_24px_rgba(67,40,85,0.14)] transition hover:border-[#cbb7d8] hover:bg-white";
                       const content = (
                         <>
-                          <span className={iconClassName}>{item.icon}</span>
-                            <span className={quickLinkLabelClassName}>
-                              {item.label}
-                            </span>
+                          <span className={quickLinkIconClassName}>{item.icon}</span>
+                          <span className={quickLinkLabelClassName}>{item.label}</span>
                         </>
                       );
 

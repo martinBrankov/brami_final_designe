@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -6,7 +6,6 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ProductCard } from "@/components/product-card";
 import {
   SectionIntro,
-  sectionActionClassName,
 } from "@/components/section-intro";
 import { getProductBadgeLabel, type Product } from "@/data/products";
 
@@ -244,39 +243,37 @@ export function ProductCarouselSection({
   return (
     <section className="w-full bg-[#f5f7fb] py-10">
       <div className="flex w-full flex-col gap-3 px-6 sm:px-10 lg:px-14">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex items-end justify-between gap-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col items-start gap-2">
             <SectionIntro title={title} titleClassName={titleClassName} />
-            {isOverflowing ? (
-              <div className="hidden items-center gap-3 lg:flex">
-                <button
-                  type="button"
-                  aria-label={`Предишни ${title.toLowerCase()}`}
-                  onClick={() => scrollByPage("left")}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d0de] bg-white text-[#432855] transition hover:border-[#c4b2d1] hover:bg-[#faf7fc]"
-                >
-                  <ArrowIcon direction="left" />
-                </button>
-                <button
-                  type="button"
-                  aria-label={`Следващи ${title.toLowerCase()}`}
-                  onClick={() => scrollByPage("right")}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d0de] bg-white text-[#432855] transition hover:border-[#c4b2d1] hover:bg-[#faf7fc]"
-                >
-                  <ArrowIcon direction="right" />
-                </button>
-              </div>
-            ) : null}
-          </div>
-
-          <div className="flex w-full justify-start lg:w-auto lg:justify-end">
             <Link
               href="/products"
-              className={`w-full justify-center lg:w-auto ${sectionActionClassName}`}
+              className="inline-flex w-auto items-center justify-start text-[13px] font-medium text-[#7a688d] underline decoration-[#cdbed9] underline-offset-[0.22em] transition hover:text-[#432855] hover:decoration-[#432855]"
             >
-              КЪМ ПРОДУКТИТЕ
+              Към продуктите
             </Link>
           </div>
+
+          {isOverflowing ? (
+            <div className="hidden items-center gap-3 lg:flex">
+              <button
+                type="button"
+                aria-label={`РџСЂРµРґРёС€РЅРё ${title.toLowerCase()}`}
+                onClick={() => scrollByPage("left")}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d0de] bg-white text-[#432855] transition hover:border-[#c4b2d1] hover:bg-[#faf7fc]"
+              >
+                <ArrowIcon direction="left" />
+              </button>
+              <button
+                type="button"
+                aria-label={`РЎР»РµРґРІР°С‰Рё ${title.toLowerCase()}`}
+                onClick={() => scrollByPage("right")}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d0de] bg-white text-[#432855] transition hover:border-[#c4b2d1] hover:bg-[#faf7fc]"
+              >
+                <ArrowIcon direction="right" />
+              </button>
+            </div>
+          ) : null}
         </div>
 
         <div className="relative">

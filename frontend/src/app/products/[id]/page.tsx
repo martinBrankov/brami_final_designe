@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -11,9 +13,29 @@ import { RecentlyViewedTracker } from "@/components/recently-viewed-tracker";
 import {
   getProductBadgeLabel,
   getProductById,
+  getProductDescription,
+  getProductShareDescription,
   getProductsByIds,
   products,
 } from "@/data/products";
+import homeScreenImgMobile from "@/assets/images/homeScreenImgMobile.jpg";
+
+const fallbackSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://brami.shop";
+
+async function resolveSiteUrl() {
+  const requestHeaders = await headers();
+  const forwardedProto = requestHeaders.get("x-forwarded-proto");
+  const forwardedHost = requestHeaders.get("x-forwarded-host");
+  const host = forwardedHost || requestHeaders.get("host");
+
+  if (host) {
+    const protocol =
+      forwardedProto || (host.includes("localhost") || host.startsWith("192.168.") ? "http" : "https");
+    return `${protocol}://${host}`;
+  }
+
+  return fallbackSiteUrl;
+}
 
 type ProductDetailPageProps = {
   params: Promise<{
@@ -125,6 +147,65 @@ export function generateStaticParams() {
   }));
 }
 
+export async function generateMetadata({
+  params,
+}: ProductDetailPageProps): Promise<Metadata> {
+  const siteUrl = await resolveSiteUrl();
+  const { id } = await params;
+  const productId = Number(id);
+  const product = Number.isNaN(productId) ? undefined : getProductById(productId);
+
+  if (!product) {
+    return {
+      title: "Продукт",
+    };
+  }
+
+  const productImage = product.imageSrc[0];
+  const productShareDescription = getProductShareDescription(product);
+  const productImageUrl =
+    typeof productImage === "object" && productImage !== null && "src" in productImage
+      ? new URL(String(productImage.src), siteUrl).toString()
+      : new URL(homeScreenImgMobile.src, siteUrl).toString();
+  const description = productShareDescription;
+  const canonicalUrl = `/products/${product.id}`;
+
+  return {
+    title: product.name,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      type: "website",
+      locale: "bg_BG",
+      url: canonicalUrl,
+      title: product.name,
+      description,
+      images: [
+        {
+          url: productImageUrl,
+          width:
+            typeof productImage === "object" && productImage !== null && "width" in productImage
+              ? Number(productImage.width)
+              : homeScreenImgMobile.width,
+          height:
+            typeof productImage === "object" && productImage !== null && "height" in productImage
+              ? Number(productImage.height)
+              : homeScreenImgMobile.height,
+          alt: product.name,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.name,
+      description,
+      images: [productImageUrl],
+    },
+  };
+}
+
 export default async function ProductDetailPage({
   params,
 }: ProductDetailPageProps) {
@@ -137,6 +218,7 @@ export default async function ProductDetailPage({
   }
 
   const productImage = product.imageSrc[0];
+  const productDescription = getProductDescription(product);
   const primaryCategory = product.category[0];
   const categoryLabel = primaryCategory
     ? categoryLabels[primaryCategory]
@@ -162,24 +244,24 @@ export default async function ProductDetailPage({
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fbf8fd_0%,_#f3edf7_45%,_#efe6f6_100%)]">
       <RecentlyViewedTracker productId={product.id} />
       <section className="h-[49px] w-full border-b border-[#ece6f1] bg-white">
-        <div className="flex h-full items-center px-6 sm:px-10 lg:px-14">
+        <div className="flex h-full min-w-0 items-center px-6 sm:px-10 lg:px-14">
           <nav
             aria-label="Breadcrumb"
-            className="flex flex-wrap items-center gap-2 text-[13px] font-medium text-[#7a688d]"
+            className="flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-[13px] font-medium text-[#7a688d]"
           >
-            <Link href="/" className="transition hover:text-[#432855]">
+            <Link href="/" className="shrink-0 transition hover:text-[#432855]">
               {HOME_LABEL}
             </Link>
-            <span className="text-[#b7a8c3]">/</span>
-            <Link href="/products" className="transition hover:text-[#432855]">
+            <span className="shrink-0 text-[#b7a8c3]">/</span>
+            <Link href="/products" className="shrink-0 transition hover:text-[#432855]">
               {PRODUCTS_LABEL}
             </Link>
-            <span className="text-[#b7a8c3]">/</span>
-            <Link href={categoryHref} className="transition hover:text-[#432855]">
+            <span className="shrink-0 text-[#b7a8c3]">/</span>
+            <Link href={categoryHref} className="shrink-0 transition hover:text-[#432855]">
               {categoryLabel}
             </Link>
-            <span className="text-[#b7a8c3]">/</span>
-            <span className="text-[#5f4b73]">{product.name}</span>
+            <span className="shrink-0 text-[#b7a8c3]">/</span>
+            <span className="min-w-0 truncate text-[#5f4b73]">{product.name}</span>
           </nav>
         </div>
       </section>
@@ -187,7 +269,7 @@ export default async function ProductDetailPage({
       <section className="w-full border-b border-[#d8d0de] bg-white">
         <div className="px-6 py-8 sm:px-10 lg:px-14">
           <div className="grid items-start gap-8 xl:grid-cols-[minmax(340px,520px)_minmax(320px,520px)] xl:items-stretch xl:gap-10">
-            <div className="relative overflow-hidden rounded-[28px] bg-white">
+            <div className="relative mx-auto w-full max-w-[400px] overflow-hidden rounded-[28px] bg-white max-xl:mx-0 xl:mx-0 xl:max-w-[600px] [@media(orientation:landscape)_and_(max-width:932px)]:mx-0 [@media(orientation:landscape)_and_(max-width:932px)]:max-w-[200px]">
               <div className="relative rounded-[28px] border border-[#d8d0de] bg-[linear-gradient(180deg,#fcfbfd_0%,#f4eef8_100%)] p-0">
                 <span className="absolute right-4 top-4 z-10 inline-flex rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-3 py-1 text-xs font-semibold text-white">
                   {getProductBadgeLabel(product.badge)}
@@ -299,7 +381,7 @@ export default async function ProductDetailPage({
       <ProductDetailTabs
         productId={product.id}
         productName={product.name}
-        description={product.description}
+        description={productDescription}
         comments={product.comments}
       />
 

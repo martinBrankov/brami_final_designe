@@ -270,3 +270,54 @@ export function getProductsByIds(ids: number[]): Product[] {
     .map((id) => getProductById(id))
     .filter((product): product is Product => product !== undefined);
 }
+
+export function getProductDescription(product: Product): string {
+  const description = product.description.trim();
+
+  if (description) {
+    return description;
+  }
+
+  const highlights = product.checkboxInfo.length
+    ? `<br/><br/><b>Акценти:</b><br/>${product.checkboxInfo.join("<br/>")}`
+    : "";
+
+  return [
+    `<b>${product.name}</b>`,
+    `${product.packaging} от ${getProductBadgeLabel(product.badge).toLowerCase()} продукт с подбрани съставки и предназначение за ежедневна грижа.`,
+    highlights,
+  ].join("<br/>");
+}
+
+function stripHtml(value: string): string {
+  return value
+    .replaceAll(/<br\s*\/?>/gi, " ")
+    .replaceAll(/<[^>]+>/g, " ")
+    .replaceAll(/\s+/g, " ")
+    .trim();
+}
+
+function trimToLength(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+export function getProductShareDescription(product: Product): string {
+  const plainDescription = stripHtml(product.description);
+  const firstSentence = plainDescription.match(/.+?[.!?](?:\s|$)/)?.[0]?.trim();
+
+  if (firstSentence && firstSentence.length >= 40) {
+    return trimToLength(firstSentence, 140);
+  }
+
+  const highlights = product.checkboxInfo.slice(0, 2).join(", ");
+  const fallback = [
+    product.packaging,
+    highlights || "Натурална грижа за ежедневна употреба",
+  ].join(" • ");
+
+  return trimToLength(fallback, 140);
+}

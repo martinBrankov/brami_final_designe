@@ -1,0 +1,39 @@
+
+> brami-monorepo@1.0.0 dev
+> concurrently -n frontend,backend -c magenta,cyan "npm run dev --workspace frontend" "npm run dev --workspace backend"
+
+[frontend] 
+[frontend] > frontend@0.1.0 dev
+[frontend] > next dev
+[frontend] 
+[backend] 
+[backend] > brami-order-mailer@1.0.0 dev
+[backend] > node scripts/dev.js
+[backend] 
+[backend] [backend] Port 4001 is already in use. Reusing the existing backend process.
+[backend] npm run dev --workspace backend exited with code 0
+[frontend]  ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+[frontend]  We detected multiple lockfiles and selected the directory of F:\newdsigne2026\brami_final_designe\package-lock.json as the root directory.
+[frontend]  To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+[frontend]    See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+[frontend]  Detected additional lockfiles: 
+[frontend]    * F:\newdsigne2026\brami_final_designe\frontend\package-lock.json
+[frontend] 
+[frontend]    ▲ Next.js 15.5.9
+[frontend]    - Local:        http://localhost:3000
+[frontend]    - Network:      http://192.168.0.178:3000
+[frontend] 
+[frontend]  ✓ Starting...
+[frontend]  ✓ Ready in 2.9s
+[frontend]  ○ Compiling /products/[id] ...
+[frontend]  ✓ Compiled /products/[id] in 3.9s (770 modules)
+[frontend]  ✓ Compiled in 736ms (294 modules)
+[frontend]  GET /products/6 200 in 5819ms
+[frontend]  GET /products/6 200 in 236ms
+[frontend]  ⚠ Found a change in next.config.ts. Restarting the server to apply the changes...
+[frontend]    ▲ Next.js 15.5.9
+[frontend]    - Local:        http://localhost:3000
+[frontend]    - Network:      http://192.168.0.178:3000
+[frontend] 
+[frontend]  ✓ Starting...
+[frontend]  ✓ Ready in 2.9s

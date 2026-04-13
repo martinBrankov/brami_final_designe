@@ -78,7 +78,7 @@ export function InfoStrip({
         {items.map(({ icon: Icon, title, text }) => (
           <div
             key={`${title}-${text}`}
-            className="flex items-center gap-3 text-[#4B2E6F]"
+            className="flex flex-col items-center gap-2 text-center text-[#4B2E6F]"
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d8d0de] bg-white/80">
               <Icon />

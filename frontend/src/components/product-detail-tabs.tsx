@@ -219,7 +219,7 @@ export function ProductDetailTabs({
                 </p>
               </section>
             ) : hasRated ? null : (
-              <section className="-mx-6 border-t border-b border-[#e4dbea] bg-[#fbf8ff] sm:-mx-10 lg:-mx-14">
+              <section className="-mx-6 border-b border-[#e4dbea] bg-[#fbf8ff] sm:-mx-10 lg:-mx-14">
                 <button
                   type="button"
                   onClick={() => {
@@ -236,7 +236,7 @@ export function ProductDetailTabs({
                       {"Избери брой звезди и изпрати оценка."}
                     </p>
                   </div>
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d0de] bg-white text-[#432855]">
+                  <span className="flex h-10 w-10 shrink-0 aspect-square items-center justify-center rounded-full border border-[#d8d0de] bg-white text-[#432855]">
                     <ChevronIcon open={isRatingFormOpen} />
                   </span>
                 </button>
@@ -244,7 +244,7 @@ export function ProductDetailTabs({
                 {isRatingFormOpen ? (
                   <form
                     onSubmit={handleRatingSubmit}
-                    className="border-t border-[#e4dbea] px-6 pb-5 pt-4 sm:px-10 lg:px-14"
+                    className="border-t border-[#e4dbea] bg-[#fdfdfd] px-6 pb-5 pt-4 sm:px-10 lg:px-14"
                   >
                     <div className="space-y-0.5">
                       {[5, 4, 3, 2, 1].map((value) => (
@@ -314,7 +314,7 @@ export function ProductDetailTabs({
                     {"Сподели опита си за продукта и добави оценка със звездички."}
                   </p>
                 </div>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d0de] bg-white text-[#432855]">
+                <span className="flex h-10 w-10 shrink-0 aspect-square items-center justify-center rounded-full border border-[#d8d0de] bg-white text-[#432855]">
                   <ChevronIcon open={isCommentFormOpen} />
                 </span>
               </button>
@@ -322,7 +322,7 @@ export function ProductDetailTabs({
               {isCommentFormOpen ? (
                 <form
                   onSubmit={handleCommentSubmit}
-                  className="border-t border-[#e4dbea] px-6 pb-5 pt-4 sm:px-10 lg:px-14"
+                  className="border-t border-[#e4dbea] bg-[#fdfdfd] px-6 pb-5 pt-4 sm:px-10 lg:px-14"
                 >
                   <div className="grid gap-4">
                     <label className="flex flex-col gap-2">

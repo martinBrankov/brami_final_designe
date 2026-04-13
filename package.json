@@ -1,0 +1,19 @@
+{
+  "name": "brami-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n frontend,backend -c magenta,cyan \"npm run dev --workspace frontend\" \"npm run dev --workspace backend\"",
+    "start": "concurrently -n frontend,backend -c magenta,cyan \"npm run start --workspace frontend\" \"npm run start --workspace backend\"",
+    "build": "npm run build --workspace frontend",
+    "lint": "npm run lint --workspace frontend",
+    "install:all": "npm install --workspaces --include-workspace-root"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

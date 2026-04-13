@@ -30,6 +30,7 @@ const initialAddress = {
 
 type AddressField = keyof typeof initialAddress;
 type DeliveryMethod = "address" | "office";
+type OrderEmailStatus = "idle" | "sending" | "sent" | "failed";
 type DeliveryFieldConfig = [
   key: AddressField,
   label: string,
@@ -117,6 +118,18 @@ function scrollToPageTop() {
   });
 }
 
+function getOrderMailEndpoint() {
+  if (process.env.NEXT_PUBLIC_ORDER_API_URL) {
+    return process.env.NEXT_PUBLIC_ORDER_API_URL;
+  }
+
+  if (typeof window !== "undefined") {
+    return `${window.location.protocol}//${window.location.hostname}:4001/api/orders/confirmation`;
+  }
+
+  return "http://localhost:4001/api/orders/confirmation";
+}
+
 export default function CartPage() {
   const { items, updateQuantity, removeItem, clearCart } = useCart();
   const [currentStep, setCurrentStep] = useState(0);
@@ -129,6 +142,8 @@ export default function CartPage() {
   const [showPoliciesError, setShowPoliciesError] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [orderId, setOrderId] = useState("");
+  const [orderEmailStatus, setOrderEmailStatus] = useState<OrderEmailStatus>("idle");
+  const [orderEmailError, setOrderEmailError] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -194,6 +209,10 @@ export default function CartPage() {
       `${office.city} ${office.address}`.toLowerCase().includes(normalizedQuery),
     );
   }, [officeQuery]);
+  const selectedOffice = useMemo(
+    () => speedyOffices.find((office) => office.id === address.officeId) ?? null,
+    [address.officeId],
+  );
 
   function getFieldError(field: AddressField, value: string) {
     const trimmedValue = value.trim();
@@ -305,6 +324,66 @@ export default function CartPage() {
     });
   }
 
+  async function sendOrderConfirmationEmail(generatedOrderId: string) {
+    const deliveryDestination =
+      deliveryMethod === "office"
+        ? selectedOffice
+          ? `${selectedOffice.city}, ${selectedOffice.address}, ${selectedOffice.postcode}`
+          : officeQuery.trim()
+        : [address.city.trim(), address.postcode.trim(), address.addressLine.trim()]
+            .filter(Boolean)
+            .join(", ");
+
+    const payload = {
+      orderId: generatedOrderId,
+      status: "Потвърдена",
+      createdAt: new Date().toLocaleString("bg-BG"),
+      customer: {
+        fullName: address.fullName.trim(),
+        phone: address.phone.trim(),
+        email: address.email.trim(),
+      },
+      delivery: {
+        methodLabel: deliveryMethod === "office" ? "До офис на Спиди" : "До адрес",
+        destination: deliveryDestination,
+        notes: address.notes.trim(),
+      },
+      items: cartItems.map((item) => ({
+        id: item.product.id,
+        name: item.product.name,
+        packaging: item.product.packaging,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+      })),
+      totals: {
+        subtotal,
+        shipping,
+        total,
+      },
+    };
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const response = await fetch(getOrderMailEndpoint(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+
+      return response.ok;
+    } catch {
+      return false;
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  }
+
   async function handleAddressStepContinue() {
     markAllMandatoryFieldsTouched();
     setShowPoliciesError(!hasAcceptedPolicies);
@@ -350,11 +429,24 @@ export default function CartPage() {
     }
 
     setIsSubmittingOrder(true);
+    setOrderEmailStatus("sending");
+    setOrderEmailError("");
     await new Promise((resolve) => window.setTimeout(resolve, 1800));
     const generatedOrderId = `BR-${new Date()
       .toISOString()
       .slice(0, 10)
       .replaceAll("-", "")}-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const emailSent = await sendOrderConfirmationEmail(generatedOrderId);
+
+    if (emailSent) {
+      setOrderEmailStatus("sent");
+    } else {
+      setOrderEmailStatus("failed");
+      setOrderEmailError(
+        "Поръчката е приета, но не успяхме да изпратим имейл потвърждение. Можеш да опиташ отново по-късно.",
+      );
+    }
 
     setOrderId(generatedOrderId);
     setIsSubmittingOrder(false);
@@ -902,8 +994,17 @@ export default function CartPage() {
                         Индивидуален номер на поръчката: <span className="font-semibold text-[#305439]">{orderId}</span>
                       </p>
                       <p className="mt-2 text-[#4f6a57]">
-                        Бекенд интеграцията ще се добави отделно. В момента това е симулирано успешно изпращане.
+                        Изпратихме потвърждението и започваме обработката на поръчката.
                       </p>
+                      {orderEmailStatus === "sent" ? (
+                        <p className="mt-2 text-[#4f6a57]">
+                          Изпратихме имейл с обобщението на поръчката до{" "}
+                          <span className="font-semibold text-[#305439]">{address.email}</span>.
+                        </p>
+                      ) : null}
+                      {orderEmailStatus === "failed" ? (
+                        <p className="mt-2 text-[#8d4e5f]">{orderEmailError}</p>
+                      ) : null}
                       <Link
                         href="/products"
                         className={`mt-5 ${sectionPrimaryButtonClassName}`}
@@ -917,7 +1018,7 @@ export default function CartPage() {
                         Изпращаме поръчката...
                       </p>
                       <p className="mt-3 text-[#6b587f]">
-                        Изчакай няколко секунди, за да генерираме потвърждението.
+                        Изчакай няколко секунди, за да генерираме потвърждението и да изпратим имейл.
                       </p>
                     </div>
                   ) : (
