@@ -1,19 +1,30 @@
 {
-  "name": "brami-monorepo",
-  "version": "1.0.0",
+  "name": "frontend",
+  "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "frontend",
-    "backend"
-  ],
+  "packageManager": "npm@10.8.2",
   "scripts": {
-    "dev": "concurrently -n frontend,backend -c magenta,cyan \"npm run dev --workspace frontend\" \"npm run dev --workspace backend\"",
-    "start": "concurrently -n frontend,backend -c magenta,cyan \"npm run start --workspace frontend\" \"npm run start --workspace backend\"",
-    "build": "npm run build --workspace frontend",
-    "lint": "npm run lint --workspace frontend",
-    "install:all": "npm install --workspaces --include-workspace-root"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "next": "15.5.9",
+    "nodemailer": "^8.0.5",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "@types/node": "^20",
+    "@types/nodemailer": "^8.0.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.9",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5"
   }
 }

@@ -1,4 +1,4 @@
-﻿function escapeHtml(value) {
+function escapeHtml(value: string | number) {
   return String(value)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
@@ -7,9 +7,41 @@
     .replaceAll("'", "&#39;");
 }
 
-function formatCurrency(value) {
+function formatCurrency(value: number) {
   return `${Number(value).toFixed(2)} лв.`;
 }
+
+type OrderItem = {
+  name: string;
+  packaging: string;
+  imageUrl?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+};
+
+type OrderEmailPayload = {
+  orderId: string;
+  customer: {
+    fullName: string;
+    email: string;
+    phone: string;
+  };
+  delivery: {
+    methodLabel: string;
+    destination: string;
+    notes?: string;
+  };
+  items: OrderItem[];
+  totals: {
+    subtotal: number;
+    shipping: number;
+    total: number;
+  };
+  status: string;
+  createdAt: string;
+  recipient?: "customer" | "sales";
+};
 
 export function createOrderEmail({
   orderId,
@@ -20,11 +52,18 @@ export function createOrderEmail({
   status,
   createdAt,
   recipient = "customer",
-}) {
+}: OrderEmailPayload) {
   const rowsHtml = items
     .map(
       (item) => `
         <tr>
+          <td style="padding:10px 12px;border-bottom:1px solid #eee4f4;width:72px;">
+            ${
+              item.imageUrl
+                ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}" width="52" height="52" style="display:block;width:52px;height:52px;border-radius:10px;object-fit:cover;border:1px solid #ece3f2;" />`
+                : ""
+            }
+          </td>
           <td style="padding:10px 12px;border-bottom:1px solid #eee4f4;">${escapeHtml(item.name)}</td>
           <td style="padding:10px 12px;border-bottom:1px solid #eee4f4;">${escapeHtml(item.packaging)}</td>
           <td style="padding:10px 12px;border-bottom:1px solid #eee4f4;text-align:center;">${item.quantity}</td>
@@ -79,6 +118,7 @@ export function createOrderEmail({
           <table style="width:100%;border-collapse:collapse;border:1px solid #ece3f2;border-radius:18px;overflow:hidden;">
             <thead style="background:#faf7fc;">
               <tr>
+                <th style="padding:12px;text-align:left;font-size:13px;">Снимка</th>
                 <th style="padding:12px;text-align:left;font-size:13px;">Продукт</th>
                 <th style="padding:12px;text-align:left;font-size:13px;">Разфасовка</th>
                 <th style="padding:12px;text-align:center;font-size:13px;">Брой</th>

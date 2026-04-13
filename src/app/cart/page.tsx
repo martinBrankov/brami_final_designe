@@ -123,11 +123,34 @@ function getOrderMailEndpoint() {
     return process.env.NEXT_PUBLIC_ORDER_API_URL;
   }
 
-  if (typeof window !== "undefined") {
-    return `${window.location.protocol}//${window.location.hostname}:4001/api/orders/confirmation`;
+  return "/api/orders/confirmation";
+}
+
+function getAbsoluteImageUrl(imageSrc: unknown) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+
+  if (!siteUrl) {
+    return "";
   }
 
-  return "http://localhost:4001/api/orders/confirmation";
+  if (typeof imageSrc === "string") {
+    if (imageSrc.startsWith("http://") || imageSrc.startsWith("https://")) {
+      return imageSrc;
+    }
+
+    return imageSrc.startsWith("/") ? `${siteUrl}${imageSrc}` : `${siteUrl}/${imageSrc}`;
+  }
+
+  if (
+    typeof imageSrc === "object" &&
+    imageSrc !== null &&
+    "src" in imageSrc &&
+    typeof imageSrc.src === "string"
+  ) {
+    return imageSrc.src.startsWith("/") ? `${siteUrl}${imageSrc.src}` : `${siteUrl}/${imageSrc.src}`;
+  }
+
+  return "";
 }
 
 export default function CartPage() {
@@ -352,6 +375,7 @@ export default function CartPage() {
         id: item.product.id,
         name: item.product.name,
         packaging: item.product.packaging,
+        imageUrl: getAbsoluteImageUrl(item.product.imageSrc[0]),
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         totalPrice: item.totalPrice,

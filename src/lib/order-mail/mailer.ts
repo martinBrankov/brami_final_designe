@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 
-function requireEnv(name) {
+function requireEnv(name: string) {
   const value = process.env[name];
 
   if (!value) {
