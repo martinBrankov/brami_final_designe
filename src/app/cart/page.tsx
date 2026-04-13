@@ -834,7 +834,14 @@ export default function CartPage() {
                           </span>
                           <input
                             type="text"
-                            autoComplete="off"
+                            name="speedy-office-search"
+                            autoComplete="new-password"
+                            autoCorrect="off"
+                            autoCapitalize="none"
+                            spellCheck={false}
+                            data-form-type="other"
+                            data-lpignore="true"
+                            aria-autocomplete="list"
                             placeholder="Пиши за офис, град или адрес"
                             value={officeQuery}
                             onFocus={() => setIsOfficeDropdownOpen(true)}
