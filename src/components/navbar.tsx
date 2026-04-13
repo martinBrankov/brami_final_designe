@@ -167,12 +167,12 @@ export function Navbar() {
   ];
   const quickLinks = [
     {
-      href: "/contact",
+      href: "https://www.facebook.com/Bramitrade",
       label: "Facebook",
       icon: <FacebookIcon />,
     },
     {
-      href: "/contact",
+      href: "https://www.instagram.com/Bramitrade",
       label: "Instagram",
       icon: <InstagramIcon />,
     },
@@ -614,6 +614,21 @@ export function Navbar() {
                           <a
                             key={item.label}
                             href={item.href}
+                            aria-label={item.label}
+                            className={quickLinkItemClassName}
+                          >
+                            {content}
+                          </a>
+                        );
+                      }
+
+                      if (item.href.startsWith("http://") || item.href.startsWith("https://")) {
+                        return (
+                          <a
+                            key={item.label}
+                            href={item.href}
+                            target="_blank"
+                            rel="noreferrer"
                             aria-label={item.label}
                             className={quickLinkItemClassName}
                           >

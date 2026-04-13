@@ -82,12 +82,12 @@ const helpLinks = [
 
 const socialLinks = [
   {
-    href: "https://facebook.com",
+    href: "https://www.facebook.com/Bramitrade",
     label: "Facebook",
     icon: <FacebookIcon />,
   },
   {
-    href: "https://instagram.com",
+    href: "https://www.instagram.com/Bramitrade",
     label: "Instagram",
     icon: <InstagramIcon />,
   },
@@ -138,7 +138,7 @@ export function BottomBar() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="transition hover:text-[#eadcf3]"
+                    className="whitespace-nowrap transition hover:text-[#eadcf3]"
                   >
                     {link.label}
                   </Link>
@@ -156,7 +156,7 @@ export function BottomBar() {
                   className="inline-flex items-start gap-2 transition hover:text-[#eadcf3]"
                 >
                   <MailIcon />
-                  <span className="break-all leading-6 sm:break-normal">
+                  <span className="whitespace-nowrap leading-6">
                     info@brami-trade.com
                   </span>
                 </a>
