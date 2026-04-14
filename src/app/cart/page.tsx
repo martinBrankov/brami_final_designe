@@ -59,32 +59,15 @@ const contactFields: DeliveryFieldConfig[] = [
   ["email", "Имейл", "email", "email", "Например: maria@example.com", true],
 ];
 
-const speedyOffices = [
-  {
-    id: "sofia-center",
-    city: "София",
-    postcode: "1000",
-    address: "Офис Спиди София Център, бул. Дондуков 28",
-  },
-  {
-    id: "sofia-mladost",
-    city: "София",
-    postcode: "1784",
-    address: "Офис Спиди София Младост, бул. Александър Малинов 31",
-  },
-  {
-    id: "plovdiv-center",
-    city: "Пловдив",
-    postcode: "4000",
-    address: "Офис Спиди Пловдив Център, ул. Христо Г. Данов 14",
-  },
-  {
-    id: "varna-center",
-    city: "Варна",
-    postcode: "9000",
-    address: "Офис Спиди Варна Център, бул. Мария Луиза 21",
-  },
-] as const;
+type SpeedyOffice = {
+  id: number;
+  name: string;
+  address: {
+    fullAddressString?: string;
+    siteName?: string;
+    postCode?: string;
+  };
+};
 
 const BGN_TO_EUR = 1.95583;
 
@@ -98,17 +81,6 @@ function parseEurPrice(price: string) {
 
   if (eurMatch) {
     return Number.parseFloat(eurMatch[1].replace(",", "."));
-  }
-
-  const fallbackMatch = price.match(/(\d+[.,]?\d*)/);
-  return fallbackMatch ? Number.parseFloat(fallbackMatch[1].replace(",", ".")) : 0;
-}
-
-function parseBgnPrice(price: string) {
-  const bgnMatch = price.match(/\/(\d+[.,]?\d*)лв\.?/i);
-
-  if (bgnMatch) {
-    return Number.parseFloat(bgnMatch[1].replace(",", "."));
   }
 
   const fallbackMatch = price.match(/(\d+[.,]?\d*)/);
@@ -187,6 +159,9 @@ export default function CartPage() {
   const [address, setAddress] = useState(initialAddress);
   const [officeQuery, setOfficeQuery] = useState("");
   const [isOfficeDropdownOpen, setIsOfficeDropdownOpen] = useState(false);
+  const [officeSearchResults, setOfficeSearchResults] = useState<SpeedyOffice[]>([]);
+  const [isLoadingOffices, setIsLoadingOffices] = useState(false);
+  const [selectedSpeedyOffice, setSelectedSpeedyOffice] = useState<SpeedyOffice | null>(null);
   const [touchedFields, setTouchedFields] = useState<Partial<Record<AddressField, boolean>>>({});
   const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false);
   const [showPoliciesError, setShowPoliciesError] = useState(false);
@@ -254,21 +229,37 @@ export default function CartPage() {
     }
   }, [cartItems.length, orderId]);
 
-  const filteredOffices = useMemo(() => {
-    const normalizedQuery = officeQuery.trim().toLowerCase();
+  useEffect(() => {
+    const query = officeQuery.trim();
 
-    if (!normalizedQuery) {
-      return speedyOffices;
+    if (query.length < 2) {
+      setOfficeSearchResults([]);
+      return;
     }
 
-    return speedyOffices.filter((office) =>
-      `${office.city} ${office.address}`.toLowerCase().includes(normalizedQuery),
-    );
+    setIsLoadingOffices(true);
+
+    const timeout = window.setTimeout(async () => {
+      try {
+        const res = await fetch("/api/speedy/offices", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query }),
+        });
+        const data = (await res.json()) as { offices?: SpeedyOffice[] };
+        setOfficeSearchResults(data.offices ?? []);
+      } catch {
+        setOfficeSearchResults([]);
+      } finally {
+        setIsLoadingOffices(false);
+      }
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timeout);
+      setIsLoadingOffices(false);
+    };
   }, [officeQuery]);
-  const selectedOffice = useMemo(
-    () => speedyOffices.find((office) => office.id === address.officeId) ?? null,
-    [address.officeId],
-  );
 
   function getFieldError(field: AddressField, value: string) {
     const trimmedValue = value.trim();
@@ -384,8 +375,12 @@ export default function CartPage() {
   async function sendOrderConfirmationEmail(generatedOrderId: string) {
     const deliveryDestination =
       deliveryMethod === "office"
-        ? selectedOffice
-          ? `${selectedOffice.city}, ${selectedOffice.address}, ${selectedOffice.postcode}`
+        ? selectedSpeedyOffice
+          ? [
+              selectedSpeedyOffice.address.siteName,
+              selectedSpeedyOffice.address.fullAddressString ?? selectedSpeedyOffice.name,
+              selectedSpeedyOffice.address.postCode,
+            ].filter(Boolean).join(", ")
           : officeQuery.trim()
         : [address.city.trim(), address.postcode.trim(), address.addressLine.trim()]
             .filter(Boolean)
@@ -765,6 +760,26 @@ export default function CartPage() {
                       </label>
                     ))}
 
+                    <div className="sm:col-span-2 flex flex-col gap-1">
+                      <span className="text-sm font-medium text-[#432855]">Начин на плащане</span>
+                      <div className="flex items-center gap-3 pt-1">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#d8d0de] bg-white text-[#6b587f]">
+                          <svg aria-hidden="true" viewBox="0 0 38 24" className="h-[1.35rem] w-[1.7rem]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M1 5h14v11H1z" />
+                            <path d="M15 9h4.5l3 3.5V16H15z" />
+                            <circle cx="5.5" cy="18" r="2" />
+                            <circle cx="19" cy="18" r="2" />
+                            <path d="M25 12h2" strokeWidth="1.4" />
+                            <rect x="28" y="7" width="9" height="6" rx="1" />
+                            <circle cx="32.5" cy="10" r="1.3" />
+                          </svg>
+                        </span>
+                        <p className="text-sm leading-5 text-[#5f4b73]">
+                          Плащането става лесно и сигурно с наложен платеж при получаване.
+                        </p>
+                      </div>
+                    </div>
+
                     <div className="sm:col-span-2">
                       <p className="mb-2 text-xs font-medium leading-5 text-[#6b587f]">
                         Доставката се извършва от куриерска фирма Спиди.
@@ -781,6 +796,8 @@ export default function CartPage() {
 
                             setDeliveryMethod(nextMethod);
                             setOfficeQuery("");
+                            setOfficeSearchResults([]);
+                            setSelectedSpeedyOffice(null);
                             setIsOfficeDropdownOpen(false);
                             setAddress((current) => ({
                               ...current,
@@ -934,9 +951,13 @@ export default function CartPage() {
 
                           {isOfficeDropdownOpen ? (
                             <div className="max-h-64 overflow-y-auto rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] p-2">
-                              {filteredOffices.length ? (
+                              {isLoadingOffices ? (
+                                <p className="px-2 py-3 text-sm text-[#8f72a7]">Търсене...</p>
+                              ) : officeQuery.trim().length < 2 ? (
+                                <p className="px-2 py-3 text-sm text-[#8f72a7]">Въведи поне 2 символа за търсене.</p>
+                              ) : officeSearchResults.length ? (
                                 <div className="space-y-2">
-                                  {filteredOffices.map((office) => (
+                                  {officeSearchResults.map((office) => (
                                     <button
                                       key={office.id}
                                       type="button"
@@ -944,9 +965,14 @@ export default function CartPage() {
                                       onClick={() => {
                                         setAddress((current) => ({
                                           ...current,
-                                          officeId: office.id,
+                                          officeId: String(office.id),
                                         }));
-                                        setOfficeQuery(`${office.city}, ${office.address}`);
+                                        setSelectedSpeedyOffice(office);
+                                        setOfficeQuery(
+                                          [office.address.siteName, office.address.fullAddressString ?? office.name]
+                                            .filter(Boolean)
+                                            .join(", "),
+                                        );
                                         setTouchedFields((current) => ({
                                           ...current,
                                           officeId: true,
@@ -954,23 +980,23 @@ export default function CartPage() {
                                         setIsOfficeDropdownOpen(false);
                                       }}
                                       className={`flex w-full flex-col rounded-[16px] border px-4 py-3 text-left transition ${
-                                        address.officeId === office.id
+                                        address.officeId === String(office.id)
                                           ? "border-[#9f79ac] bg-white"
                                           : "border-transparent bg-white/70 hover:border-[#d9cce3]"
                                       }`}
                                     >
                                       <span className="text-sm font-semibold text-[#432855]">
-                                        {office.city}
+                                        {office.address.siteName ?? office.name}
                                       </span>
                                       <span className="mt-1 text-sm leading-5 text-[#6b587f]">
-                                        {office.address}
+                                        {office.address.fullAddressString ?? office.name}
                                       </span>
                                     </button>
                                   ))}
                                 </div>
                               ) : (
                                 <p className="px-2 py-3 text-sm text-[#6b587f]">
-                                  Няма офиси по това търсене.
+                                  Няма намерени офиси.
                                 </p>
                               )}
                             </div>

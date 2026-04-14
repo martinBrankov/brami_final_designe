@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.speedy.bg)",
+      "WebFetch(domain:services.speedy.bg)",
+      "WebSearch",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}
