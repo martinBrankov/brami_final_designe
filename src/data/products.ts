@@ -39,6 +39,7 @@ export type Product = {
   checkboxInfo: string[];
   price: string;
   packaging: string;
+  weight: number;
   rating: number;
   comments: Comment[];
   description: string;
@@ -56,6 +57,7 @@ type ProductJson = {
   checkboxInfo?: string[];
   price: string;
   packaging: string;
+  weight?: number;
   rating: number;
   comments: Comment[];
   description: string;
@@ -233,6 +235,7 @@ function parseProduct(product: ProductJson): Product {
     checkboxInfo: parseCheckboxInfo(product.checkboxInfo),
     price: fixMojibake(product.price),
     packaging: fixMojibake(product.packaging),
+    weight: typeof product.weight === "number" ? product.weight : 0.2,
     rating: product.rating,
     comments: parseComments(product.comments),
     description: fixMojibake(product.description),
@@ -253,7 +256,7 @@ export function getProductBadgeLabel(badge: Product["badge"]): string {
     case "new":
       return "Нов";
     case "favorite":
-      return "Любим";
+      return "Препоръчваме Ви";
     case "featured":
       return "Избрано";
     default:

@@ -54,7 +54,7 @@ const defaultItems: InfoStripItem[] = [
   {
     icon: DeliveryIcon,
     title: "Безплатна доставка",
-    text: "над 50 евро",
+    text: "над 100 евро",
   },
   {
     icon: LeafIcon,

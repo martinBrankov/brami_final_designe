@@ -17,7 +17,7 @@ export function CartNotification({
     <div className="pointer-events-none fixed inset-x-4 bottom-4 z-[120] sm:bottom-6">
       <div className="pointer-events-auto mx-auto w-full max-w-[360px] rounded-[24px] border border-[#ddd3e4] bg-white/95 p-4 shadow-[0_18px_45px_rgba(67,40,85,0.14)] backdrop-blur sm:max-w-none">
         <div className="flex items-start gap-3 sm:items-center sm:gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] text-white">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(100deg,#2e7d46_0%,#1a5c30_100%)] text-white">
             <svg
               aria-hidden="true"
               viewBox="0 0 20 20"

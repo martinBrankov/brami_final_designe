@@ -17,6 +17,14 @@ type ProductCardProps = {
 const BGN_SUFFIX = "лв.";
 const EURO_SYMBOL = "€";
 
+const BADGE_GRADIENTS: Record<Product["badge"], string> = {
+  bestseller: "linear-gradient(100deg,#d4b082 0%,#bf9464 100%)",
+  sale:       "linear-gradient(100deg,#e86969 0%,#c43c3c 100%)",
+  new:        "linear-gradient(100deg,#2e7d46 0%,#1a5c30 100%)",
+  favorite:   "linear-gradient(100deg,#e07db5 0%,#b84d87 100%)",
+  featured:   "linear-gradient(100deg,#7e9fda 0%,#4a6db8 100%)",
+};
+
 function parseBgnPrice(price: string) {
   const bgnMatch = price.match(/\/(\d+[.,]?\d*)лв\.?/i);
 
@@ -152,7 +160,8 @@ export function ProductCard({
       >
         <div className="relative overflow-hidden border-b border-[#e5e0e8] bg-[linear-gradient(180deg,#f2f2f6_0%,#e8e8ee_100%)]">
           <span
-            className={`absolute z-20 inline-flex rounded-full bg-[linear-gradient(100deg,#d4b082_0%,#bf9464_100%)] font-semibold text-white ${
+            style={{ background: BADGE_GRADIENTS[product.badge] }}
+            className={`absolute z-20 inline-flex rounded-full font-semibold text-white ${
               compact
                 ? "left-2.5 top-2.5 px-2 py-0.5 text-[10px] sm:left-3 sm:top-3 sm:px-2.5 sm:py-1 sm:text-[11px]"
                 : "left-4 top-4 px-3 py-1 text-xs"
@@ -196,11 +205,11 @@ export function ProductCard({
             </span>
           </div>
           <div
-            className={
+            className={`flex flex-col ${
               compact
                 ? "mt-1.5 min-h-[68px] sm:mt-2 sm:min-h-[76px]"
                 : "mt-3 min-h-[104px]"
-            }
+            }`}
           >
             <h3
               className={`font-serif text-[#432855] ${
@@ -212,7 +221,7 @@ export function ProductCard({
               {product.name}
             </h3>
             <p
-              className={`mt-1 text-[#6b587f] ${
+              className={`mt-auto pt-1 text-[#6b587f] ${
                 compact ? "text-sm" : "text-base"
               }`}
             >

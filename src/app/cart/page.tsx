@@ -17,6 +17,19 @@ import {
 } from "@/components/section-intro";
 import { getProductsByIds, products } from "@/data/products";
 
+const FREE_SHIPPING_THRESHOLD_EUR = 100;
+const HEAVY_THRESHOLD_KG = 3;
+
+const SHIPPING_RATES = {
+  office:  { standard: 5.99, heavy: 8.99 },
+  address: { standard: 7.99, heavy: 10.99 },
+};
+
+function calcShipping(method: DeliveryMethod, totalWeightKg: number): number {
+  const rates = SHIPPING_RATES[method];
+  return totalWeightKg > HEAVY_THRESHOLD_KG ? rates.heavy : rates.standard;
+}
+
 const initialAddress = {
   fullName: "",
   phone: "",
@@ -73,8 +86,22 @@ const speedyOffices = [
   },
 ] as const;
 
-function formatPrice(value: number) {
-  return `${value.toFixed(2)} лв.`;
+const BGN_TO_EUR = 1.95583;
+
+function formatPrice(eur: number) {
+  const bgn = eur * BGN_TO_EUR;
+  return `€${eur.toFixed(2)} / ${bgn.toFixed(2)} лв.`;
+}
+
+function parseEurPrice(price: string) {
+  const eurMatch = price.match(/€\s?(\d+[.,]?\d*)/i);
+
+  if (eurMatch) {
+    return Number.parseFloat(eurMatch[1].replace(",", "."));
+  }
+
+  const fallbackMatch = price.match(/(\d+[.,]?\d*)/);
+  return fallbackMatch ? Number.parseFloat(fallbackMatch[1].replace(",", ".")) : 0;
 }
 
 function parseBgnPrice(price: string) {
@@ -163,6 +190,7 @@ export default function CartPage() {
   const [touchedFields, setTouchedFields] = useState<Partial<Record<AddressField, boolean>>>({});
   const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false);
   const [showPoliciesError, setShowPoliciesError] = useState(false);
+  const [step1ValidationFailed, setStep1ValidationFailed] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [orderId, setOrderId] = useState("");
   const [orderEmailStatus, setOrderEmailStatus] = useState<OrderEmailStatus>("idle");
@@ -186,7 +214,7 @@ export default function CartPage() {
             return null;
           }
 
-          const unitPrice = parseBgnPrice(product.price);
+          const unitPrice = parseEurPrice(product.price);
 
           return {
             ...item,
@@ -200,7 +228,12 @@ export default function CartPage() {
   );
 
   const subtotal = cartItems.reduce((total, item) => total + item.totalPrice, 0);
-  const shipping = cartItems.length ? 7.99 : 0;
+  const totalWeight = cartItems.reduce(
+    (sum, item) => sum + item.product.weight * item.quantity,
+    0,
+  ) + 0.15;
+  const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD_EUR;
+  const shipping = cartItems.length && !isFreeShipping ? calcShipping(deliveryMethod, totalWeight) / BGN_TO_EUR : 0;
   const total = subtotal + shipping;
   const relatedCartProducts = useMemo(() => {
     if (!cartItems.length) {
@@ -334,6 +367,7 @@ export default function CartPage() {
   };
 
   const isAddressValid = Object.values(fieldErrors).every((error) => !error);
+  const step1HasError = step1ValidationFailed && (!isAddressValid || !hasAcceptedPolicies);
 
   function markAllMandatoryFieldsTouched() {
     setTouchedFields({
@@ -413,9 +447,11 @@ export default function CartPage() {
     setShowPoliciesError(!hasAcceptedPolicies);
 
     if (!isAddressValid || !hasAcceptedPolicies) {
+      setStep1ValidationFailed(true);
       return;
     }
 
+    setStep1ValidationFailed(false);
     setCurrentStep(2);
     scrollToPageTop();
     await handleSubmitOrder();
@@ -439,9 +475,11 @@ export default function CartPage() {
 
     if (!isAddressValid || !hasAcceptedPolicies) {
       setCurrentStep(1);
+      setStep1ValidationFailed(true);
       return;
     }
 
+    setStep1ValidationFailed(false);
     setCurrentStep(2);
     scrollToPageTop();
   }
@@ -491,6 +529,7 @@ export default function CartPage() {
             <CartStepper
               currentStep={currentStep}
               orderCompleted={Boolean(orderId)}
+              stepErrors={{ 1: step1HasError }}
               onStepSelect={cartItems.length && currentStep !== 2 ? handleStepSelect : undefined}
             />
           </div>
@@ -548,9 +587,16 @@ export default function CartPage() {
                               </div>
 
                               <div className="col-start-2 row-start-2 flex min-w-0 flex-col justify-between self-stretch">
-                                <p className="text-lg font-semibold text-[#432855]">
-                                  {item.product.price}
-                                </p>
+                                <div>
+                                  <p className="text-lg font-semibold text-[#432855]">
+                                    {item.product.price}
+                                  </p>
+                                  {item.quantity > 1 ? (
+                                    <p className="mt-0.5 text-xs text-[#8f72a7]">
+                                      Общо: {formatPrice(item.totalPrice)}
+                                    </p>
+                                  ) : null}
+                                </div>
                                 <div className="mt-3 flex flex-col items-start gap-2">
                                   <div className="inline-flex items-center rounded-full border border-[#ddd3e4] bg-white p-1">
                                     <button
@@ -575,13 +621,13 @@ export default function CartPage() {
                               </div>
                             </div>
 
-                            <div className="hidden min-w-0 items-start gap-4 md:flex">
-                              <div className="w-[140px] shrink-0 overflow-hidden rounded-[18px] border border-[#ece3f2] bg-[#fcf9ff]">
+                            <div className="hidden min-w-0 items-stretch gap-4 md:flex">
+                              <div className="aspect-square w-[140px] shrink-0 self-end overflow-hidden rounded-[18px] border border-[#ece3f2] bg-[#fcf9ff]">
                                 {productImage ? (
                                   <Image
                                     src={productImage}
                                     alt={item.product.name}
-                                    className="aspect-square w-full object-cover"
+                                    className="h-full w-full object-cover"
                                   />
                                 ) : (
                                   <div className="aspect-square w-full bg-[#f3edf7]" />
@@ -611,6 +657,11 @@ export default function CartPage() {
                                   <p className="mt-2 text-lg font-semibold text-[#432855]">
                                     {item.product.price}
                                   </p>
+                                  {item.quantity > 1 ? (
+                                    <p className="mt-0.5 text-xs text-[#8f72a7]">
+                                      Общо: {formatPrice(item.totalPrice)}
+                                    </p>
+                                  ) : null}
                                 </div>
 
                                 <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -722,34 +773,41 @@ export default function CartPage() {
 
                     <label className="sm:col-span-2 min-w-0 flex flex-col gap-2 text-sm font-medium text-[#432855]">
                       <span>Начин на доставка</span>
-                      <select
-                        value={deliveryMethod}
-                        onChange={(event) => {
-                          const nextMethod = event.target.value as DeliveryMethod;
+                      <div className="relative">
+                        <select
+                          value={deliveryMethod}
+                          onChange={(event) => {
+                            const nextMethod = event.target.value as DeliveryMethod;
 
-                          setDeliveryMethod(nextMethod);
-                          setOfficeQuery("");
-                          setIsOfficeDropdownOpen(false);
-                          setAddress((current) => ({
-                            ...current,
-                            officeId: "",
-                            city: "",
-                            postcode: "",
-                            addressLine: "",
-                          }));
-                          setTouchedFields((current) => ({
-                            ...current,
-                            officeId: false,
-                            city: false,
-                            postcode: false,
-                            addressLine: false,
-                          }));
-                        }}
-                        className="h-12 w-full min-w-0 rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] px-4 pr-[58px] text-[#432855] outline-none transition focus:border-[#9f79ac]"
-                      >
-                        <option value="address">До адрес</option>
-                        <option value="office">До офис на Спиди</option>
-                      </select>
+                            setDeliveryMethod(nextMethod);
+                            setOfficeQuery("");
+                            setIsOfficeDropdownOpen(false);
+                            setAddress((current) => ({
+                              ...current,
+                              officeId: "",
+                              city: "",
+                              postcode: "",
+                              addressLine: "",
+                            }));
+                            setTouchedFields((current) => ({
+                              ...current,
+                              officeId: false,
+                              city: false,
+                              postcode: false,
+                              addressLine: false,
+                            }));
+                          }}
+                          className="h-12 w-full min-w-0 appearance-none rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] px-4 pr-10 text-[#432855] outline-none transition focus:border-[#9f79ac]"
+                        >
+                          <option value="address">До адрес</option>
+                          <option value="office">До офис на Спиди</option>
+                        </select>
+                        <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#6b587f]">
+                          <svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 8l5 5 5-5" />
+                          </svg>
+                        </span>
+                      </div>
                     </label>
 
                     {deliveryMethod === "address" ? (
@@ -1066,6 +1124,38 @@ export default function CartPage() {
 
             {!orderId && cartItems.length ? (
               <aside className="border-y border-[#d8d0de] bg-white py-6">
+                <Link
+                  href="/products"
+                  className={`mb-5 flex items-center gap-4 rounded-[18px] border px-4 py-3.5 transition ${
+                    isFreeShipping
+                      ? "border-[#3a9e52] bg-[#f4fbf5] hover:bg-[#edf7ef]"
+                      : "border-[#d4b44a] bg-[#fdf9ee] hover:bg-[#faf4dc]"
+                  }`}
+                >
+                  <span
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
+                      isFreeShipping
+                        ? "bg-[linear-gradient(100deg,#2e7d65_0%,#1a5540_100%)] shadow-[0_0_14px_5px_rgba(58,158,82,0.4)]"
+                        : "bg-[linear-gradient(100deg,#c8a020_0%,#a07810_100%)] shadow-[0_0_14px_5px_rgba(200,160,32,0.45)]"
+                    } text-white`}
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 3h13v13H1zM14 8h4l3 3v5h-7V8z" />
+                      <circle cx="5.5" cy="18.5" r="2.5" />
+                      <circle cx="18.5" cy="18.5" r="2.5" />
+                    </svg>
+                  </span>
+                  <span className="flex flex-col gap-0.5">
+                    <span className={`text-sm font-semibold ${isFreeShipping ? "text-[#1a5c30]" : "text-[#7a5c10]"}`}>
+                      {isFreeShipping
+                        ? "Безплатна доставка!"
+                        : `Остават €${(FREE_SHIPPING_THRESHOLD_EUR - subtotal).toFixed(2)} до безплатна доставка`}
+                    </span>
+                    <span className={`text-xs ${isFreeShipping ? "text-[#3a7a50]" : "text-[#9a7820]"}`}>
+                      {isFreeShipping ? "Добавена е безплатна доставка за вашата поръчка." : "Добави още продукти и спести от доставката."}
+                    </span>
+                  </span>
+                </Link>
                 <h2 className="font-serif text-3xl text-[#432855]">Обобщение</h2>
                 <div className="mt-5 space-y-3 text-[#5f4b73]">
                   <div className="flex items-center justify-between gap-4">
@@ -1073,8 +1163,17 @@ export default function CartPage() {
                     <span className="font-medium text-[#432855]">{formatPrice(subtotal)}</span>
                   </div>
                   <div className="flex items-center justify-between gap-4">
-                    <span>Доставка</span>
-                    <span className="font-medium text-[#432855]">{formatPrice(shipping)}</span>
+                    <span className="flex flex-col gap-0.5">
+                      <span>Доставка</span>
+                      <span className="text-xs text-[#8f72a7]">
+                        {deliveryMethod === "office" ? "До офис на Спиди" : "До адрес"} · {totalWeight.toFixed(2)} кг
+                        {totalWeight > HEAVY_THRESHOLD_KG ? " · тежка пратка" : ""}
+                        {isFreeShipping ? " · безплатна" : ""}
+                      </span>
+                    </span>
+                    <span className={`font-medium ${isFreeShipping ? "text-[#2e7d46]" : "text-[#432855]"}`}>
+                      {isFreeShipping ? "Безплатна" : formatPrice(shipping)}
+                    </span>
                   </div>
                   <div className="h-px bg-[#e4dbea]" />
                   <div className="flex items-center justify-between gap-4 text-lg font-semibold text-[#432855]">
@@ -1084,6 +1183,12 @@ export default function CartPage() {
                 </div>
 
               </aside>
+            ) : null}
+
+            {!orderId && cartItems.length ? (
+              <p className="mt-3 text-xs leading-5 text-[#9a87b0]">
+                Курс на превалутиране: €1 = {BGN_TO_EUR.toFixed(5)} лв. Възможно е незначително разминаване между крайните цени в лева поради закръгляне при превалутирането.
+              </p>
             ) : null}
 
             <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -1123,7 +1228,10 @@ export default function CartPage() {
                 {currentStep === 1 && !orderId ? (
                   <button
                     type="button"
-                    onClick={() => setCurrentStep((step) => Math.max(0, step - 1))}
+                    onClick={() => {
+                      setCurrentStep((step) => Math.max(0, step - 1));
+                      setStep1ValidationFailed(false);
+                    }}
                     className={`w-full justify-center sm:w-auto ${sectionActionClassName} uppercase tracking-[0.08em]`}
                   >
                     Назад
