@@ -12,9 +12,9 @@ const values = [
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen space-y-6 bg-[radial-gradient(circle_at_top,_#fbf8fd_0%,_#f3edf7_45%,_#efe6f6_100%)] pb-6">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fbf8fd_0%,_#f3edf7_45%,_#efe6f6_100%)]">
       <section className="w-full border-b border-[#d8d0de] bg-white">
-        <div className="grid min-h-[520px] lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="grid min-h-[520px] lg:grid-cols-2">
           <div className="flex items-center px-6 py-14 sm:px-10 lg:px-14 lg:py-20">
             <div className="max-w-2xl">
               <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[#8f72a7]">
@@ -29,20 +29,20 @@ export default function AboutPage() {
                 усещане за грижа, спокойствие и ежедневен комфорт.
               </p>
 
-              <div className="mt-8 flex flex-wrap gap-3">
+              <ul className="mt-8 space-y-2">
                 {values.map((value) => (
-                  <span
-                    key={value}
-                    className="rounded-full border border-[#ddd3e4] bg-[#faf7fc] px-4 py-2 text-sm font-medium text-[#432855]"
-                  >
+                  <li key={value} className="flex items-center gap-2.5 text-sm font-medium text-[#432855]">
+                    <svg viewBox="0 0 10 8" className="h-3 w-3 shrink-0 text-[#6c3f8d]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 4l3 3 5-6" />
+                    </svg>
                     {value}
-                  </span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           </div>
 
-          <div className="relative min-h-[320px] border-t border-[#d8d0de] lg:min-h-full lg:border-l lg:border-t-0">
+          <div className="relative min-h-[320px] border-t border-[#d8d0de] lg:min-h-full lg:border-t-0">
             <Image
               src={garden}
               alt="Градина с насаждения за натурална козметика"
@@ -55,8 +55,8 @@ export default function AboutPage() {
       </section>
 
       <section className="w-full border-b border-[#d8d0de] bg-[#fbf8ff]">
-        <div className="grid lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="relative min-h-[320px] border-b border-[#d8d0de] lg:min-h-[460px] lg:border-b-0 lg:border-r">
+        <div className="grid lg:grid-cols-2">
+          <div className="relative order-2 min-h-[320px] border-t border-[#d8d0de] lg:order-none lg:min-h-[460px] lg:border-t-0">
             <Image
               src={saffron}
               alt="Шафран и натурални съставки"
@@ -65,7 +65,7 @@ export default function AboutPage() {
             />
           </div>
 
-          <div className="flex items-center px-6 py-14 sm:px-10 lg:px-14 lg:py-16">
+          <div className="flex items-center border-b border-[#d8d0de] px-6 py-14 sm:px-10 lg:border-b-0 lg:px-14 lg:py-16">
             <div className="max-w-2xl">
               <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[#8f72a7]">
                 Нашият подход
@@ -91,7 +91,7 @@ export default function AboutPage() {
       </section>
 
       <section className="w-full bg-white">
-        <div className="grid lg:grid-cols-[1fr_1fr]">
+        <div className="grid lg:grid-cols-2">
           <div className="flex items-center px-6 py-14 sm:px-10 lg:px-14 lg:py-16">
             <div className="max-w-2xl">
               <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[#8f72a7]">
@@ -116,7 +116,7 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div className="relative min-h-[320px] border-t border-[#d8d0de] lg:min-h-[460px] lg:border-l lg:border-t-0">
+          <div className="relative min-h-[320px] border-t border-[#d8d0de] lg:min-h-[460px] lg:border-t-0">
             <Image
               src={addelaSunny}
               alt="Продукти BRAMI"

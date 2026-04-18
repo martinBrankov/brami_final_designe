@@ -369,7 +369,7 @@ export function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 w-full border-b border-[#ece6f1] bg-[rgba(253,253,253,0.78)] backdrop-blur-xl">
+      <header data-site-navbar="true" className="sticky top-0 z-30 w-full border-b border-[#ece6f1] bg-[rgba(253,253,253,0.78)] backdrop-blur-xl">
         <div className="relative flex h-14 w-full items-center justify-between px-4 sm:h-16 sm:px-10 lg:px-14">
           <button
             type="button"

@@ -1,3 +1,5 @@
+const BGN_TO_EUR = 1.95583;
+
 function escapeHtml(value: string | number) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -8,13 +10,18 @@ function escapeHtml(value: string | number) {
 }
 
 function formatCurrency(value: number) {
-  return `${Number(value).toFixed(2)} лв.`;
+  const eur = Number(value);
+  const bgn = eur * BGN_TO_EUR;
+
+  return `\u20AC${eur.toFixed(2)} / ${bgn.toFixed(2)} лв.`;
 }
 
 type OrderItem = {
+  id?: string;
   name: string;
   packaging: string;
   imageUrl?: string;
+  productUrl?: string;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
@@ -60,11 +67,17 @@ export function createOrderEmail({
           <td style="padding:10px 12px;border-bottom:1px solid #eee4f4;width:72px;">
             ${
               item.imageUrl
-                ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}" width="52" height="52" style="display:block;width:52px;height:52px;border-radius:10px;object-fit:cover;border:1px solid #ece3f2;" />`
+                ? item.productUrl
+                  ? `<a href="${escapeHtml(item.productUrl)}" style="display:block;width:52px;"><img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}" width="52" height="52" style="display:block;width:52px;height:52px;border-radius:10px;object-fit:cover;border:1px solid #ece3f2;" /></a>`
+                  : `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}" width="52" height="52" style="display:block;width:52px;height:52px;border-radius:10px;object-fit:cover;border:1px solid #ece3f2;" />`
                 : ""
             }
           </td>
-          <td style="padding:10px 12px;border-bottom:1px solid #eee4f4;">${escapeHtml(item.name)}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #eee4f4;">${
+            item.productUrl
+              ? `<a href="${escapeHtml(item.productUrl)}" style="color:#432855;text-decoration:underline;">${escapeHtml(item.name)}</a>`
+              : escapeHtml(item.name)
+          }</td>
           <td style="padding:10px 12px;border-bottom:1px solid #eee4f4;">${escapeHtml(item.packaging)}</td>
           <td style="padding:10px 12px;border-bottom:1px solid #eee4f4;text-align:center;">${item.quantity}</td>
           <td style="padding:10px 12px;border-bottom:1px solid #eee4f4;text-align:right;">${formatCurrency(item.unitPrice)}</td>
@@ -154,7 +167,10 @@ export function createOrderEmail({
     "",
     "Продукти:",
     ...items.map(
-      (item) => `- ${item.name} (${item.packaging}) x${item.quantity} - ${formatCurrency(item.totalPrice)}`,
+      (item) =>
+        `- ${item.name} (${item.packaging}) x${item.quantity} - ${formatCurrency(item.totalPrice)}${
+          item.productUrl ? ` - ${item.productUrl}` : ""
+        }`,
     ),
     "",
     `Продукти: ${formatCurrency(totals.subtotal)}`,

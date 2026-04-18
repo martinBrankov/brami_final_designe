@@ -213,10 +213,10 @@ export function ProductsPageContent() {
       <section className={pageSectionClassName}>
         <div className="mb-3">
           <SectionIntro
-            title="Продукт лист"
+            title="Разгледай продуктите"
             titleAs="h1"
             size="page"
-            description="Разгледай подбраните формули за лице, тяло и коса."
+            description="Формули, създадени за естествена грижа и баланс."
           >
             {query ? (
               <p className="mt-3 text-sm font-medium text-[#8f72a7]">

@@ -14,12 +14,12 @@ export function HomeHero() {
       <div className="grid w-full overflow-hidden border-y border-y-[#d8d0de] bg-[#f5f7fb] lg:grid-cols-[1.05fr_0.95fr]">
         <div className="flex flex-col justify-center px-6 py-10 sm:px-10 sm:py-14 lg:px-14">
           <SectionIntro
-            title="Сияйна и подмладена кожа с кокиче"
+            title="Естествена грижа с шафран."
             titleAs="h1"
             size="hero"
             contentClassName="max-w-[36rem]"
             titleClassName="max-w-[12ch]"
-            description="Премиум грижа с екстракт от българско кокиче за дълбока хидратация и естествен блясък."
+            description="Грижа, която започва отвън и се усеща отвътре – вдъхновена от силата на шафрана."
           >
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <Link href="/products" className={sectionPrimaryButtonClassName}>
@@ -38,7 +38,7 @@ export function HomeHero() {
         <div className="relative min-h-[320px] bg-[#f5f7fb] sm:min-h-[420px] lg:min-h-[560px]">
           <Image
             src={homeScreenImgMobile}
-            alt="Козметика с кокиче"
+            alt="Козметика с шафран"
             priority
             className="absolute inset-0 h-full w-full object-contain object-right-bottom"
           />

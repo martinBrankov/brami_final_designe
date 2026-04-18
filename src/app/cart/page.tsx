@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { HTMLInputTypeAttribute } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { CartStepper } from "@/components/cart-stepper";
 import { useCart } from "@/components/cart-provider";
@@ -117,6 +117,12 @@ function scrollToPageTop() {
   });
 }
 
+function scrollFieldToTop(el: HTMLElement) {
+  window.setTimeout(() => {
+    el.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, 300);
+}
+
 function getOrderMailEndpoint() {
   if (process.env.NEXT_PUBLIC_ORDER_API_URL) {
     return process.env.NEXT_PUBLIC_ORDER_API_URL;
@@ -153,9 +159,13 @@ function getAbsoluteImageUrl(imageSrc: unknown) {
 }
 
 export default function CartPage() {
+  const deliveryDropdownRef = useRef<HTMLDivElement | null>(null);
   const { items, updateQuantity, removeItem, clearCart } = useCart();
+  const officeDropdownRef = useRef<HTMLDivElement | null>(null);
+  const officeSearchInputRef = useRef<HTMLInputElement | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("office");
+  const [isDeliveryDropdownOpen, setIsDeliveryDropdownOpen] = useState(false);
   const [address, setAddress] = useState(initialAddress);
   const [officeQuery, setOfficeQuery] = useState("");
   const [isOfficeDropdownOpen, setIsOfficeDropdownOpen] = useState(false);
@@ -228,6 +238,48 @@ export default function CartPage() {
       setCurrentStep(0);
     }
   }, [cartItems.length, orderId]);
+
+  useEffect(() => {
+    if (!isDeliveryDropdownOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!deliveryDropdownRef.current?.contains(event.target as Node)) {
+        setIsDeliveryDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [isDeliveryDropdownOpen]);
+
+  useEffect(() => {
+    if (!isOfficeDropdownOpen) {
+      return;
+    }
+
+    officeSearchInputRef.current?.focus();
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!officeDropdownRef.current?.contains(event.target as Node)) {
+        setIsOfficeDropdownOpen(false);
+        setTouchedFields((current) => ({
+          ...current,
+          officeId: true,
+        }));
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [isOfficeDropdownOpen]);
 
   useEffect(() => {
     const query = officeQuery.trim();
@@ -360,6 +412,29 @@ export default function CartPage() {
   const isAddressValid = Object.values(fieldErrors).every((error) => !error);
   const step1HasError = step1ValidationFailed && (!isAddressValid || !hasAcceptedPolicies);
 
+  function applyDeliveryMethod(nextMethod: DeliveryMethod) {
+    setDeliveryMethod(nextMethod);
+    setOfficeQuery("");
+    setOfficeSearchResults([]);
+    setSelectedSpeedyOffice(null);
+    setIsOfficeDropdownOpen(false);
+    setIsDeliveryDropdownOpen(false);
+    setAddress((current) => ({
+      ...current,
+      officeId: "",
+      city: "",
+      postcode: "",
+      addressLine: "",
+    }));
+    setTouchedFields((current) => ({
+      ...current,
+      officeId: false,
+      city: false,
+      postcode: false,
+      addressLine: false,
+    }));
+  }
+
   function markAllMandatoryFieldsTouched() {
     setTouchedFields({
       fullName: true,
@@ -381,7 +456,7 @@ export default function CartPage() {
               selectedSpeedyOffice.address.fullAddressString ?? selectedSpeedyOffice.name,
               selectedSpeedyOffice.address.postCode,
             ].filter(Boolean).join(", ")
-          : officeQuery.trim()
+          : ""
         : [address.city.trim(), address.postcode.trim(), address.addressLine.trim()]
             .filter(Boolean)
             .join(", ");
@@ -739,6 +814,7 @@ export default function CartPage() {
                               [key]: nextValue,
                             }));
                           }}
+                          onFocus={(e) => scrollFieldToTop(e.currentTarget)}
                           onBlur={() =>
                             setTouchedFields((current) => ({
                               ...current,
@@ -788,42 +864,47 @@ export default function CartPage() {
 
                     <label className="sm:col-span-2 min-w-0 flex flex-col gap-2 text-sm font-medium text-[#432855]">
                       <span>Начин на доставка</span>
-                      <div className="relative">
-                        <select
-                          value={deliveryMethod}
-                          onChange={(event) => {
-                            const nextMethod = event.target.value as DeliveryMethod;
-
-                            setDeliveryMethod(nextMethod);
-                            setOfficeQuery("");
-                            setOfficeSearchResults([]);
-                            setSelectedSpeedyOffice(null);
-                            setIsOfficeDropdownOpen(false);
-                            setAddress((current) => ({
-                              ...current,
-                              officeId: "",
-                              city: "",
-                              postcode: "",
-                              addressLine: "",
-                            }));
-                            setTouchedFields((current) => ({
-                              ...current,
-                              officeId: false,
-                              city: false,
-                              postcode: false,
-                              addressLine: false,
-                            }));
-                          }}
-                          className="h-12 w-full min-w-0 appearance-none rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] px-4 pr-10 text-[#432855] outline-none transition focus:border-[#9f79ac]"
+                      <div ref={deliveryDropdownRef} className="relative">
+                        <button
+                          type="button"
+                          aria-haspopup="listbox"
+                          aria-expanded={isDeliveryDropdownOpen}
+                          onClick={() => setIsDeliveryDropdownOpen((current) => !current)}
+                          className="flex h-12 w-full min-w-0 items-center justify-between gap-3 rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] px-4 text-left text-[#432855] outline-none transition focus:border-[#9f79ac]"
                         >
-                          <option value="address">До адрес</option>
-                          <option value="office">До офис на Спиди</option>
-                        </select>
-                        <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#6b587f]">
-                          <svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M5 8l5 5 5-5" />
-                          </svg>
-                        </span>
+                          <span>{deliveryMethod === "office" ? "До офис на Спиди" : "До адрес"}</span>
+                          <span className="shrink-0 text-[#6b587f]">
+                            <svg aria-hidden="true" viewBox="0 0 20 20" className={`h-4 w-4 transition ${isDeliveryDropdownOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M5 8l5 5 5-5" />
+                            </svg>
+                          </span>
+                        </button>
+
+                        {isDeliveryDropdownOpen ? (
+                          <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] p-2 shadow-[0_24px_80px_rgba(67,40,85,0.16)]">
+                            <div className="space-y-2">
+                              {[
+                                { value: "address" as const, label: "До адрес" },
+                                { value: "office" as const, label: "До офис на Спиди" },
+                              ].map((option) => (
+                                <button
+                                  key={option.value}
+                                  type="button"
+                                  onClick={() => applyDeliveryMethod(option.value)}
+                                  className={`flex w-full rounded-[16px] border px-4 py-3 text-left transition ${
+                                    deliveryMethod === option.value
+                                      ? "border-[#e4d6ea] bg-white"
+                                      : "border-transparent bg-white/70 hover:border-[#d9cce3]"
+                                  }`}
+                                >
+                                  <span className="text-sm font-semibold text-[#432855]">
+                                    {option.label}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     </label>
 
@@ -845,6 +926,7 @@ export default function CartPage() {
                                 city: event.target.value,
                               }))
                             }
+                            onFocus={(e) => scrollFieldToTop(e.currentTarget)}
                             onBlur={() =>
                               setTouchedFields((current) => ({
                                 ...current,
@@ -881,6 +963,7 @@ export default function CartPage() {
                                 postcode: event.target.value.replace(/\D/g, "").slice(0, 10),
                               }))
                             }
+                            onFocus={(e) => scrollFieldToTop(e.currentTarget)}
                             onBlur={() =>
                               setTouchedFields((current) => ({
                                 ...current,
@@ -907,99 +990,110 @@ export default function CartPage() {
                             Избери офис
                             <span className="ml-1 text-[#b5445c]">*</span>
                           </span>
-                          <input
-                            type="text"
-                            name="speedy-office-search"
-                            autoComplete="new-password"
-                            autoCorrect="off"
-                            autoCapitalize="none"
-                            spellCheck={false}
-                            data-form-type="other"
-                            data-lpignore="true"
-                            aria-autocomplete="list"
-                            placeholder="Пиши за офис, град или адрес"
-                            value={officeQuery}
-                            onFocus={() => setIsOfficeDropdownOpen(true)}
-                            onChange={(event) => {
-                              setOfficeQuery(event.target.value);
-                              setIsOfficeDropdownOpen(true);
-                              setAddress((current) => ({
-                                ...current,
-                                officeId: "",
-                              }));
-                            }}
-                            onBlur={() =>
-                              window.setTimeout(() => {
-                                setTouchedFields((current) => ({
-                                  ...current,
-                                  officeId: true,
-                                }));
-                                setIsOfficeDropdownOpen(false);
-                              }, 120)
-                            }
-                            className={`h-12 w-full min-w-0 rounded-[18px] border bg-[#faf7fc] px-4 text-[#432855] outline-none transition ${
-                              touchedFields.officeId && fieldErrors.officeId
-                                ? "border-[#d85b73] focus:border-[#d85b73]"
-                                : "border-[#ddd3e4] focus:border-[#9f79ac]"
-                            }`}
-                          />
+                          <div ref={officeDropdownRef} className="relative">
+                            <button
+                              type="button"
+                              aria-haspopup="listbox"
+                              aria-expanded={isOfficeDropdownOpen}
+                              onClick={() => setIsOfficeDropdownOpen((current) => !current)}
+                              className={`flex h-12 w-full min-w-0 items-center justify-between gap-3 rounded-[18px] border bg-[#faf7fc] px-4 text-left text-[#432855] outline-none transition ${
+                                touchedFields.officeId && fieldErrors.officeId
+                                  ? "border-[#d85b73]"
+                                  : "border-[#ddd3e4]"
+                              }`}
+                            >
+                              <span className={address.officeId ? "text-[#432855]" : "text-[#8f72a7]"}>
+                                {selectedSpeedyOffice
+                                  ? [selectedSpeedyOffice.address.siteName, selectedSpeedyOffice.address.fullAddressString ?? selectedSpeedyOffice.name]
+                                      .filter(Boolean)
+                                      .join(", ")
+                                  : "Избери офис от списъка"}
+                              </span>
+                              <span className="shrink-0 text-[#6b587f]">
+                                <svg aria-hidden="true" viewBox="0 0 20 20" className={`h-4 w-4 transition ${isOfficeDropdownOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M5 8l5 5 5-5" />
+                                </svg>
+                              </span>
+                            </button>
+
+                            {isOfficeDropdownOpen ? (
+                              <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] p-2 shadow-[0_24px_80px_rgba(67,40,85,0.16)]">
+                                <input
+                                  ref={officeSearchInputRef}
+                                  type="text"
+                                  name="speedy-office-filter"
+                                  autoComplete="off"
+                                  autoCorrect="off"
+                                  autoCapitalize="none"
+                                  spellCheck={false}
+                                  data-form-type="other"
+                                  data-lpignore="true"
+                                  placeholder="Търси по офис, град или адрес"
+                                  value={officeQuery}
+                                  onChange={(event) => {
+                                    setOfficeQuery(event.target.value);
+                                    setAddress((current) => ({
+                                      ...current,
+                                      officeId: "",
+                                    }));
+                                    setSelectedSpeedyOffice(null);
+                                  }}
+                                  onFocus={(e) => scrollFieldToTop(e.currentTarget)}
+                                  className="mb-2 h-11 w-full rounded-[14px] border border-[#ddd3e4] bg-white px-4 text-[#432855] outline-none transition focus:border-[#9f79ac]"
+                                />
+
+                                <div className="max-h-64 overflow-y-auto">
+                                  {isLoadingOffices ? (
+                                    <p className="px-2 py-3 text-sm text-[#8f72a7]">Търсене...</p>
+                                  ) : officeQuery.trim().length < 2 ? (
+                                    <p className="px-2 py-3 text-sm text-[#8f72a7]">Въведи поне 2 символа за търсене.</p>
+                                  ) : officeSearchResults.length ? (
+                                    <div className="space-y-2">
+                                      {officeSearchResults.map((office) => (
+                                        <button
+                                          key={office.id}
+                                          type="button"
+                                          onClick={() => {
+                                            setAddress((current) => ({
+                                              ...current,
+                                              officeId: String(office.id),
+                                            }));
+                                            setSelectedSpeedyOffice(office);
+                                            setOfficeQuery("");
+                                            setTouchedFields((current) => ({
+                                              ...current,
+                                              officeId: true,
+                                            }));
+                                            setIsOfficeDropdownOpen(false);
+                                          }}
+                                          className={`flex w-full flex-col rounded-[16px] border px-4 py-3 text-left transition ${
+                                            address.officeId === String(office.id)
+                                              ? "border-[#e4d6ea] bg-white"
+                                              : "border-transparent bg-white/70 hover:border-[#d9cce3]"
+                                          }`}
+                                        >
+                                          <span className="text-sm font-semibold text-[#432855]">
+                                            {office.address.siteName ?? office.name}
+                                          </span>
+                                          <span className="mt-1 text-sm leading-5 text-[#6b587f]">
+                                            {office.address.fullAddressString ?? office.name}
+                                          </span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="px-2 py-3 text-sm text-[#6b587f]">
+                                      Няма намерени офиси.
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ) : null}
+                          </div>
                           {touchedFields.officeId && fieldErrors.officeId ? (
                             <span className="text-xs font-medium text-[#c04e65]">
                               {fieldErrors.officeId}
                             </span>
-                          ) : null}
-
-                          {isOfficeDropdownOpen ? (
-                            <div className="max-h-64 overflow-y-auto rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] p-2">
-                              {isLoadingOffices ? (
-                                <p className="px-2 py-3 text-sm text-[#8f72a7]">Търсене...</p>
-                              ) : officeQuery.trim().length < 2 ? (
-                                <p className="px-2 py-3 text-sm text-[#8f72a7]">Въведи поне 2 символа за търсене.</p>
-                              ) : officeSearchResults.length ? (
-                                <div className="space-y-2">
-                                  {officeSearchResults.map((office) => (
-                                    <button
-                                      key={office.id}
-                                      type="button"
-                                      onMouseDown={(event) => event.preventDefault()}
-                                      onClick={() => {
-                                        setAddress((current) => ({
-                                          ...current,
-                                          officeId: String(office.id),
-                                        }));
-                                        setSelectedSpeedyOffice(office);
-                                        setOfficeQuery(
-                                          [office.address.siteName, office.address.fullAddressString ?? office.name]
-                                            .filter(Boolean)
-                                            .join(", "),
-                                        );
-                                        setTouchedFields((current) => ({
-                                          ...current,
-                                          officeId: true,
-                                        }));
-                                        setIsOfficeDropdownOpen(false);
-                                      }}
-                                      className={`flex w-full flex-col rounded-[16px] border px-4 py-3 text-left transition ${
-                                        address.officeId === String(office.id)
-                                          ? "border-[#9f79ac] bg-white"
-                                          : "border-transparent bg-white/70 hover:border-[#d9cce3]"
-                                      }`}
-                                    >
-                                      <span className="text-sm font-semibold text-[#432855]">
-                                        {office.address.siteName ?? office.name}
-                                      </span>
-                                      <span className="mt-1 text-sm leading-5 text-[#6b587f]">
-                                        {office.address.fullAddressString ?? office.name}
-                                      </span>
-                                    </button>
-                                  ))}
-                                </div>
-                              ) : (
-                                <p className="px-2 py-3 text-sm text-[#6b587f]">
-                                  Няма намерени офиси.
-                                </p>
-                              )}
-                            </div>
                           ) : null}
                         </label>
                       </>
@@ -1022,6 +1116,7 @@ export default function CartPage() {
                               addressLine: event.target.value,
                             }))
                           }
+                          onFocus={(e) => scrollFieldToTop(e.currentTarget)}
                           onBlur={() =>
                             setTouchedFields((current) => ({
                               ...current,
@@ -1052,6 +1147,7 @@ export default function CartPage() {
                             notes: event.target.value,
                           }))
                         }
+                        onFocus={(e) => scrollFieldToTop(e.currentTarget)}
                         placeholder="По желание: вход, етаж, час за доставка или друга важна информация."
                         rows={4}
                         className="rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] px-4 py-3 text-[#432855] outline-none transition focus:border-[#9f79ac]"
@@ -1150,38 +1246,6 @@ export default function CartPage() {
 
             {!orderId && cartItems.length ? (
               <aside className="border-y border-[#d8d0de] bg-white py-6">
-                <Link
-                  href="/products"
-                  className={`mb-5 flex items-center gap-4 rounded-[18px] border px-4 py-3.5 transition ${
-                    isFreeShipping
-                      ? "border-[#3a9e52] bg-[#f4fbf5] hover:bg-[#edf7ef]"
-                      : "border-[#d4b44a] bg-[#fdf9ee] hover:bg-[#faf4dc]"
-                  }`}
-                >
-                  <span
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
-                      isFreeShipping
-                        ? "bg-[linear-gradient(100deg,#2e7d65_0%,#1a5540_100%)] shadow-[0_0_14px_5px_rgba(58,158,82,0.4)]"
-                        : "bg-[linear-gradient(100deg,#c8a020_0%,#a07810_100%)] shadow-[0_0_14px_5px_rgba(200,160,32,0.45)]"
-                    } text-white`}
-                  >
-                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M1 3h13v13H1zM14 8h4l3 3v5h-7V8z" />
-                      <circle cx="5.5" cy="18.5" r="2.5" />
-                      <circle cx="18.5" cy="18.5" r="2.5" />
-                    </svg>
-                  </span>
-                  <span className="flex flex-col gap-0.5">
-                    <span className={`text-sm font-semibold ${isFreeShipping ? "text-[#1a5c30]" : "text-[#7a5c10]"}`}>
-                      {isFreeShipping
-                        ? "Безплатна доставка!"
-                        : `Остават €${(FREE_SHIPPING_THRESHOLD_EUR - subtotal).toFixed(2)} до безплатна доставка`}
-                    </span>
-                    <span className={`text-xs ${isFreeShipping ? "text-[#3a7a50]" : "text-[#9a7820]"}`}>
-                      {isFreeShipping ? "Добавена е безплатна доставка за вашата поръчка." : "Добави още продукти и спести от доставката."}
-                    </span>
-                  </span>
-                </Link>
                 <h2 className="font-serif text-3xl text-[#432855]">Обобщение</h2>
                 <div className="mt-5 space-y-3 text-[#5f4b73]">
                   <div className="flex items-center justify-between gap-4">
@@ -1215,6 +1279,41 @@ export default function CartPage() {
               <p className="mt-3 text-xs leading-5 text-[#9a87b0]">
                 Курс на превалутиране: €1 = {BGN_TO_EUR.toFixed(5)} лв. Възможно е незначително разминаване между крайните цени в лева поради закръгляне при превалутирането.
               </p>
+            ) : null}
+
+            {!orderId && cartItems.length ? (
+              <Link
+                href="/products"
+                className={`mt-2 flex items-center gap-4 rounded-[18px] border px-4 py-3.5 transition ${
+                  isFreeShipping
+                    ? "border-[#3a9e52] bg-[#f4fbf5] hover:bg-[#edf7ef]"
+                    : "border-[#d4b44a] bg-[#fdf9ee] hover:bg-[#faf4dc]"
+                }`}
+              >
+                <span
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
+                    isFreeShipping
+                      ? "bg-[linear-gradient(100deg,#2e7d65_0%,#1a5540_100%)] shadow-[0_0_14px_5px_rgba(58,158,82,0.4)]"
+                      : "bg-[linear-gradient(100deg,#c8a020_0%,#a07810_100%)] shadow-[0_0_14px_5px_rgba(200,160,32,0.45)]"
+                  } text-white`}
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 3h13v13H1zM14 8h4l3 3v5h-7V8z" />
+                    <circle cx="5.5" cy="18.5" r="2.5" />
+                    <circle cx="18.5" cy="18.5" r="2.5" />
+                  </svg>
+                </span>
+                <span className="flex flex-col gap-0.5">
+                  <span className={`text-sm font-semibold ${isFreeShipping ? "text-[#1a5c30]" : "text-[#7a5c10]"}`}>
+                    {isFreeShipping
+                      ? "Безплатна доставка!"
+                      : `Остават €${(FREE_SHIPPING_THRESHOLD_EUR - subtotal).toFixed(2)} до безплатна доставка`}
+                  </span>
+                  <span className={`text-xs ${isFreeShipping ? "text-[#3a7a50]" : "text-[#9a7820]"}`}>
+                    {isFreeShipping ? "Добавена е безплатна доставка за вашата поръчка." : "Добави още продукти и спести от доставката."}
+                  </span>
+                </span>
+              </Link>
             ) : null}
 
             <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:flex-wrap">

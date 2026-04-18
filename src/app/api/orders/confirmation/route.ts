@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createOrderEmail } from "@/lib/order-mail/email-template";
 import { createMailer, getSender } from "@/lib/order-mail/mailer";
+import { getProductById } from "@/data/products";
 
 export const runtime = "nodejs";
 
@@ -18,7 +19,7 @@ type OrderRequestBody = {
     notes?: string;
   };
   items?: Array<{
-    id?: string;
+    id?: string | number;
     name?: string;
     packaging?: string;
     imageUrl?: string;
@@ -34,6 +35,77 @@ type OrderRequestBody = {
   status?: string;
   createdAt?: string;
 };
+
+function resolveSiteUrl(request: Request) {
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const host = forwardedHost || request.headers.get("host");
+
+  if (host) {
+    const protocol =
+      forwardedProto || (host.includes("localhost") || host.startsWith("192.168.") ? "http" : "https");
+    return `${protocol}://${host}`;
+  }
+
+  return new URL(request.url).origin;
+}
+
+function normalizeProductId(value: string | number | undefined) {
+  if (typeof value === "number" && Number.isInteger(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isInteger(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
+function toAbsoluteUrl(siteUrl: string, value?: string) {
+  if (!value) {
+    return undefined;
+  }
+
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return value;
+  }
+
+  return value.startsWith("/") ? `${siteUrl}${value}` : `${siteUrl}/${value}`;
+}
+
+function resolveProductImageUrl(siteUrl: string, item: { id?: string | number; imageUrl?: string }) {
+  const requestImageUrl = toAbsoluteUrl(siteUrl, item.imageUrl);
+
+  if (requestImageUrl) {
+    return requestImageUrl;
+  }
+
+  const productId = normalizeProductId(item.id);
+
+  if (productId === null) {
+    return undefined;
+  }
+
+  const product = getProductById(productId);
+  const primaryImage = product?.imageSrc[0];
+
+  if (typeof primaryImage === "string") {
+    return toAbsoluteUrl(siteUrl, primaryImage);
+  }
+
+  if (
+    typeof primaryImage === "object" &&
+    primaryImage !== null &&
+    "src" in primaryImage &&
+    typeof primaryImage.src === "string"
+  ) {
+    return toAbsoluteUrl(siteUrl, primaryImage.src);
+  }
+
+  return undefined;
+}
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -76,6 +148,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    const siteUrl = resolveSiteUrl(request);
     const transporter = createMailer();
     const normalizedStatus = body.status || "Потвърдена";
     const normalizedCreatedAt = body.createdAt || new Date().toLocaleString("bg-BG");
@@ -92,9 +165,11 @@ export async function POST(request: Request) {
         notes: body.delivery?.notes,
       },
       items: body.items!.map((item) => ({
+        id: item.id,
         name: item.name!,
         packaging: item.packaging!,
-        imageUrl: item.imageUrl,
+        imageUrl: resolveProductImageUrl(siteUrl, item),
+        productUrl: item.id ? `${siteUrl}/products/${item.id}` : undefined,
         quantity: item.quantity!,
         unitPrice: item.unitPrice!,
         totalPrice: item.totalPrice!,
