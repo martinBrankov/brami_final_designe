@@ -1022,7 +1022,7 @@ export default function CartPage() {
                                   ref={officeSearchInputRef}
                                   type="text"
                                   name="speedy-office-filter"
-                                  autoComplete="off"
+                                  autoComplete="new-password"
                                   autoCorrect="off"
                                   autoCapitalize="none"
                                   spellCheck={false}
