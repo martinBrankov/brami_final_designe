@@ -41,7 +41,7 @@ const brandOptions: Array<{
   label: string;
 }> = [
   { value: "brami", label: "Brami" },
-  { value: "voditsa", label: "voditsa" },
+  { value: "Voditsa", label: "Voditsa" },
 ];
 
 const badgeOptions: Array<{

@@ -186,9 +186,14 @@ export function BottomBar() {
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col gap-2 border-t border-[#6f4f88] pt-5 text-xs text-[#d8c7e4] sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2026 Brami. Всички права запазени.</p>
-          <p>Създадено за по-лесно пазаруване и ясна продуктова информация.</p>
+        <div className="mt-8 border-t border-[#6f4f88] pt-5 text-xs text-[#d8c7e4]">
+          <p className="mb-3 leading-5 text-[#c9b6d9]">
+            Ние работим със Спиди. Плащанията се извършват чрез Пощенски паричен превод / Наложен платеж.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p>© 2026 Brami. Всички права запазени.</p>
+            <p>Създадено за по-лесно пазаруване и ясна продуктова информация.</p>
+          </div>
         </div>
       </div>
     </footer>

@@ -46,7 +46,7 @@ const sizeStyles = {
     title:
       "font-serif text-[2.35rem] leading-[1.02] text-[#432855] sm:text-[3.25rem] lg:text-[4rem]",
     description:
-      "mt-5 max-w-xl text-base leading-8 text-[#6b587f] sm:text-[1.05rem]",
+      "mt-5 max-w-xl text-base leading-6 text-[#6b587f] sm:text-[1.05rem]",
   },
 } as const;
 

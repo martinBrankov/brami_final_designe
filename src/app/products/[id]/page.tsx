@@ -18,7 +18,7 @@ import {
   getProductsByIds,
   products,
 } from "@/data/products";
-import homeScreenImgMobile from "@/assets/images/homeScreenImgMobile.jpg";
+import homeScreenImgMobile from "@/assets/images/homeScreenImgMobile.png";
 
 const fallbackSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://brami.shop";
 
