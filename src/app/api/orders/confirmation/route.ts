@@ -165,11 +165,11 @@ export async function POST(request: Request) {
         notes: body.delivery?.notes,
       },
       items: body.items!.map((item) => ({
-        id: item.id,
+        id: item.id != null ? String(item.id) : undefined,
         name: item.name!,
         packaging: item.packaging!,
         imageUrl: resolveProductImageUrl(siteUrl, item),
-        productUrl: item.id ? `${siteUrl}/products/${item.id}` : undefined,
+        productUrl: item.id != null ? `${siteUrl}/products/${item.id}` : undefined,
         quantity: item.quantity!,
         unitPrice: item.unitPrice!,
         totalPrice: item.totalPrice!,
