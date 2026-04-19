@@ -20,7 +20,7 @@ export function IconCircleButton({
       aria-label={label}
       className={`inline-flex items-center justify-center rounded-full text-[#8f72a7] transition hover:bg-[#f2e8f6] hover:text-[#432855] ${className}`}
     >
-      <span className="inline-flex items-center justify-center leading-none">
+      <span className="inline-flex translate-y-px items-center justify-center leading-none">
         {children}
       </span>
     </button>

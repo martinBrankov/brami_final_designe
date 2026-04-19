@@ -457,7 +457,7 @@ export function Navbar() {
                   onClick={handleSearchClose}
                   className="ml-auto flex h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#f1e8f5]"
                 >
-                  <span className="text-2xl leading-none">{"\u00d7"}</span>
+                  <svg viewBox="0 0 14 14" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg>
                 </button>
               </div>
               <form onSubmit={handleSearchSubmit} className="flex items-center gap-3 sm:flex-col sm:items-stretch">
@@ -486,7 +486,7 @@ export function Navbar() {
                   onClick={handleSearchClose}
                   className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#ddd3e4] bg-[#faf7fc] text-[#6f5587] transition hover:border-[#cdbad9] hover:bg-[#f4edf8] hover:text-[#432855] sm:hidden"
                 >
-                  <span className="text-[1.35rem] leading-none">{"\u00d7"}</span>
+                  <svg viewBox="0 0 14 14" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg>
                 </button>
                 <button
                   type="submit"
@@ -577,7 +577,7 @@ export function Navbar() {
                 onClick={() => setIsMenuOpen(false)}
                 className="flex h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#f1e8f5]"
               >
-                <span className="text-2xl leading-none">{"\u00d7"}</span>
+                <svg viewBox="0 0 14 14" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg>
               </button>
             </div>
 
@@ -587,7 +587,7 @@ export function Navbar() {
               onClick={() => setIsMenuOpen(false)}
               className={floatingCloseButtonClassName}
             >
-              <span className="text-2xl leading-none">{"\u00d7"}</span>
+              <svg viewBox="0 0 14 14" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg>
             </button>
 
             <div className={menuContentClassName}>
