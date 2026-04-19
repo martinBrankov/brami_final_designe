@@ -42,13 +42,12 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div className="relative min-h-[320px] border-t border-[#d8d0de] lg:min-h-full lg:border-t-0">
+          <div className="border-t border-[#d8d0de] lg:border-t-0">
             <Image
               src={garden}
               alt="Градина с насаждения за натурална козметика"
-              fill
               priority
-              className="object-cover"
+              className="h-auto w-full object-cover"
             />
           </div>
         </div>
@@ -56,12 +55,11 @@ export default function AboutPage() {
 
       <section className="w-full border-b border-[#d8d0de] bg-[#fbf8ff]">
         <div className="grid lg:grid-cols-2">
-          <div className="relative order-2 min-h-[320px] border-t border-[#d8d0de] lg:order-none lg:min-h-[460px] lg:border-t-0">
+          <div className="order-2 border-t border-[#d8d0de] lg:order-none lg:border-t-0">
             <Image
               src={saffron}
               alt="Шафран и натурални съставки"
-              fill
-              className="object-cover"
+              className="h-auto w-full object-cover"
             />
           </div>
 
@@ -116,12 +114,11 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div className="relative min-h-[320px] border-t border-[#d8d0de] lg:min-h-[460px] lg:border-t-0">
+          <div className="border-t border-[#d8d0de] lg:border-t-0">
             <Image
               src={addelaSunny}
               alt="Продукти BRAMI"
-              fill
-              className="object-cover"
+              className="h-auto w-full object-cover"
             />
           </div>
         </div>

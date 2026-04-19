@@ -32,7 +32,7 @@ export type Product = {
   category: ("hair" | "body" | "face")[];
   // Audience tags used by the product-list filter: women, men, unisex.
   audience: ("women" | "men" | "unisex")[];
-  brand: "brami" | "vodica" | "other";
+  brand: "brami" | "voditsa" | "other";
   badge: "bestseller" | "sale" | "new" | "favorite" | "featured";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   imageSrc: any[];
@@ -75,7 +75,7 @@ const allowedAudiences = new Set<Product["audience"][number]>([
   "unisex",
 ]);
 
-const allowedBrands = new Set<Product["brand"]>(["brami", "vodica", "other"]);
+const allowedBrands = new Set<Product["brand"]>(["brami", "voditsa", "other"]);
 const allowedBadges = new Set<Product["badge"]>([
   "bestseller",
   "sale",
