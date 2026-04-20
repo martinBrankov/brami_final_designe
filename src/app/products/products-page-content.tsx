@@ -456,7 +456,7 @@ export function ProductsPageContent() {
               <ProductCard
                 key={product.id}
                 product={product}
-                badge={getProductBadgeLabel(product.badge)}
+                badge={getProductBadgeLabel(product.badge, product.discountPercent)}
                 compact
                 className="w-full max-w-[168px] justify-self-center min-[640px]:w-[198px] min-[640px]:max-w-[198px]"
               />

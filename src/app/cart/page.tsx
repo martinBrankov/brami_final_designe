@@ -199,7 +199,10 @@ export default function CartPage() {
             return null;
           }
 
-          const unitPrice = parseEurPrice(product.price);
+          const originalPrice = parseEurPrice(product.price);
+          const unitPrice = product.badge === "sale" && product.discountPercent
+            ? originalPrice * (1 - product.discountPercent / 100)
+            : originalPrice;
 
           return {
             ...item,

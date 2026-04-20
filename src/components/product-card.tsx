@@ -23,6 +23,7 @@ const BADGE_GRADIENTS: Record<Product["badge"], string> = {
   new:        "linear-gradient(100deg,#2e7d46 0%,#1a5c30 100%)",
   favorite:   "linear-gradient(100deg,#e07db5 0%,#b84d87 100%)",
   featured:   "linear-gradient(100deg,#7e9fda 0%,#4a6db8 100%)",
+  none:       "",
 };
 
 function parseBgnPrice(price: string) {
@@ -122,13 +123,14 @@ export function ProductCard({
   const productImage = product.imageSrc[0];
   const detailsHref = `/products/${product.id}`;
   const favorite = isFavorite(product.id);
-  const currentPriceEuro = parseEuroPrice(product.price);
-  const currentPriceBgn = parseBgnPrice(product.price);
+  const originalPriceEuro = parseEuroPrice(product.price);
+  const originalPriceBgn = parseBgnPrice(product.price);
   const isOnSale = product.badge === "sale";
-  const oldPriceEuro =
-    isOnSale && currentPriceEuro ? currentPriceEuro / 0.8 : null;
-  const oldPriceBgn =
-    isOnSale && currentPriceBgn ? currentPriceBgn / 0.8 : null;
+  const discountFactor = isOnSale && product.discountPercent ? 1 - product.discountPercent / 100 : 0.8;
+  const currentPriceEuro = isOnSale && originalPriceEuro ? originalPriceEuro * discountFactor : originalPriceEuro;
+  const currentPriceBgn = isOnSale && originalPriceBgn ? originalPriceBgn * discountFactor : originalPriceBgn;
+  const oldPriceEuro = isOnSale ? originalPriceEuro : null;
+  const oldPriceBgn = isOnSale ? originalPriceBgn : null;
 
   return (
     <article
@@ -159,16 +161,18 @@ export function ProductCard({
         className="flex flex-1 flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6c3f8d] focus-visible:ring-offset-2"
       >
         <div className="relative overflow-hidden border-b border-[#e5e0e8] bg-[linear-gradient(180deg,#f2f2f6_0%,#e8e8ee_100%)]">
-          <span
-            style={{ background: BADGE_GRADIENTS[product.badge] }}
-            className={`absolute z-20 inline-flex rounded-full font-semibold text-white ${
-              compact
-                ? "left-2.5 top-2.5 px-2 py-0.5 text-[10px] sm:left-3 sm:top-3 sm:px-2.5 sm:py-1 sm:text-[11px]"
-                : "left-4 top-4 px-3 py-1 text-xs"
-            }`}
-          >
-            {badge}
-          </span>
+          {product.badge !== "none" ? (
+            <span
+              style={{ background: BADGE_GRADIENTS[product.badge] }}
+              className={`absolute z-20 inline-flex rounded-full font-semibold text-white ${
+                compact
+                  ? "left-2.5 top-2.5 px-2 py-0.5 text-[10px] sm:left-3 sm:top-3 sm:px-2.5 sm:py-1 sm:text-[11px]"
+                  : "left-4 top-4 px-3 py-1 text-xs"
+              }`}
+            >
+              {badge}
+            </span>
+          ) : null}
           <div
             className={`relative overflow-hidden bg-[#f2f2f6] ${
               compact ? "pt-9 sm:pt-10" : "pt-12"

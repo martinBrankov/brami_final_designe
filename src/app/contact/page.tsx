@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   SectionIntro,
   contentSectionClassName,
@@ -104,12 +105,12 @@ const contactItems = [
   },
   {
     title: "Имейл",
-    value: "info@brami-trade.com",
+    value: "info@brami.shop",
     icon: <MailIcon />,
   },
   {
     title: "Продажби",
-    value: "sales@brami-trade.com",
+    value: "sales@brami.shop",
     icon: <MailIcon />,
   },
 ];
@@ -210,6 +211,15 @@ export default function ContactPage() {
         <div className="border-t border-[#d8d0de] bg-[#f8f4fc] px-6 py-8 sm:px-10 lg:px-14">
           <ContactForm />
         </div>
+      </section>
+
+      <section className="w-full border-b border-[#d8d0de] bg-white px-6 py-8 sm:px-10 lg:px-14">
+        <p className="text-sm text-[#6b587f]">
+          Желаете да се откажете от поръчка?{" "}
+          <Link href="/cancellation-form" className="font-medium text-[#432855] underline underline-offset-2 transition hover:text-[#6c3f8d]">
+            Формуляр за отказ от договор
+          </Link>
+        </p>
       </section>
     </main>
   );

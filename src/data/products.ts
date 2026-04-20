@@ -33,7 +33,8 @@ export type Product = {
   // Audience tags used by the product-list filter: women, men, unisex.
   audience: ("women" | "men" | "unisex")[];
   brand: "brami" | "Voditsa" | "other";
-  badge: "bestseller" | "sale" | "new" | "favorite" | "featured";
+  badge: "bestseller" | "sale" | "new" | "favorite" | "featured" | "none";
+  discountPercent?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   imageSrc: any[];
   checkboxInfo: string[];
@@ -53,6 +54,7 @@ type ProductJson = {
   audience?: string[];
   brand: string;
   badge: string;
+  discountPercent?: number;
   imageSrc: unknown[];
   checkboxInfo?: string[];
   price: string;
@@ -60,7 +62,7 @@ type ProductJson = {
   weight?: number;
   rating: number;
   comments: Comment[];
-  description: string;
+  description?: string;
   relatedProductIds?: number[];
 };
 
@@ -82,6 +84,7 @@ const allowedBadges = new Set<Product["badge"]>([
   "new",
   "favorite",
   "featured",
+  "none",
 ]);
 const unicodeToByte = new Map<string, number>();
 
@@ -117,9 +120,9 @@ for (let index = 0; index < 256; index += 1) {
   }
 }
 
-function fixMojibake(value: string): string {
-  if (!/[РСЃЎҐВ]/.test(value)) {
-    return value;
+function fixMojibake(value: string | undefined): string {
+  if (!value || !/[РСЃЎҐВ]/.test(value)) {
+    return value || "";
   }
 
   const bytes: number[] = [];
@@ -189,7 +192,7 @@ function parseBrand(brand: string): Product["brand"] {
 function parseBadge(badge: string): Product["badge"] {
   return allowedBadges.has(badge as Product["badge"])
     ? (badge as Product["badge"])
-    : "featured";
+    : "none";
 }
 
 function parseImageSrc(imageSrc: unknown[]): Product["imageSrc"] {
@@ -231,6 +234,7 @@ function parseProduct(product: ProductJson): Product {
     audience: parseAudience(product.audience),
     brand: parseBrand(product.brand),
     badge: parseBadge(product.badge),
+    discountPercent: typeof product.discountPercent === "number" ? product.discountPercent : undefined,
     imageSrc: parseImageSrc(product.imageSrc),
     checkboxInfo: parseCheckboxInfo(product.checkboxInfo),
     price: fixMojibake(product.price),
@@ -247,12 +251,12 @@ export const products: Product[] = (productsJson as ProductJson[]).map(
   parseProduct,
 );
 
-export function getProductBadgeLabel(badge: Product["badge"]): string {
+export function getProductBadgeLabel(badge: Product["badge"], discountPercent?: number): string {
   switch (badge) {
     case "bestseller":
       return "Най-продаван";
     case "sale":
-      return "-20%";
+      return discountPercent ? `-${discountPercent}%` : "-20%";
     case "new":
       return "Нов";
     case "favorite":

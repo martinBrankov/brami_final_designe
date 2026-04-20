@@ -78,6 +78,7 @@ const helpLinks = [
   { href: "/privacy-policy", label: "Политика за лични данни" },
   { href: "/terms", label: "Общи условия" },
   { href: "/delivery-returns", label: "Доставка и връщане" },
+  { href: "/cancellation-form", label: "Формуляр за отказ" },
 ];
 
 const socialLinks = [
@@ -152,12 +153,12 @@ export function BottomBar() {
               </p>
               <div className="mt-4 flex flex-col gap-3 text-sm text-white">
                 <a
-                  href="mailto:info@brami-trade.com"
+                  href="mailto:info@brami.shop"
                   className="inline-flex items-start gap-2 transition hover:text-[#eadcf3]"
                 >
                   <MailIcon />
                   <span className="whitespace-nowrap leading-6">
-                    info@brami-trade.com
+                    info@brami.shop
                   </span>
                 </a>
                 <a

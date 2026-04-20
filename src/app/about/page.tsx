@@ -8,6 +8,9 @@ const values = [
   "Натурални съставки",
   "Деликатна грижа",
   "Чисти формули",
+  "Отлична биосъвместимост с дермата",
+  "„Меки“ консерванти, които се срещат в природата - Зелен стандарт в натуралната козметика", 
+  "Естествени ароматни компоненти"
 ];
 
 export default function AboutPage() {
@@ -24,15 +27,15 @@ export default function AboutPage() {
                 Българска грижа, вдъхновена от природата
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-8 text-[#6b587f]">
-                BRAMI съчетава внимателно подбрани съставки, меко усещане върху
+                Brami съчетава внимателно подбрани съставки, меко усещане върху
                 кожата и чист визуален език. Създаваме продукти, които носят
                 усещане за грижа, спокойствие и ежедневен комфорт.
               </p>
 
               <ul className="mt-8 space-y-2">
                 {values.map((value) => (
-                  <li key={value} className="flex items-center gap-2.5 text-sm font-medium text-[#432855]">
-                    <svg viewBox="0 0 10 8" className="h-3 w-3 shrink-0 text-[#6c3f8d]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <li key={value} className="flex items-baseline gap-2.5 text-sm font-medium text-[#432855]">
+                    <svg viewBox="0 0 10 8" className="h-3 w-3 shrink-0 translate-y-[1px] text-[#6c3f8d]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M1 4l3 3 5-6" />
                     </svg>
                     {value}
@@ -93,7 +96,7 @@ export default function AboutPage() {
           <div className="flex items-center px-6 py-14 sm:px-10 lg:px-14 lg:py-16">
             <div className="max-w-2xl">
               <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[#8f72a7]">
-                BRAMI
+                Brami
               </p>
               <h2 className="mt-4 font-serif text-3xl leading-tight text-[#432855] sm:text-4xl">
                 Грижа, която изглежда премиум и остава близка до природата
@@ -106,7 +109,7 @@ export default function AboutPage() {
                   употреба.
                 </p>
                 <p>
-                  Развиваме BRAMI като марка с ясен характер: мека естетика,
+                  Развиваме Brami като марка с ясен характер: мека естетика,
                   внимателен подбор на съставки и продукти, които създават
                   усещане за качество още от първия допир.
                 </p>
@@ -117,7 +120,7 @@ export default function AboutPage() {
           <div className="border-t border-[#d8d0de] lg:border-t-0">
             <Image
               src={addelaSunny}
-              alt="Продукти BRAMI"
+              alt="Продукти Brami"
               className="h-auto w-full object-cover"
             />
           </div>

@@ -226,16 +226,14 @@ export default async function ProductDetailPage({
   const categoryHref = primaryCategory
     ? `/products?category=${primaryCategory}`
     : "/products";
-  const currentPriceEuro = parseEuroPrice(product.price);
-  const currentPriceBgn = parseBgnPrice(product.price);
-  const oldPriceEuro =
-    product.badge === "sale" && currentPriceEuro
-      ? currentPriceEuro / 0.8
-      : null;
-  const oldPriceBgn =
-    product.badge === "sale" && currentPriceBgn
-      ? currentPriceBgn / 0.8
-      : null;
+  const originalPriceEuro = parseEuroPrice(product.price);
+  const originalPriceBgn = parseBgnPrice(product.price);
+  const isOnSale = product.badge === "sale";
+  const discountFactor = isOnSale && product.discountPercent ? 1 - product.discountPercent / 100 : 0.8;
+  const currentPriceEuro = isOnSale && originalPriceEuro ? originalPriceEuro * discountFactor : originalPriceEuro;
+  const currentPriceBgn = isOnSale && originalPriceBgn ? originalPriceBgn * discountFactor : originalPriceBgn;
+  const oldPriceEuro = isOnSale ? originalPriceEuro : null;
+  const oldPriceBgn = isOnSale ? originalPriceBgn : null;
   const relatedProducts = getProductsByIds(product.relatedProductIds).filter(
     (relatedProduct) => relatedProduct.id !== product.id,
   );
@@ -271,9 +269,11 @@ export default async function ProductDetailPage({
           <div className="grid items-start gap-8 xl:grid-cols-[minmax(340px,520px)_minmax(320px,520px)] xl:items-stretch xl:gap-10">
             <div className="relative mx-auto w-full max-w-[400px] overflow-hidden rounded-[28px] bg-white max-xl:mx-0 xl:mx-0 xl:max-w-[600px] [@media(orientation:landscape)_and_(max-width:932px)]:mx-0 [@media(orientation:landscape)_and_(max-width:932px)]:max-w-[200px]">
               <div className="relative rounded-[28px] border border-[#d8d0de] bg-[linear-gradient(180deg,#fcfbfd_0%,#f4eef8_100%)] p-0">
-                <span className="absolute right-4 top-4 z-10 inline-flex rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-3 py-1 text-xs font-semibold text-white">
-                  {getProductBadgeLabel(product.badge)}
-                </span>
+                {product.badge !== "none" ? (
+                  <span className="absolute right-4 top-4 z-10 inline-flex rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-3 py-1 text-xs font-semibold text-white">
+                    {getProductBadgeLabel(product.badge, product.discountPercent)}
+                  </span>
+                ) : null}
                 <div className="overflow-hidden rounded-[28px]">
                   {productImage ? (
                     <Image

@@ -655,10 +655,10 @@ export function Navbar() {
                       Имейл
                     </p>
                     <a
-                      href="mailto:info@brami-trade.com"
+                      href="mailto:info@brami.shop"
                       className="mt-2 block break-words transition hover:text-[#432855]"
                     >
-                      info@brami-trade.com
+                      info@brami.shop
                     </a>
                   </div>
                 </div>

@@ -292,7 +292,7 @@ export function ProductCarouselSection({
               >
                 <ProductCard
                   product={product}
-                  badge={getProductBadgeLabel(product.badge)}
+                  badge={getProductBadgeLabel(product.badge, product.discountPercent)}
                   compact
                   className="w-full max-w-[168px] min-[640px]:w-[198px] min-[640px]:max-w-[198px]"
                 />
