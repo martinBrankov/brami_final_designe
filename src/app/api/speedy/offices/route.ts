@@ -6,8 +6,11 @@ export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
-    const { query } = (await request.json()) as { query?: string };
-    const offices = await searchOffices(query ?? "");
+    const { query, officeType } = (await request.json()) as {
+      query?: string;
+      officeType?: "OFFICE" | "APT";
+    };
+    const offices = await searchOffices(query ?? "", officeType);
     return NextResponse.json({ offices });
   } catch (err) {
     return NextResponse.json(

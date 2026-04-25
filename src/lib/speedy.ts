@@ -28,6 +28,7 @@ async function post<T>(path: string, body: object): Promise<T> {
 export type SpeedyOffice = {
   id: number;
   name: string;
+  type?: "OFFICE" | "APT";
   address: {
     fullAddressString?: string;
     siteName?: string;
@@ -46,7 +47,7 @@ export type SpeedyShipmentInput = {
   recipientName: string;
   recipientPhone: string;
   recipientEmail?: string;
-  deliveryMethod: "office" | "address";
+  deliveryMethod: "office" | "locker" | "address";
   officeId?: number;
   siteId?: number;
   addressLine?: string;
@@ -61,13 +62,24 @@ type OfficeSearchResponse = {
   error?: { message: string };
 };
 
-export async function searchOffices(query: string): Promise<SpeedyOffice[]> {
+type SearchOfficeType = "OFFICE" | "APT";
+
+export async function searchOffices(
+  query: string,
+  officeType?: SearchOfficeType,
+): Promise<SpeedyOffice[]> {
   const data = await post<OfficeSearchResponse>("/location/office", {
     countryId: 100,
     ...(query.trim() ? { name: query.trim() } : {}),
   });
 
-  return data.offices ?? [];
+  const offices = data.offices ?? [];
+
+  if (!officeType) {
+    return offices;
+  }
+
+  return offices.filter((office) => office.type === officeType);
 }
 
 // ─── Price calculation ───────────────────────────────────────────────────────
@@ -129,7 +141,7 @@ export async function createShipment(input: SpeedyShipmentInput): Promise<{
       ...(input.recipientEmail ? { email: input.recipientEmail } : {}),
     };
 
-    if (input.deliveryMethod === "office" && input.officeId) {
+    if ((input.deliveryMethod === "office" || input.deliveryMethod === "locker") && input.officeId) {
       recipient.pickupOfficeId = input.officeId;
     } else {
       recipient.address = {

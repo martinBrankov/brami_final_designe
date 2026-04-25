@@ -19,9 +19,12 @@ import { getProductsByIds, products } from "@/data/products";
 
 const FREE_SHIPPING_THRESHOLD_EUR = 100;
 const HEAVY_THRESHOLD_KG = 3;
+const BGN_TO_EUR = 1.95583;
+const LOCKER_SHIPPING_BGN = 1.27 * BGN_TO_EUR;
 
 const SHIPPING_RATES = {
   office:  { standard: 5.99, heavy: 8.99 },
+  locker:  { standard: LOCKER_SHIPPING_BGN, heavy: LOCKER_SHIPPING_BGN },
   address: { standard: 7.99, heavy: 10.99 },
 };
 
@@ -42,7 +45,7 @@ const initialAddress = {
 };
 
 type AddressField = keyof typeof initialAddress;
-type DeliveryMethod = "address" | "office";
+type DeliveryMethod = "address" | "office" | "locker";
 type OrderEmailStatus = "idle" | "sending" | "sent" | "failed";
 type DeliveryFieldConfig = [
   key: AddressField,
@@ -62,14 +65,13 @@ const contactFields: DeliveryFieldConfig[] = [
 type SpeedyOffice = {
   id: number;
   name: string;
+  type?: "OFFICE" | "APT";
   address: {
     fullAddressString?: string;
     siteName?: string;
     postCode?: string;
   };
 };
-
-const BGN_TO_EUR = 1.95583;
 
 function formatPrice(eur: number) {
   const bgn = eur * BGN_TO_EUR;
@@ -85,6 +87,35 @@ function parseEurPrice(price: string) {
 
   const fallbackMatch = price.match(/(\d+[.,]?\d*)/);
   return fallbackMatch ? Number.parseFloat(fallbackMatch[1].replace(",", ".")) : 0;
+}
+
+function isOfficePickupMethod(method: DeliveryMethod) {
+  return method === "office" || method === "locker";
+}
+
+function getDeliveryMethodLabel(method: DeliveryMethod) {
+  switch (method) {
+    case "office":
+      return "До офис на Спиди";
+    case "locker":
+      return "До автомат на Спиди";
+    default:
+      return "До адрес";
+  }
+}
+
+function getOfficePickerLabel(method: DeliveryMethod) {
+  return method === "locker" ? "Избери автомат на Спиди" : "Избери офис на Спиди";
+}
+
+function getOfficeSearchPlaceholder(method: DeliveryMethod) {
+  return method === "locker"
+    ? "Търси по автомат, град или адрес"
+    : "Търси по офис, град или адрес";
+}
+
+function getOfficeEmptyLabel(method: DeliveryMethod) {
+  return method === "locker" ? "Няма намерени автомати." : "Няма намерени офиси.";
 }
 
 function formatPhoneInput(value: string) {
@@ -220,6 +251,7 @@ export default function CartPage() {
     (sum, item) => sum + item.product.weight * item.quantity,
     0,
   ) + 0.15;
+  const isHeavyShipment = totalWeight > HEAVY_THRESHOLD_KG;
   const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD_EUR;
   const shipping = cartItems.length && !isFreeShipping ? calcShipping(deliveryMethod, totalWeight) / BGN_TO_EUR : 0;
   const total = subtotal + shipping;
@@ -241,6 +273,12 @@ export default function CartPage() {
       setCurrentStep(0);
     }
   }, [cartItems.length, orderId]);
+
+  useEffect(() => {
+    if (deliveryMethod === "locker" && isHeavyShipment) {
+      applyDeliveryMethod("office");
+    }
+  }, [deliveryMethod, isHeavyShipment]);
 
   useEffect(() => {
     if (!isDeliveryDropdownOpen) {
@@ -299,7 +337,10 @@ export default function CartPage() {
         const res = await fetch("/api/speedy/offices", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query }),
+          body: JSON.stringify({
+            query,
+            officeType: deliveryMethod === "locker" ? "APT" : "OFFICE",
+          }),
         });
         const data = (await res.json()) as { offices?: SpeedyOffice[] };
         setOfficeSearchResults(data.offices ?? []);
@@ -314,7 +355,7 @@ export default function CartPage() {
       window.clearTimeout(timeout);
       setIsLoadingOffices(false);
     };
-  }, [officeQuery]);
+  }, [deliveryMethod, officeQuery]);
 
   function getFieldError(field: AddressField, value: string) {
     const trimmedValue = value.trim();
@@ -351,13 +392,15 @@ export default function CartPage() {
 
         return "";
       case "officeId":
-        if (deliveryMethod === "office" && !trimmedValue) {
-          return "Избери офис на Спиди.";
+        if (isOfficePickupMethod(deliveryMethod) && !trimmedValue) {
+          return deliveryMethod === "locker"
+            ? "Избери автомат на Спиди."
+            : "Избери офис на Спиди.";
         }
 
         return "";
       case "city":
-        if (deliveryMethod === "office") {
+        if (isOfficePickupMethod(deliveryMethod)) {
           return "";
         }
 
@@ -367,7 +410,7 @@ export default function CartPage() {
 
         return "";
       case "postcode":
-        if (deliveryMethod === "office") {
+        if (isOfficePickupMethod(deliveryMethod)) {
           return "";
         }
 
@@ -381,7 +424,7 @@ export default function CartPage() {
 
         return "";
       case "addressLine":
-        if (deliveryMethod === "office") {
+        if (isOfficePickupMethod(deliveryMethod)) {
           return "";
         }
 
@@ -438,6 +481,12 @@ export default function CartPage() {
     }));
   }
 
+  const deliveryOptions = [
+    { value: "address" as const, label: "До адрес" },
+    { value: "office" as const, label: "До офис на Спиди" },
+    ...(!isHeavyShipment ? [{ value: "locker" as const, label: "До автомат на Спиди" }] : []),
+  ];
+
   function markAllMandatoryFieldsTouched() {
     setTouchedFields({
       fullName: true,
@@ -446,13 +495,13 @@ export default function CartPage() {
       city: deliveryMethod === "address",
       postcode: deliveryMethod === "address",
       addressLine: deliveryMethod === "address",
-      officeId: deliveryMethod === "office",
+      officeId: isOfficePickupMethod(deliveryMethod),
     });
   }
 
   async function sendOrderConfirmationEmail(generatedOrderId: string) {
     const deliveryDestination =
-      deliveryMethod === "office"
+      isOfficePickupMethod(deliveryMethod)
         ? selectedSpeedyOffice
           ? [
               selectedSpeedyOffice.address.siteName,
@@ -474,7 +523,7 @@ export default function CartPage() {
         email: address.email.trim(),
       },
       delivery: {
-        methodLabel: deliveryMethod === "office" ? "До офис на Спиди" : "До адрес",
+        methodLabel: getDeliveryMethodLabel(deliveryMethod),
         destination: deliveryDestination,
         notes: address.notes.trim(),
       },
@@ -875,7 +924,7 @@ export default function CartPage() {
                           onClick={() => setIsDeliveryDropdownOpen((current) => !current)}
                           className="flex h-12 w-full min-w-0 items-center justify-between gap-3 rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] px-4 text-left text-[#432855] outline-none transition focus:border-[#9f79ac]"
                         >
-                          <span>{deliveryMethod === "office" ? "До офис на Спиди" : "До адрес"}</span>
+                          <span>{getDeliveryMethodLabel(deliveryMethod)}</span>
                           <span className="shrink-0 text-[#6b587f]">
                             <svg aria-hidden="true" viewBox="0 0 20 20" className={`h-4 w-4 transition ${isDeliveryDropdownOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M5 8l5 5 5-5" />
@@ -886,10 +935,7 @@ export default function CartPage() {
                         {isDeliveryDropdownOpen ? (
                           <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] p-2 shadow-[0_24px_80px_rgba(67,40,85,0.16)]">
                             <div className="space-y-2">
-                              {[
-                                { value: "address" as const, label: "До адрес" },
-                                { value: "office" as const, label: "До офис на Спиди" },
-                              ].map((option) => (
+                              {deliveryOptions.map((option) => (
                                 <button
                                   key={option.value}
                                   type="button"
@@ -990,7 +1036,7 @@ export default function CartPage() {
                       <>
                         <label className="sm:col-span-2 min-w-0 flex flex-col gap-2 text-sm font-medium text-[#432855]">
                           <span>
-                            Избери офис
+                            {getOfficePickerLabel(deliveryMethod)}
                             <span className="ml-1 text-[#b5445c]">*</span>
                           </span>
                           <div ref={officeDropdownRef} className="relative">
@@ -1010,7 +1056,7 @@ export default function CartPage() {
                                   ? [selectedSpeedyOffice.address.siteName, selectedSpeedyOffice.address.fullAddressString ?? selectedSpeedyOffice.name]
                                       .filter(Boolean)
                                       .join(", ")
-                                  : "Избери офис от списъка"}
+                                  : `${getOfficePickerLabel(deliveryMethod)} от списъка`}
                               </span>
                               <span className="shrink-0 text-[#6b587f]">
                                 <svg aria-hidden="true" viewBox="0 0 20 20" className={`h-4 w-4 transition ${isOfficeDropdownOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1031,7 +1077,7 @@ export default function CartPage() {
                                   spellCheck={false}
                                   data-form-type="other"
                                   data-lpignore="true"
-                                  placeholder="Търси по офис, град или адрес"
+                                  placeholder={getOfficeSearchPlaceholder(deliveryMethod)}
                                   value={officeQuery}
                                   onChange={(event) => {
                                     setOfficeQuery(event.target.value);
@@ -1086,7 +1132,7 @@ export default function CartPage() {
                                     </div>
                                   ) : (
                                     <p className="px-2 py-3 text-sm text-[#6b587f]">
-                                      Няма намерени офиси.
+                                      {getOfficeEmptyLabel(deliveryMethod)}
                                     </p>
                                   )}
                                 </div>
@@ -1259,7 +1305,7 @@ export default function CartPage() {
                     <span className="flex flex-col gap-0.5">
                       <span>Доставка</span>
                       <span className="text-xs text-[#8f72a7]">
-                        {deliveryMethod === "office" ? "До офис на Спиди" : "До адрес"} · {totalWeight.toFixed(2)} кг
+                        {getDeliveryMethodLabel(deliveryMethod)} · {totalWeight.toFixed(2)} кг
                         {totalWeight > HEAVY_THRESHOLD_KG ? " · тежка пратка" : ""}
                         {isFreeShipping ? " · безплатна" : ""}
                       </span>
