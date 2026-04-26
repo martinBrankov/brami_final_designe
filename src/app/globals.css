@@ -18,3 +18,15 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+.content-protected {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.content-protected input,
+.content-protected textarea,
+.content-protected [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}

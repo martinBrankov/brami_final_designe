@@ -1,4 +1,5 @@
 ﻿import type { ComponentType, SVGProps } from "react";
+import { FREE_SHIPPING_THRESHOLD_EUR } from "@/data/products";
 
 type StripIconProps = SVGProps<SVGSVGElement>;
 type StripIcon = ComponentType<StripIconProps>;
@@ -54,7 +55,7 @@ const defaultItems: InfoStripItem[] = [
   {
     icon: DeliveryIcon,
     title: "Безплатна доставка",
-    text: "над 100 евро",
+    text: `над €${FREE_SHIPPING_THRESHOLD_EUR}`,
   },
   {
     icon: LeafIcon,

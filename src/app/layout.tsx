@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 
-import logoImage from "@/assets/images/logo.png";
 import { CartProvider } from "@/components/cart-provider";
 import { BottomBar } from "@/components/bottom-bar";
 import { CookieConsentBanner } from "@/components/cookie-consent-banner";
 import { FavoritesProvider } from "@/components/favorites-provider";
+import { InteractionGuard } from "@/components/interaction-guard";
 import { Navbar } from "@/components/navbar";
 
 import "./globals.css";
@@ -40,7 +40,7 @@ async function resolveSiteUrl() {
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteUrl = await resolveSiteUrl();
-  const defaultOgImageUrl = new URL(logoImage.src, siteUrl).toString();
+  const defaultOgImageUrl = new URL("/og-logo.png", siteUrl).toString();
 
   return {
     metadataBase: new URL(siteUrl),
@@ -61,8 +61,8 @@ export async function generateMetadata(): Promise<Metadata> {
       images: [
         {
           url: defaultOgImageUrl,
-          width: logoImage.width,
-          height: logoImage.height,
+          width: 300,
+          height: 145,
           alt: "Brami",
         },
       ],
@@ -87,7 +87,8 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="content-protected min-h-full flex flex-col">
+        <InteractionGuard />
         <CartProvider>
           <FavoritesProvider>
             <Navbar />

@@ -15,22 +15,37 @@ import {
   sectionActionClassName,
   sectionPrimaryButtonClassName,
 } from "@/components/section-intro";
-import { getProductsByIds, products } from "@/data/products";
-
-const FREE_SHIPPING_THRESHOLD_EUR = 100;
-const HEAVY_THRESHOLD_KG = 3;
-const BGN_TO_EUR = 1.95583;
-const LOCKER_SHIPPING_BGN = 1.27 * BGN_TO_EUR;
-
-const SHIPPING_RATES = {
-  office:  { standard: 5.99, heavy: 8.99 },
-  locker:  { standard: LOCKER_SHIPPING_BGN, heavy: LOCKER_SHIPPING_BGN },
-  address: { standard: 7.99, heavy: 10.99 },
-};
+import {
+  BGN_TO_EUR,
+  FREE_SHIPPING_THRESHOLD_EUR,
+  HEAVY_THRESHOLD_KG,
+  PACKAGING_WEIGHT_TABLE,
+  SHIPPING_RATES,
+  SHIPPING_RATE_TABLE,
+  getProductsByIds,
+  products,
+} from "@/data/products";
 
 function calcShipping(method: DeliveryMethod, totalWeightKg: number): number {
-  const rates = SHIPPING_RATES[method];
-  return totalWeightKg > HEAVY_THRESHOLD_KG ? rates.heavy : rates.standard;
+  if (method === "locker") {
+    return SHIPPING_RATES.locker.standard;
+  }
+
+  const bracket = SHIPPING_RATE_TABLE[method].find(
+    (entry) => totalWeightKg <= entry.maxWeightKg,
+  );
+  const fallback = SHIPPING_RATE_TABLE[method][SHIPPING_RATE_TABLE[method].length - 1];
+
+  return (bracket ?? fallback).eur * BGN_TO_EUR;
+}
+
+function getPackagingWeightKg(productsWeightKg: number) {
+  const bracket = PACKAGING_WEIGHT_TABLE.find(
+    (entry) => productsWeightKg <= entry.maxWeightKg,
+  );
+  const fallback = PACKAGING_WEIGHT_TABLE[PACKAGING_WEIGHT_TABLE.length - 1];
+
+  return (bracket ?? fallback).packagingWeightKg;
 }
 
 const initialAddress = {
@@ -118,6 +133,10 @@ function getOfficeEmptyLabel(method: DeliveryMethod) {
   return method === "locker" ? "Няма намерени автомати." : "Няма намерени офиси.";
 }
 
+function getSpeedyLocationTypeLabel(type?: SpeedyOffice["type"]) {
+  return type === "APT" ? "Автомат" : "Офис";
+}
+
 function formatPhoneInput(value: string) {
   const sanitizedValue = value.replace(/[^\d+\s]/g, "");
 
@@ -146,12 +165,6 @@ function scrollToPageTop() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
   });
-}
-
-function scrollFieldToTop(el: HTMLElement) {
-  window.setTimeout(() => {
-    el.scrollIntoView({ block: "start", behavior: "smooth" });
-  }, 300);
 }
 
 function getOrderMailEndpoint() {
@@ -247,10 +260,12 @@ export default function CartPage() {
   );
 
   const subtotal = cartItems.reduce((total, item) => total + item.totalPrice, 0);
-  const totalWeight = cartItems.reduce(
+  const productsWeight = cartItems.reduce(
     (sum, item) => sum + item.product.weight * item.quantity,
     0,
-  ) + 0.15;
+  );
+  const packagingWeight = getPackagingWeightKg(productsWeight);
+  const totalWeight = productsWeight + packagingWeight;
   const isHeavyShipment = totalWeight > HEAVY_THRESHOLD_KG;
   const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD_EUR;
   const shipping = cartItems.length && !isFreeShipping ? calcShipping(deliveryMethod, totalWeight) / BGN_TO_EUR : 0;
@@ -668,11 +683,15 @@ export default function CartPage() {
                     <div className="mt-6 space-y-4">
                       {cartItems.map((item) => {
                         const productImage = item.product.imageSrc[0];
+                        const cartImageClassName =
+                          item.product.id === 1
+                            ? "scale-[1.06] object-top"
+                            : "";
 
                         return (
                           <article
                             key={item.product.id}
-                            className="border-b border-[#e4dbea] py-4 last:border-b-0"
+                            className="py-4 md:border-b md:border-[#e4dbea] md:last:border-b-0"
                           >
                             <div className="grid grid-cols-[92px_minmax(0,1fr)] grid-rows-[auto_auto_auto] gap-x-4 gap-y-3 md:hidden">
                               <div className="col-span-2 row-start-1 min-w-0">
@@ -696,15 +715,15 @@ export default function CartPage() {
                                 </p>
                               </div>
 
-                              <div className="col-start-1 row-start-2 w-[92px] shrink-0 overflow-hidden rounded-[18px] border border-[#ece3f2] bg-[#fcf9ff]">
+                              <div className="col-start-1 row-start-2 aspect-square w-[92px] shrink-0 overflow-hidden rounded-[18px] border border-[#ece3f2] bg-[#fcf9ff]">
                                 {productImage ? (
                                   <Image
                                     src={productImage}
                                     alt={item.product.name}
-                                    className="aspect-square w-full object-cover"
+                                    className={`block h-full w-full object-cover ${cartImageClassName}`}
                                   />
                                 ) : (
-                                  <div className="aspect-square w-full bg-[#f3edf7]" />
+                                  <div className="h-full w-full bg-[#f3edf7]" />
                                 )}
                               </div>
 
@@ -744,12 +763,12 @@ export default function CartPage() {
                             </div>
 
                             <div className="hidden min-w-0 items-stretch gap-4 md:flex">
-                              <div className="aspect-square w-[140px] shrink-0 self-end overflow-hidden rounded-[18px] border border-[#ece3f2] bg-[#fcf9ff]">
+                              <div className="aspect-square w-[184px] shrink-0 self-start overflow-hidden rounded-[18px] border border-[#ece3f2] bg-[#fcf9ff] lg:w-[196px]">
                                 {productImage ? (
                                   <Image
                                     src={productImage}
                                     alt={item.product.name}
-                                    className="h-full w-full object-cover"
+                                    className={`block h-full w-full object-cover ${cartImageClassName}`}
                                   />
                                 ) : (
                                   <div className="aspect-square w-full bg-[#f3edf7]" />
@@ -866,7 +885,6 @@ export default function CartPage() {
                               [key]: nextValue,
                             }));
                           }}
-                          onFocus={(e) => scrollFieldToTop(e.currentTarget)}
                           onBlur={() =>
                             setTouchedFields((current) => ({
                               ...current,
@@ -892,14 +910,20 @@ export default function CartPage() {
                       <span className="text-sm font-medium text-[#432855]">Начин на плащане</span>
                       <div className="flex items-center gap-3 pt-1">
                         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#d8d0de] bg-white text-[#6b587f]">
-                          <svg aria-hidden="true" viewBox="0 0 38 24" className="h-[1.35rem] w-[1.7rem]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M1 5h14v11H1z" />
-                            <path d="M15 9h4.5l3 3.5V16H15z" />
-                            <circle cx="5.5" cy="18" r="2" />
-                            <circle cx="19" cy="18" r="2" />
-                            <path d="M25 12h2" strokeWidth="1.4" />
-                            <rect x="28" y="7" width="9" height="6" rx="1" />
-                            <circle cx="32.5" cy="10" r="1.3" />
+                          <svg aria-hidden="true" viewBox="0 0 36 24" className="h-[1.35rem] w-[1.7rem]" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                            <g opacity="0.45" strokeWidth="1.4">
+                              <path d="M20 9h5l3 3v4h-8V9Z" />
+                              <path d="M17 9h3v7h-3" />
+                              <circle cx="22" cy="17.5" r="1.5" />
+                              <circle cx="28" cy="17.5" r="1.5" />
+                            </g>
+                            <g strokeWidth="1.8">
+                              <rect x="3" y="5" width="18" height="11" rx="2.5" />
+                              <circle cx="12" cy="10.5" r="2.5" />
+                              <path d="M6 8.5h1.5M17.5 12.5H19" />
+                              <path d="M24 8.5c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3Z" />
+                              <path d="M27.5 15.5c1.38 0 2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5S25 19.38 25 18s1.12-2.5 2.5-2.5Z" />
+                            </g>
                           </svg>
                         </span>
                         <p className="text-sm leading-5 text-[#5f4b73]">
@@ -975,7 +999,6 @@ export default function CartPage() {
                                 city: event.target.value,
                               }))
                             }
-                            onFocus={(e) => scrollFieldToTop(e.currentTarget)}
                             onBlur={() =>
                               setTouchedFields((current) => ({
                                 ...current,
@@ -1012,7 +1035,6 @@ export default function CartPage() {
                                 postcode: event.target.value.replace(/\D/g, "").slice(0, 10),
                               }))
                             }
-                            onFocus={(e) => scrollFieldToTop(e.currentTarget)}
                             onBlur={() =>
                               setTouchedFields((current) => ({
                                 ...current,
@@ -1087,7 +1109,6 @@ export default function CartPage() {
                                     }));
                                     setSelectedSpeedyOffice(null);
                                   }}
-                                  onFocus={(e) => scrollFieldToTop(e.currentTarget)}
                                   className="mb-2 h-11 w-full rounded-[14px] border border-[#ddd3e4] bg-white px-4 text-[#432855] outline-none transition focus:border-[#9f79ac]"
                                 />
 
@@ -1122,7 +1143,7 @@ export default function CartPage() {
                                           }`}
                                         >
                                           <span className="text-sm font-semibold text-[#432855]">
-                                            {office.address.siteName ?? office.name}
+                                            {(office.address.siteName ?? office.name)} - {getSpeedyLocationTypeLabel(office.type)}
                                           </span>
                                           <span className="mt-1 text-sm leading-5 text-[#6b587f]">
                                             {office.address.fullAddressString ?? office.name}
@@ -1165,7 +1186,6 @@ export default function CartPage() {
                               addressLine: event.target.value,
                             }))
                           }
-                          onFocus={(e) => scrollFieldToTop(e.currentTarget)}
                           onBlur={() =>
                             setTouchedFields((current) => ({
                               ...current,
@@ -1196,7 +1216,6 @@ export default function CartPage() {
                             notes: event.target.value,
                           }))
                         }
-                        onFocus={(e) => scrollFieldToTop(e.currentTarget)}
                         placeholder="По желание: вход, етаж, час за доставка или друга важна информация."
                         rows={4}
                         className="rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] px-4 py-3 text-[#432855] outline-none transition focus:border-[#9f79ac]"
@@ -1325,9 +1344,14 @@ export default function CartPage() {
             ) : null}
 
             {!orderId && cartItems.length ? (
-              <p className="mt-3 text-xs leading-5 text-[#9a87b0]">
-                Курс на превалутиране: €1 = {BGN_TO_EUR.toFixed(5)} лв. Възможно е незначително разминаване между крайните цени в лева поради закръгляне при превалутирането.
-              </p>
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-xs leading-5 text-[#9a87b0]">
+                <li>
+                  Курс на превалутиране: €1 = {BGN_TO_EUR.toFixed(5)} лв. Възможно е незначително разминаване между крайните цени в лева поради закръгляне при превалутирането.
+                </li>
+                <li>
+                  Доставката до автомат на Спиди е налична само за пратки до 3 кг.
+                </li>
+              </ul>
             ) : null}
 
             {!orderId && cartItems.length ? (

@@ -19,6 +19,40 @@ import id17 from "@/assets/images/products/00000017/01.jpg";
 import id18 from "@/assets/images/products/00000018/01.jpg";
 import id19 from "@/assets/images/products/00000019/01.jpg";
 
+export const FREE_SHIPPING_THRESHOLD_EUR = 70;
+export const HEAVY_THRESHOLD_KG = 3;
+export const BGN_TO_EUR = 1.95583;
+export const LOCKER_SHIPPING_BGN = 1.27 * BGN_TO_EUR;
+
+export const SHIPPING_RATE_TABLE = {
+  office: [
+    { maxWeightKg: 1, eur: 2.5 },
+    { maxWeightKg: 3, eur: 2.5 },
+    { maxWeightKg: 6, eur: 3.48 },
+    { maxWeightKg: 10, eur: 4.3 },
+    { maxWeightKg: 20, eur: 7.65 },
+  ],
+  address: [
+    { maxWeightKg: 1, eur: 3.6 },
+    { maxWeightKg: 3, eur: 4.3 },
+    { maxWeightKg: 6, eur: 7.34 },
+    { maxWeightKg: 10, eur: 8.06 },
+    { maxWeightKg: 20, eur: 11.76 },
+  ],
+} as const;
+
+export const PACKAGING_WEIGHT_TABLE = [
+  { maxWeightKg: 1, packagingWeightKg: 0.3 },
+  { maxWeightKg: 3, packagingWeightKg: 0.3 },
+  { maxWeightKg: 6, packagingWeightKg: 0.35 },
+  { maxWeightKg: 10, packagingWeightKg: 0.4 },
+  { maxWeightKg: 20, packagingWeightKg: 0.6 },
+] as const;
+
+export const SHIPPING_RATES = {
+  locker: { standard: LOCKER_SHIPPING_BGN, heavy: LOCKER_SHIPPING_BGN },
+} as const;
+
 export interface Comment {
   name: string;
   comment: string;
