@@ -1,4 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Общи условия",
+  description:
+    "Общи условия за използване на сайта на Brami — поръчки, плащания, доставки, права на потребителите и политика при рекламации.",
+  alternates: { canonical: "/terms" },
+  openGraph: {
+    title: "Общи условия | Brami",
+    description:
+      "Прочети общите условия на Brami за поръчки, доставки, плащания и права на потребителите.",
+    url: "/terms",
+  },
+};
 import {
   SectionIntro,
   contentSectionClassName,

@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: "Формуляр за отказ от договор",
   description:
     "Попълнете и изпратете формуляра за отказ от договор за покупка на стоки от Брами Трейд ЕООД.",
+  robots: { index: false, follow: false },
 };
 
 export default function CancellationFormPage() {

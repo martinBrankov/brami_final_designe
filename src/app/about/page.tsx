@@ -1,6 +1,20 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 
 import addelaSunny from "@/assets/images/about/addelaSunny.jpg";
+
+export const metadata: Metadata = {
+  title: "За нас",
+  description:
+    "Научи повече за Brami — българска козметична марка, вдъхновена от природата. Натурални съставки, чисти формули и деликатна грижа за лице, тяло и коса.",
+  alternates: { canonical: "/about" },
+  openGraph: {
+    title: "За нас | Brami",
+    description:
+      "Brami съчетава натурални съставки, мека текстура и чист визуален език за ежедневна грижа с качество.",
+    url: "/about",
+  },
+};
 import garden from "@/assets/images/about/garden.jpg";
 import saffron from "@/assets/images/about/saffron.jpg";
 
@@ -18,7 +32,7 @@ export default function AboutPage() {
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fbf8fd_0%,_#f3edf7_45%,_#efe6f6_100%)]">
       <section className="w-full border-b border-[#d8d0de] bg-white">
         <div className="grid min-h-[520px] lg:grid-cols-2">
-          <div className="flex items-center px-6 py-14 sm:px-10 lg:px-14 lg:py-20">
+          <div className="flex items-center px-6 pt-14 pb-7 sm:px-10 lg:px-14 lg:pt-20 lg:pb-0">
             <div className="max-w-2xl">
               <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[#8f72a7]">
                 За нас
@@ -93,7 +107,7 @@ export default function AboutPage() {
 
       <section className="w-full bg-white">
         <div className="grid lg:grid-cols-2">
-          <div className="flex items-center px-6 py-14 sm:px-10 lg:px-14 lg:py-16">
+          <div className="flex items-center px-6 pt-14 pb-0 sm:px-10 lg:px-14 lg:pt-16">
             <div className="max-w-2xl">
               <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[#8f72a7]">
                 Brami
@@ -120,7 +134,7 @@ export default function AboutPage() {
           <div className="border-t border-[#d8d0de] lg:border-t-0">
             <Image
               src={addelaSunny}
-              alt="Продукти Brami"
+              alt="Натурална козметика Brami — продукти за лице, тяло и коса"
               className="h-auto w-full object-cover"
             />
           </div>

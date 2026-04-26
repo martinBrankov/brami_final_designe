@@ -238,8 +238,58 @@ export default async function ProductDetailPage({
     (relatedProduct) => relatedProduct.id !== product.id,
   );
 
+  const siteUrl = await resolveSiteUrl();
+  const productImageUrl =
+    typeof productImage === "object" && productImage !== null && "src" in productImage
+      ? new URL(String(productImage.src), siteUrl).toString()
+      : new URL(homeScreenImgMobile.src, siteUrl).toString();
+  const productUrl = `${siteUrl}/products/${product.id}`;
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Начало", item: siteUrl },
+      { "@type": "ListItem", position: 2, name: "Продукти", item: `${siteUrl}/products` },
+      { "@type": "ListItem", position: 3, name: categoryLabel, item: `${siteUrl}${categoryHref}` },
+      { "@type": "ListItem", position: 4, name: product.name, item: productUrl },
+    ],
+  };
+
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    image: productImageUrl,
+    description: getProductShareDescription(product),
+    brand: { "@type": "Brand", name: "Brami" },
+    offers: {
+      "@type": "Offer",
+      url: productUrl,
+      priceCurrency: "BGN",
+      price: currentPriceBgn.toFixed(2),
+      availability: "https://schema.org/InStock",
+      seller: { "@type": "Organization", name: "Brami" },
+    },
+    ...(product.comments.length > 0 && {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: product.rating,
+        reviewCount: product.comments.length,
+      },
+    }),
+  };
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fbf8fd_0%,_#f3edf7_45%,_#efe6f6_100%)]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       <RecentlyViewedTracker productId={product.id} />
       <section className="h-[49px] w-full border-b border-[#ece6f1] bg-white">
         <div className="flex h-full min-w-0 items-center px-6 sm:px-10 lg:px-14">

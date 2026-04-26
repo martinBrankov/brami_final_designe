@@ -1,4 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Контакти",
+  description:
+    "Свържи се с Brami — телефон, имейл, адрес и контактна форма. Работим в работни дни от 09:00 до 18:00.",
+  alternates: { canonical: "/contact" },
+  openGraph: {
+    title: "Контакти | Brami",
+    description:
+      "Свържи се с екипа на Brami за въпроси относно продукти, поръчки, доставки и партньорства.",
+    url: "/contact",
+  },
+};
 import {
   SectionIntro,
   contentSectionClassName,

@@ -1,4 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Политика за личните данни",
+  description:
+    "Политика за личните данни на Brami — информация за събираните данни, целите на обработването, вашите права и използването на бисквитки.",
+  alternates: { canonical: "/privacy-policy" },
+  openGraph: {
+    title: "Политика за личните данни | Brami",
+    description:
+      "Прочети как Brami обработва и защитава личните ти данни при използване на сайта и извършване на поръчки.",
+    url: "/privacy-policy",
+  },
+};
 import {
   SectionIntro,
   contentSectionClassName,

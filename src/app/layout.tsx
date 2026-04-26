@@ -84,10 +84,32 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="bg"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="content-protected min-h-full flex flex-col">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Brami",
+              url: "https://brami.shop",
+              logo: "https://brami.shop/og-logo.png",
+              contactPoint: {
+                "@type": "ContactPoint",
+                telephone: "+359-889-342-781",
+                contactType: "customer service",
+                availableLanguage: "Bulgarian",
+              },
+              sameAs: [
+                "https://www.facebook.com/Bramitrade",
+                "https://www.instagram.com/Bramitrade",
+              ],
+            }),
+          }}
+        />
         <InteractionGuard />
         <CartProvider>
           <FavoritesProvider>

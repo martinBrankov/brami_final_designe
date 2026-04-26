@@ -1,4 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Доставка и връщане",
+  description:
+    "Условия за доставка и връщане на Brami — срокове, методи за доставка, цени и процедура при връщане на продукт.",
+  alternates: { canonical: "/delivery-returns" },
+  openGraph: {
+    title: "Доставка и връщане | Brami",
+    description:
+      "Информация за сроковете и методите за доставка, цените и условията при връщане на продукти от Brami.",
+    url: "/delivery-returns",
+  },
+};
 import {
   SectionIntro,
   contentSectionClassName,
