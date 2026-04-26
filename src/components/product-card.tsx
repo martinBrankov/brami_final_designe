@@ -175,7 +175,7 @@ export function ProductCard({
           ) : null}
           <div
             className={`relative overflow-hidden bg-[#f2f2f6] ${
-              compact ? "pt-9 sm:pt-10" : "pt-12"
+              compact ? "pt-8 sm:pt-10" : "pt-12"
             }`}
           >
             {productImage ? (
@@ -183,9 +183,13 @@ export function ProductCard({
                 <Image
                   src={productImage}
                   alt={product.name}
-                  className="aspect-square w-full object-cover"
+                  className="block aspect-square w-full object-cover"
                 />
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-[linear-gradient(180deg,#f2f2f6_0%,rgba(242,242,246,0.82)_38%,rgba(242,242,246,0)_100%)] sm:h-20" />
+                <div
+                  className={`pointer-events-none absolute inset-x-0 top-0 bg-[linear-gradient(180deg,rgba(248,248,250,0.98)_0%,rgba(248,248,250,0.98)_50%,rgba(248,248,250,0.6)_62%,rgba(248,248,250,0.16)_76%,rgba(248,248,250,0)_90%)] ${
+                    compact ? "h-16 sm:h-20" : "h-24"
+                  }`}
+                />
               </>
             ) : (
               <div className="aspect-square w-full bg-[#f3edf7]" />
