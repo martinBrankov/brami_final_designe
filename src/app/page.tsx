@@ -1,3 +1,6 @@
+import { createHash } from "crypto";
+import { readFileSync } from "fs";
+import { join } from "path";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -5,6 +8,11 @@ import { BestsellersSection } from "@/components/bestsellers-section";
 import { HomeHero } from "@/components/home-hero";
 import { InfoStrip } from "@/components/info-strip";
 import { getMappedProductId } from "@/data/external-product-map";
+
+const ogHash = createHash("md5")
+  .update(readFileSync(join(process.cwd(), "src/assets/images/og-home.jpg")))
+  .digest("hex")
+  .slice(0, 8);
 
 export const metadata: Metadata = {
   title: "Brami — Натурална козметика за лице, тяло и коса",
@@ -18,6 +26,14 @@ export const metadata: Metadata = {
     description:
       "Открий натуралната козметика на Brami — продукти за лице, тяло и коса с чисти формули и деликатна грижа.",
     url: "/",
+    images: [
+      {
+        url: `https://brami.shop/opengraph-image?v=${ogHash}`,
+        width: 1200,
+        height: 630,
+        alt: "Brami — Натурална козметика за лице, тяло и коса",
+      },
+    ],
   },
 };
 
