@@ -163,12 +163,22 @@ export async function generateMetadata({
 
   const productImage = product.imageSrc[0];
   const productShareDescription = getProductShareDescription(product);
-  const productImageUrl =
-    typeof productImage === "object" && productImage !== null && "src" in productImage
-      ? new URL(String(productImage.src), siteUrl).toString()
-      : new URL(homeScreenImgMobile.src, siteUrl).toString();
   const description = productShareDescription;
   const canonicalUrl = `/products/${product.id}`;
+
+  const ogImg = product.ogImage ?? productImage;
+  const ogImageUrl =
+    ogImg && typeof ogImg === "object" && "src" in ogImg
+      ? new URL(String(ogImg.src), siteUrl).toString()
+      : new URL(homeScreenImgMobile.src, siteUrl).toString();
+  const ogWidth =
+    ogImg && typeof ogImg === "object" && "width" in ogImg
+      ? Number(ogImg.width)
+      : homeScreenImgMobile.width;
+  const ogHeight =
+    ogImg && typeof ogImg === "object" && "height" in ogImg
+      ? Number(ogImg.height)
+      : homeScreenImgMobile.height;
 
   return {
     title: product.name,
@@ -182,26 +192,13 @@ export async function generateMetadata({
       url: canonicalUrl,
       title: product.name,
       description,
-      images: [
-        {
-          url: productImageUrl,
-          width:
-            typeof productImage === "object" && productImage !== null && "width" in productImage
-              ? Number(productImage.width)
-              : homeScreenImgMobile.width,
-          height:
-            typeof productImage === "object" && productImage !== null && "height" in productImage
-              ? Number(productImage.height)
-              : homeScreenImgMobile.height,
-          alt: product.name,
-        },
-      ],
+      images: [{ url: ogImageUrl, width: ogWidth, height: ogHeight, alt: product.name }],
     },
     twitter: {
       card: "summary_large_image",
       title: product.name,
       description,
-      images: [productImageUrl],
+      images: [ogImageUrl],
     },
   };
 }
@@ -319,11 +316,6 @@ export default async function ProductDetailPage({
           <div className="grid items-start gap-8 xl:grid-cols-[minmax(340px,520px)_minmax(320px,520px)] xl:items-stretch xl:gap-10">
             <div className="relative mx-auto w-full max-w-[400px] overflow-hidden rounded-[28px] bg-white max-xl:mx-0 xl:mx-0 xl:max-w-[600px] [@media(orientation:landscape)_and_(max-width:932px)]:mx-0 [@media(orientation:landscape)_and_(max-width:932px)]:max-w-[200px]">
               <div className="relative rounded-[28px] border border-[#d8d0de] bg-[linear-gradient(180deg,#fcfbfd_0%,#f4eef8_100%)] p-0">
-                {product.badge !== "none" ? (
-                  <span className="absolute right-4 top-4 z-10 inline-flex rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-3 py-1 text-xs font-semibold text-white">
-                    {getProductBadgeLabel(product.badge, product.discountPercent)}
-                  </span>
-                ) : null}
                 <div className="overflow-hidden rounded-[28px]">
                   {productImage ? (
                     <Image
@@ -339,6 +331,13 @@ export default async function ProductDetailPage({
             </div>
 
             <div className="flex h-full flex-col justify-between">
+              {product.badge !== "none" ? (
+                <div className="mb-3">
+                  <span className="inline-flex rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-3 py-1 text-xs font-semibold text-white">
+                    {getProductBadgeLabel(product.badge, product.discountPercent)}
+                  </span>
+                </div>
+              ) : null}
               <h1 className="font-serif text-[2.2rem] leading-tight text-[#432855] sm:text-[3rem]">
                 {product.name}
               </h1>

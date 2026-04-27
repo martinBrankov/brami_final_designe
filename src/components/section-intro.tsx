@@ -15,7 +15,7 @@ export const sectionPrimaryButtonClassName =
   "inline-flex h-11 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:brightness-105";
 
 type SectionIntroProps = {
-  title: string;
+  title: ReactNode;
   description?: string;
   note?: string;
   action?: ReactNode;

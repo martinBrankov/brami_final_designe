@@ -18,11 +18,30 @@ import id16 from "@/assets/images/products/00000016/01.jpg";
 import id17 from "@/assets/images/products/00000017/01.jpg";
 import id18 from "@/assets/images/products/00000018/01.jpg";
 import id19 from "@/assets/images/products/00000019/01.jpg";
+import ogId01 from "@/assets/images/products/0000001/og.jpg";
+import ogId02 from "@/assets/images/products/0000002/og.jpg";
+import ogId03 from "@/assets/images/products/0000003/og.jpg";
+import ogId04 from "@/assets/images/products/0000004/og.jpg";
+import ogId05 from "@/assets/images/products/0000005/og.jpg";
+import ogId06 from "@/assets/images/products/0000006/og.jpg";
+import ogId07 from "@/assets/images/products/0000007/og.jpg";
+import ogId08 from "@/assets/images/products/0000008/og.jpg";
+import ogId09 from "@/assets/images/products/0000009/og.jpg";
+import ogId10 from "@/assets/images/products/00000010/og.jpg";
+import ogId11 from "@/assets/images/products/00000011/og.jpg";
+import ogId12 from "@/assets/images/products/00000012/og.jpg";
+import ogId13 from "@/assets/images/products/00000013/og.jpg";
+import ogId14 from "@/assets/images/products/00000014/og.jpg";
+import ogId15 from "@/assets/images/products/00000015/og.jpg";
+import ogId16 from "@/assets/images/products/00000016/og.jpg";
+import ogId17 from "@/assets/images/products/00000017/og.jpg";
+import ogId18 from "@/assets/images/products/00000018/og.jpg";
+import ogId19 from "@/assets/images/products/00000019/og.jpg";
 
 export const FREE_SHIPPING_THRESHOLD_EUR = 70;
 export const HEAVY_THRESHOLD_KG = 3;
 export const BGN_TO_EUR = 1.95583;
-export const LOCKER_SHIPPING_BGN = 1.27 * BGN_TO_EUR;
+export const LOCKER_SHIPPING_BGN = 1.52 * BGN_TO_EUR;
 
 export const SHIPPING_RATE_TABLE = {
   office: [
@@ -79,6 +98,7 @@ export type Product = {
   comments: Comment[];
   description: string;
   relatedProductIds: number[];
+  ogImage?: { src: string; width: number; height: number };
 };
 
 type ProductJson = {
@@ -143,6 +163,28 @@ const productImages = {
   id18,
   id19,
 } as const;
+
+const productOgImages: Record<number, { src: string; width: number; height: number }> = {
+  1: ogId01,
+  2: ogId02,
+  3: ogId03,
+  4: ogId04,
+  5: ogId05,
+  6: ogId06,
+  7: ogId07,
+  8: ogId08,
+  9: ogId09,
+  10: ogId10,
+  11: ogId11,
+  12: ogId12,
+  13: ogId13,
+  14: ogId14,
+  15: ogId15,
+  16: ogId16,
+  17: ogId17,
+  18: ogId18,
+  19: ogId19,
+};
 
 for (let index = 0; index < 256; index += 1) {
   const char = new TextDecoder("windows-1251").decode(
@@ -278,6 +320,7 @@ function parseProduct(product: ProductJson): Product {
     comments: parseComments(product.comments),
     description: fixMojibake(product.description),
     relatedProductIds: parseRelatedProductIds(product.relatedProductIds),
+    ogImage: productOgImages[product.id],
   };
 }
 

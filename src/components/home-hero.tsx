@@ -15,7 +15,7 @@ export function HomeHero() {
       <div className="grid w-full overflow-hidden border-y border-y-[#d8d0de] bg-[#f5f7fb] [@media(orientation:portrait)]:min-h-[100dvh] lg:grid-cols-[1.05fr_0.95fr] lg:[@media(orientation:portrait)]:min-h-0">
         <div className="flex flex-col justify-center px-6 py-10 sm:px-10 sm:py-14 lg:px-14">
           <SectionIntro
-            title="Естествена грижа с Brami Cosmetics"
+            title={<>Естествена грижа с Brami<sup className="text-[0.45em] align-super">®</sup> Cosmetics</>}
             titleAs="h1"
             size="hero"
             contentClassName="max-w-[36rem]"

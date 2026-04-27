@@ -40,7 +40,6 @@ async function resolveSiteUrl() {
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteUrl = await resolveSiteUrl();
-  const defaultOgImageUrl = new URL("/og-logo.png", siteUrl).toString();
 
   return {
     metadataBase: new URL(siteUrl),
@@ -58,21 +57,12 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "Brami",
       description:
         "Козметика и селекция от продукти за лице, тяло и коса с бърза онлайн поръчка.",
-      images: [
-        {
-          url: defaultOgImageUrl,
-          width: 300,
-          height: 145,
-          alt: "Brami",
-        },
-      ],
     },
     twitter: {
       card: "summary_large_image",
       title: "Brami",
       description:
         "Козметика и селекция от продукти за лице, тяло и коса с бърза онлайн поръчка.",
-      images: [defaultOgImageUrl],
     },
   };
 }
