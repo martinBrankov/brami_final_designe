@@ -202,12 +202,12 @@ export function ProductCard({
             compact ? "px-2.5 py-2.5 sm:px-3.5 sm:py-3.5" : "px-5 py-5"
           }`}
         >
-          <div className={`flex items-center ${compact ? "gap-1.5" : "gap-2"}`}>
+          <div className={`flex min-w-0 items-center ${compact ? "gap-1.5" : "gap-2"}`}>
             <StarRow rating={product.rating} compact={compact} />
             <span
               className={`${
                 compact ? "text-xs" : "text-sm"
-              } font-medium text-[#6b587f]`}
+              } shrink-0 font-medium text-[#6b587f]`}
             >
               ({product.comments.length} оценки)
             </span>

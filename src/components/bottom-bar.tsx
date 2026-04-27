@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 
 function FacebookIcon() {
@@ -75,10 +76,10 @@ const shopLinks = [
 ];
 
 const helpLinks = [
-  { href: "/privacy-policy", label: "Политика за лични данни" },
-  { href: "/terms", label: "Общи условия" },
   { href: "/delivery-returns", label: "Доставка и връщане" },
   { href: "/cancellation-form", label: "Формуляр за отказ" },
+  { href: "/terms", label: "Общи условия" },
+  { href: "/privacy-policy", label: "Политика за лични данни" },
 ];
 
 const socialLinks = [
@@ -113,38 +114,33 @@ export function BottomBar() {
           </div>
 
           <div className="grid grid-cols-2 gap-8 [@media(orientation:landscape)]:grid-cols-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#d3bddf]">
-                Навигация
-              </p>
-              <div className="mt-4 flex flex-col gap-3 text-sm text-white">
-                {shopLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="transition hover:text-[#eadcf3]"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div>
+            <div className="col-span-2 grid grid-cols-2 gap-x-8 [@media(orientation:landscape)]:col-span-2">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#d3bddf]">
                 Полезно
               </p>
-              <div className="mt-4 flex flex-col gap-3 text-sm text-white">
-                {helpLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="whitespace-nowrap transition hover:text-[#eadcf3]"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#d3bddf]">
+                Навигация
+              </p>
+              {Array.from({ length: Math.max(helpLinks.length, shopLinks.length) }).map((_, i) => (
+                <Fragment key={i}>
+                  {helpLinks[i] ? (
+                    <Link
+                      href={helpLinks[i].href}
+                      className="flex items-start pt-3 text-sm text-white transition hover:text-[#eadcf3]"
+                    >
+                      {helpLinks[i].label}
+                    </Link>
+                  ) : <div />}
+                  {shopLinks[i] ? (
+                    <Link
+                      href={shopLinks[i].href}
+                      className="flex items-start pt-3 text-sm text-white transition hover:text-[#eadcf3]"
+                    >
+                      {shopLinks[i].label}
+                    </Link>
+                  ) : <div />}
+                </Fragment>
+              ))}
             </div>
 
             <div className="col-span-2 [@media(orientation:landscape)]:col-span-1">
