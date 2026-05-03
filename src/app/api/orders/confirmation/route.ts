@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createOrderEmail } from "@/lib/order-mail/email-template";
 import { createMailer, getSender } from "@/lib/order-mail/mailer";
-import { getProductById } from "@/data/products";
+import { getProducts, getProductById } from "@/data/products";
 
 export const runtime = "nodejs";
 
@@ -75,7 +75,11 @@ function toAbsoluteUrl(siteUrl: string, value?: string) {
   return value.startsWith("/") ? `${siteUrl}${value}` : `${siteUrl}/${value}`;
 }
 
-function resolveProductImageUrl(siteUrl: string, item: { id?: string | number; imageUrl?: string }) {
+async function resolveProductImageUrl(
+  siteUrl: string,
+  item: { id?: string | number; imageUrl?: string },
+  allProducts: Awaited<ReturnType<typeof getProducts>>,
+) {
   const requestImageUrl = toAbsoluteUrl(siteUrl, item.imageUrl);
 
   if (requestImageUrl) {
@@ -88,7 +92,7 @@ function resolveProductImageUrl(siteUrl: string, item: { id?: string | number; i
     return undefined;
   }
 
-  const product = getProductById(productId);
+  const product = getProductById(allProducts, productId);
   const primaryImage = product?.imageSrc[0];
 
   if (typeof primaryImage === "string") {
@@ -150,6 +154,7 @@ export async function POST(request: Request) {
   try {
     const siteUrl = resolveSiteUrl(request);
     const transporter = createMailer();
+    const allProducts = await getProducts();
     const normalizedStatus = body.status || "Потвърдена";
     const normalizedCreatedAt = body.createdAt || new Date().toLocaleString("bg-BG");
     const normalizedOrder = {
@@ -164,16 +169,18 @@ export async function POST(request: Request) {
         destination: body.delivery!.destination!,
         notes: body.delivery?.notes,
       },
-      items: body.items!.map((item) => ({
-        id: item.id != null ? String(item.id) : undefined,
-        name: item.name!,
-        packaging: item.packaging!,
-        imageUrl: resolveProductImageUrl(siteUrl, item),
-        productUrl: item.id != null ? `${siteUrl}/products/${item.id}` : undefined,
-        quantity: item.quantity!,
-        unitPrice: item.unitPrice!,
-        totalPrice: item.totalPrice!,
-      })),
+      items: await Promise.all(
+        body.items!.map(async (item) => ({
+          id: item.id != null ? String(item.id) : undefined,
+          name: item.name!,
+          packaging: item.packaging!,
+          imageUrl: await resolveProductImageUrl(siteUrl, item, allProducts),
+          productUrl: item.id != null ? `${siteUrl}/products/${item.id}` : undefined,
+          quantity: item.quantity!,
+          unitPrice: item.unitPrice!,
+          totalPrice: item.totalPrice!,
+        })),
+      ),
       totals: {
         subtotal: body.totals!.subtotal!,
         shipping: body.totals!.shipping!,

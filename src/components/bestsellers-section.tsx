@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 
 import { ProductCarouselSection } from "@/components/product-carousel-section";
-import { products } from "@/data/products";
+import { useProducts } from "@/components/products-context";
 
 export function BestsellersSection() {
+  const products = useProducts();
   const [featuredProducts, setFeaturedProducts] = useState(() =>
     products.slice(0, 5),
   );

@@ -11,7 +11,8 @@ import {
 } from "react";
 
 import { CartNotification } from "@/components/cart-notification";
-import { products } from "@/data/products";
+import type { Product } from "@/data/products";
+import { useProducts } from "@/components/products-context";
 
 type CartItem = {
   productId: number;
@@ -21,7 +22,7 @@ type CartItem = {
 type CartNotificationState = {
   productId: number;
   productName: string;
-  productImage?: (typeof products)[number]["imageSrc"][number];
+  productImage?: Product["imageSrc"][number];
   key: number;
 };
 
@@ -38,6 +39,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = "brami-cart";
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const products = useProducts();
   const [items, setItems] = useState<CartItem[]>([]);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [notification, setNotification] = useState<CartNotificationState | null>(null);

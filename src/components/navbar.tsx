@@ -15,7 +15,7 @@ import {
 
 import { useCart } from "@/components/cart-provider";
 import { useFavorites } from "@/components/favorites-provider";
-import { products } from "@/data/products";
+import { useProducts } from "@/components/products-context";
 import logo from "@/assets/images/logo.png";
 
 function BurgerIcon() {
@@ -157,6 +157,7 @@ export function Navbar() {
   const router = useRouter();
   const { itemCount } = useCart();
   const { favoriteCount } = useFavorites();
+  const products = useProducts();
   const deferredSearchValue = useDeferredValue(searchValue);
 
   const navItems = [

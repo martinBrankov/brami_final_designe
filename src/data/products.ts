@@ -1,4 +1,6 @@
-﻿import productsJson from "../../entryData/products.json";
+import { cache } from "react";
+
+import { createSupabaseClient } from "@/lib/supabase";
 import id01 from "@/assets/images/products/0000001/01.jpg";
 import id02 from "@/assets/images/products/0000002/01.jpg";
 import id03 from "@/assets/images/products/0000003/01.jpg";
@@ -83,7 +85,6 @@ export type Product = {
   id: number;
   name: string;
   category: ("hair" | "body" | "face")[];
-  // Audience tags used by the product-list filter: women, men, unisex.
   audience: ("women" | "men" | "unisex")[];
   brand: "brami" | "Voditsa" | "other";
   badge: "bestseller" | "sale" | "new" | "favorite" | "featured" | "none";
@@ -101,25 +102,6 @@ export type Product = {
   ogImage?: { src: string; width: number; height: number };
 };
 
-type ProductJson = {
-  id: number;
-  name: string;
-  category: string[];
-  audience?: string[];
-  brand: string;
-  badge: string;
-  discountPercent?: number;
-  imageSrc: unknown[];
-  checkboxInfo?: string[];
-  price: string;
-  packaging: string;
-  weight?: number;
-  rating: number;
-  comments: Comment[];
-  description?: string;
-  relatedProductIds?: number[];
-};
-
 const allowedCategories = new Set<Product["category"][number]>([
   "hair",
   "body",
@@ -130,7 +112,6 @@ const allowedAudiences = new Set<Product["audience"][number]>([
   "men",
   "unisex",
 ]);
-
 const allowedBrands = new Set<Product["brand"]>(["brami", "Voditsa", "other"]);
 const allowedBadges = new Set<Product["badge"]>([
   "bestseller",
@@ -140,7 +121,6 @@ const allowedBadges = new Set<Product["badge"]>([
   "featured",
   "none",
 ]);
-const unicodeToByte = new Map<string, number>();
 
 const productImages = {
   id01,
@@ -186,77 +166,19 @@ const productOgImages: Record<number, { src: string; width: number; height: numb
   19: ogId19,
 };
 
-for (let index = 0; index < 256; index += 1) {
-  const char = new TextDecoder("windows-1251").decode(
-    Uint8Array.from([index]),
-  );
-
-  if (!unicodeToByte.has(char)) {
-    unicodeToByte.set(char, index);
-  }
-}
-
-function fixMojibake(value: string | undefined): string {
-  if (!value || !/[РСЃЎҐВ]/.test(value)) {
-    return value || "";
-  }
-
-  const bytes: number[] = [];
-
-  for (const char of value) {
-    const code = char.charCodeAt(0);
-
-    if (code <= 0x7f) {
-      bytes.push(code);
-      continue;
-    }
-
-    const mapped = unicodeToByte.get(char);
-
-    if (mapped === undefined) {
-      return value;
-    }
-
-    bytes.push(mapped);
-  }
-
-  const decoded = new TextDecoder("utf-8").decode(new Uint8Array(bytes));
-  return /[\u0400-\u04FF]/.test(decoded) && !decoded.includes("�")
-    ? decoded
-    : value;
-}
-
-function parseComments(comments: Comment[]): Comment[] {
-  if (!Array.isArray(comments)) {
-    return [];
-  }
-
-  return comments.map((comment) => ({
-    name: fixMojibake(comment.name),
-    comment: fixMojibake(comment.comment),
-    rating: comment.rating,
-    data: fixMojibake(comment.data),
-  }));
-}
-
-function parseCategory(category: string[]): Product["category"] {
-  return category.filter(
-    (item): item is Product["category"][number] =>
-      allowedCategories.has(item as Product["category"][number]),
+function parseCategory(slugs: string[]): Product["category"] {
+  return slugs.filter(
+    (s): s is Product["category"][number] =>
+      allowedCategories.has(s as Product["category"][number]),
   );
 }
 
-function parseAudience(audience?: string[]): Product["audience"] {
-  if (!Array.isArray(audience)) {
-    return ["unisex"];
-  }
-
-  const parsedAudience = audience.filter(
-    (item): item is Product["audience"][number] =>
-      allowedAudiences.has(item as Product["audience"][number]),
+function parseAudience(slugs: string[]): Product["audience"] {
+  const parsed = slugs.filter(
+    (s): s is Product["audience"][number] =>
+      allowedAudiences.has(s as Product["audience"][number]),
   );
-
-  return parsedAudience.length ? parsedAudience : ["unisex"];
+  return parsed.length ? parsed : ["unisex"];
 }
 
 function parseBrand(brand: string): Product["brand"] {
@@ -271,87 +193,108 @@ function parseBadge(badge: string): Product["badge"] {
     : "none";
 }
 
-function parseImageSrc(imageSrc: unknown[]): Product["imageSrc"] {
-  if (!Array.isArray(imageSrc)) {
-    return [];
-  }
+const BG_MONTHS = [
+  "януари", "февруари", "март", "април", "май", "юни",
+  "юли", "август", "септември", "октомври", "ноември", "декември",
+];
 
-  return imageSrc.flatMap((item) => {
-    if (typeof item !== "string") {
-      return [];
-    }
-
-    const image = productImages[item as keyof typeof productImages];
-    return image ? [image] : [];
-  });
+function formatBgDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-");
+  const monthName = BG_MONTHS[parseInt(month, 10) - 1] ?? month;
+  return `${day} ${monthName} ${year}`;
 }
 
-function parseCheckboxInfo(checkboxInfo?: string[]): string[] {
-  if (!Array.isArray(checkboxInfo)) {
-    return ["Натурален продукт"];
-  }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapDbProduct(row: any): Product {
+  const eur = Number(row.price_eur);
+  const bgn = Number(row.price_bgn);
+  const price = `€${eur.toFixed(2)}/${bgn.toFixed(2)}лв.`;
 
-  return checkboxInfo.map((item) => fixMojibake(item));
-}
+  const categorySlugs: string[] = (row.product_categories ?? []).map(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (pc: any) => pc.categories?.slug,
+  ).filter(Boolean);
 
-function parseRelatedProductIds(relatedProductIds?: number[]): number[] {
-  if (!Array.isArray(relatedProductIds)) {
-    return [];
-  }
+  const audienceSlugs: string[] = (row.product_audiences ?? []).map(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (pa: any) => pa.audiences?.slug,
+  ).filter(Boolean);
 
-  return relatedProductIds.filter((id): id is number => Number.isInteger(id));
-}
+  const imageSrc = [...(row.product_images ?? [])]
+    .sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
+    .map((img: { image_src: string }) => productImages[img.image_src as keyof typeof productImages])
+    .filter(Boolean);
 
-function parseProduct(product: ProductJson): Product {
+  const checkboxInfo = [...(row.product_highlights ?? [])]
+    .sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
+    .map((h: { text: string }) => h.text);
+
+  const comments: Comment[] = (row.product_comments ?? []).map(
+    (c: { author_name: string; comment: string; rating: number | null; comment_date: string }) => ({
+      name: c.author_name,
+      comment: c.comment,
+      rating: c.rating ?? 5,
+      data: formatBgDate(c.comment_date),
+    }),
+  );
+
+  const relatedProductIds: number[] = (row.related_products ?? []).map(
+    (r: { related_product_id: number }) => r.related_product_id,
+  );
+
   return {
-    id: product.id,
-    name: fixMojibake(product.name),
-    category: parseCategory(product.category),
-    audience: parseAudience(product.audience),
-    brand: parseBrand(product.brand),
-    badge: parseBadge(product.badge),
-    discountPercent: typeof product.discountPercent === "number" ? product.discountPercent : undefined,
-    imageSrc: parseImageSrc(product.imageSrc),
-    checkboxInfo: parseCheckboxInfo(product.checkboxInfo),
-    price: fixMojibake(product.price),
-    packaging: fixMojibake(product.packaging),
-    weight: typeof product.weight === "number" ? product.weight : 0.2,
-    rating: product.rating,
-    comments: parseComments(product.comments),
-    description: fixMojibake(product.description),
-    relatedProductIds: parseRelatedProductIds(product.relatedProductIds),
-    ogImage: productOgImages[product.id],
+    id: row.id,
+    name: row.name,
+    category: parseCategory(categorySlugs),
+    audience: parseAudience(audienceSlugs),
+    brand: parseBrand(row.brand),
+    badge: parseBadge(row.badge),
+    discountPercent: row.discount_percent ?? undefined,
+    imageSrc,
+    checkboxInfo: checkboxInfo.length ? checkboxInfo : ["Натурален продукт"],
+    price,
+    packaging: row.packaging,
+    weight: Number(row.weight) || 0.2,
+    rating: Number(row.rating),
+    comments,
+    description: row.description ?? "",
+    relatedProductIds,
+    ogImage: productOgImages[row.id],
   };
 }
 
-export const products: Product[] = (productsJson as ProductJson[]).map(
-  parseProduct,
-);
+export const getProducts = cache(async (): Promise<Product[]> => {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select(`
+      *,
+      product_categories(categories(slug)),
+      product_audiences(audiences(slug)),
+      product_images(image_src, sort_order),
+      product_highlights(text, sort_order),
+      product_comments(author_name, comment, rating, comment_date),
+      related_products!product_id(related_product_id)
+    `)
+    .order("id");
 
-export function getProductBadgeLabel(badge: Product["badge"], discountPercent?: number): string {
-  switch (badge) {
-    case "bestseller":
-      return "Най-продаван";
-    case "sale":
-      return discountPercent ? `-${discountPercent}%` : "-20%";
-    case "new":
-      return "Нов";
-    case "favorite":
-      return "Препоръчваме Ви";
-    case "featured":
-      return "Избрано";
-    default:
-      return "Продукт";
-  }
+  if (error) throw new Error(`Failed to fetch products: ${error.message}`);
+  return (data ?? []).map(mapDbProduct);
+});
+
+export function getProductById(
+  allProducts: Product[],
+  id: number,
+): Product | undefined {
+  return allProducts.find((product) => product.id === id);
 }
 
-export function getProductById(id: number): Product | undefined {
-  return products.find((product) => product.id === id);
-}
-
-export function getProductsByIds(ids: number[]): Product[] {
+export function getProductsByIds(
+  allProducts: Product[],
+  ids: number[],
+): Product[] {
   return ids
-    .map((id) => getProductById(id))
+    .map((id) => getProductById(allProducts, id))
     .filter((product): product is Product => product !== undefined);
 }
 
@@ -385,7 +328,6 @@ function trimToLength(value: string, maxLength: number): string {
   if (value.length <= maxLength) {
     return value;
   }
-
   return `${value.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
@@ -404,4 +346,24 @@ export function getProductShareDescription(product: Product): string {
   ].join(" • ");
 
   return trimToLength(fallback, 140);
+}
+
+export function getProductBadgeLabel(
+  badge: Product["badge"],
+  discountPercent?: number,
+): string {
+  switch (badge) {
+    case "bestseller":
+      return "Най-продаван";
+    case "sale":
+      return discountPercent ? `-${discountPercent}%` : "-20%";
+    case "new":
+      return "Нов";
+    case "favorite":
+      return "Препоръчваме Ви";
+    case "featured":
+      return "Избрано";
+    default:
+      return "Продукт";
+  }
 }

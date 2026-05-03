@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { ProductCarouselSection } from "@/components/product-carousel-section";
-import { products } from "@/data/products";
+import { useProducts } from "@/components/products-context";
 import type { Product } from "@/data/products";
 
 const RECENTLY_VIEWED_STORAGE_KEY = "brami-recently-viewed";
 
 export function RecentlyViewedSection() {
+  const products = useProducts();
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<number[]>([]);
 
   const viewedProducts = useMemo(
@@ -16,7 +17,7 @@ export function RecentlyViewedSection() {
       recentlyViewedIds
         .map((id) => products.find((product) => product.id === id))
         .filter((product): product is Product => product !== undefined),
-    [recentlyViewedIds],
+    [recentlyViewedIds, products],
   );
 
   useEffect(() => {

@@ -13,9 +13,9 @@ import {
 } from "@/components/section-intro";
 import {
   getProductBadgeLabel,
-  products,
   type Product,
 } from "@/data/products";
+import { useProducts } from "@/components/products-context";
 
 const categoryOptions: Array<{
   value: Product["category"][number] | "all";
@@ -52,7 +52,6 @@ const badgeOptions: Array<{
   { value: "sale", label: "Отстъпка" },
   { value: "new", label: getProductBadgeLabel("new") },
   { value: "favorite", label: getProductBadgeLabel("favorite") },
-  { value: "featured", label: getProductBadgeLabel("featured") },
 ];
 
 function FilterIcon() {
@@ -95,6 +94,7 @@ function ChevronIcon() {
 export function ProductsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const products = useProducts();
   const { favoriteIds, hasHydrated } = useFavorites();
   const [selectedCategory, setSelectedCategory] =
     useState<Product["category"][number] | "all">("all");
@@ -157,6 +157,7 @@ export function ProductsPageContent() {
         );
       }),
     [
+      products,
       favoriteIds,
       favoritesOnly,
       hasHydrated,

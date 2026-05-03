@@ -8,8 +8,12 @@ import { CookieConsentBanner } from "@/components/cookie-consent-banner";
 import { FavoritesProvider } from "@/components/favorites-provider";
 import { InteractionGuard } from "@/components/interaction-guard";
 import { Navbar } from "@/components/navbar";
+import { ProductsProvider } from "@/components/products-context";
+import { getProducts } from "@/data/products";
 
 import "./globals.css";
+
+export const dynamic = "force-dynamic";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -67,11 +71,13 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const products = await getProducts();
+
   return (
     <html
       lang="bg"
@@ -101,14 +107,16 @@ export default function RootLayout({
           }}
         />
         <InteractionGuard />
-        <CartProvider>
-          <FavoritesProvider>
-            <Navbar />
-            <div className="flex-1">{children}</div>
-            <BottomBar />
-            <CookieConsentBanner />
-          </FavoritesProvider>
-        </CartProvider>
+        <ProductsProvider products={products}>
+          <CartProvider>
+            <FavoritesProvider>
+              <Navbar />
+              <div className="flex-1">{children}</div>
+              <BottomBar />
+              <CookieConsentBanner />
+            </FavoritesProvider>
+          </CartProvider>
+        </ProductsProvider>
       </body>
     </html>
   );

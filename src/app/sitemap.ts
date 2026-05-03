@@ -1,9 +1,12 @@
 import type { MetadataRoute } from "next";
-import { products } from "@/data/products";
+
+import { getProducts } from "@/data/products";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://brami.shop";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const allProducts = await getProducts();
+
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },
     { url: `${BASE_URL}/products`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
@@ -15,7 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/cancellation-form`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
   ];
 
-  const productRoutes: MetadataRoute.Sitemap = products.map((product) => ({
+  const productRoutes: MetadataRoute.Sitemap = allProducts.map((product) => ({
     url: `${BASE_URL}/products/${product.id}`,
     lastModified: new Date(),
     changeFrequency: "weekly",

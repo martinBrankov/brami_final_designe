@@ -22,9 +22,8 @@ import {
   PACKAGING_WEIGHT_TABLE,
   SHIPPING_RATES,
   SHIPPING_RATE_TABLE,
-  getProductsByIds,
-  products,
 } from "@/data/products";
+import { useProducts } from "@/components/products-context";
 
 function calcShipping(method: DeliveryMethod, totalWeightKg: number): number {
   if (method === "locker") {
@@ -204,6 +203,7 @@ function getAbsoluteImageUrl(imageSrc: unknown) {
 
 export default function CartPage() {
   const deliveryDropdownRef = useRef<HTMLDivElement | null>(null);
+  const products = useProducts();
   const { items, updateQuantity, removeItem, clearCart } = useCart();
   const officeDropdownRef = useRef<HTMLDivElement | null>(null);
   const officeSearchInputRef = useRef<HTMLInputElement | null>(null);
@@ -280,7 +280,9 @@ export default function CartPage() {
       new Set(cartItems.flatMap((item) => item.product.relatedProductIds)),
     ).filter((id) => !cartProductIds.has(id));
 
-    return getProductsByIds(relatedIds);
+    return relatedIds
+      .map((id) => products.find((p) => p.id === id))
+      .filter((p): p is NonNullable<typeof p> => p !== undefined);
   }, [cartItems]);
 
   useEffect(() => {

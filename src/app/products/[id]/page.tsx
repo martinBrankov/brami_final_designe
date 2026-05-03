@@ -16,9 +16,11 @@ import {
   getProductDescription,
   getProductShareDescription,
   getProductsByIds,
-  products,
+  getProducts,
 } from "@/data/products";
 import homeScreenImgMobile from "@/assets/images/homeScreenImgMobile.png";
+
+export const dynamic = "force-dynamic";
 
 const fallbackSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://brami.shop";
 
@@ -141,19 +143,14 @@ function formatEuroPrice(price: number) {
   return `${EURO_SYMBOL}${price.toFixed(2)}`;
 }
 
-export function generateStaticParams() {
-  return products.map((product) => ({
-    id: String(product.id),
-  }));
-}
-
 export async function generateMetadata({
   params,
 }: ProductDetailPageProps): Promise<Metadata> {
   const siteUrl = await resolveSiteUrl();
   const { id } = await params;
   const productId = Number(id);
-  const product = Number.isNaN(productId) ? undefined : getProductById(productId);
+  const allProducts = await getProducts();
+  const product = Number.isNaN(productId) ? undefined : getProductById(allProducts, productId);
 
   if (!product) {
     return {
@@ -208,7 +205,8 @@ export default async function ProductDetailPage({
 }: ProductDetailPageProps) {
   const { id } = await params;
   const productId = Number(id);
-  const product = Number.isNaN(productId) ? undefined : getProductById(productId);
+  const allProducts = await getProducts();
+  const product = Number.isNaN(productId) ? undefined : getProductById(allProducts, productId);
 
   if (!product) {
     notFound();
@@ -231,7 +229,7 @@ export default async function ProductDetailPage({
   const currentPriceBgn = isOnSale && originalPriceBgn ? originalPriceBgn * discountFactor : originalPriceBgn;
   const oldPriceEuro = isOnSale ? originalPriceEuro : null;
   const oldPriceBgn = isOnSale ? originalPriceBgn : null;
-  const relatedProducts = getProductsByIds(product.relatedProductIds).filter(
+  const relatedProducts = getProductsByIds(allProducts, product.relatedProductIds).filter(
     (relatedProduct) => relatedProduct.id !== product.id,
   );
 
