@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { saveCustomerOrder } from "@/lib/admin-data";
 import { createOrderEmail } from "@/lib/order-mail/email-template";
-import { createMailer, getSender } from "@/lib/order-mail/mailer";
+import { createMailer, getMailRecipient, getSender } from "@/lib/order-mail/mailer";
 import { getProducts, getProductById } from "@/data/products";
 
 export const runtime = "nodejs";
@@ -210,6 +211,17 @@ export async function POST(request: Request) {
       recipient: "sales",
     });
 
+    await saveCustomerOrder({
+      orderId: normalizedOrder.orderId,
+      status: normalizedStatus,
+      createdAt: normalizedCreatedAt,
+      customer: normalizedOrder.customer,
+      delivery: normalizedOrder.delivery,
+      items: normalizedOrder.items,
+      totals: normalizedOrder.totals,
+      rawPayload: body,
+    });
+
     await Promise.all([
       transporter.sendMail({
         from: getSender(),
@@ -220,7 +232,7 @@ export async function POST(request: Request) {
       }),
       transporter.sendMail({
         from: getSender(),
-        to: salesRecipient,
+        to: getMailRecipient(salesRecipient),
         subject: salesMessage.subject,
         html: salesMessage.html,
         text: salesMessage.text,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { createMailer, getSender } from "@/lib/order-mail/mailer";
+import { createMailer, getMailRecipient, getSender } from "@/lib/order-mail/mailer";
 
 export const runtime = "nodejs";
 
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
     await transporter.sendMail({
       from: getSender(),
-      to: recipient,
+      to: getMailRecipient(recipient),
       replyTo: normalizedEmail,
       subject: `Brami contact form: ${normalizedSubject}`,
       text: [

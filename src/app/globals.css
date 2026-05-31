@@ -14,6 +14,10 @@
   }
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -27,6 +31,88 @@ body {
 .content-protected input,
 .content-protected textarea,
 .content-protected [contenteditable="true"] {
-  -webkit-user-select: text;
-  user-select: text;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+[data-blog-editor] {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+/* TipTap blog editor */
+.tiptap-editor p {
+  margin: 0;
+}
+.tiptap-editor ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin: 0.375rem 0;
+}
+.tiptap-editor ul ul {
+  list-style-type: circle;
+  padding-left: 1rem;
+  margin-top: 0.25rem;
+}
+.tiptap-editor li > p {
+  margin: 0;
+}
+.tiptap-editor strong {
+  font-weight: 600;
+}
+.tiptap-editor em {
+  font-style: italic;
+}
+.tiptap-editor p.is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #bbb;
+  pointer-events: none;
+  height: 0;
+}
+
+.admin-print-invoice {
+  display: none;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .admin-print-area,
+  .admin-print-area * {
+    visibility: visible !important;
+  }
+
+  .admin-print-hidden,
+  .admin-print-hidden * {
+    display: none !important;
+  }
+
+  .admin-print-cards {
+    display: none !important;
+  }
+
+  .admin-print-invoice {
+    display: block !important;
+  }
+
+  .admin-print-area {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    display: block !important;
+    padding: 0 !important;
+    color: #111827 !important;
+  }
+
+  @page {
+    margin: 14mm;
+  }
 }

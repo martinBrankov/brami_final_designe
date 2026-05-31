@@ -11,7 +11,8 @@
       "Bash(node -e \"try { const m = require\\('./node_modules/next/dist/server/unstable-cache.js'\\); console.log\\('keys:', Object.keys\\(m\\)\\); } catch\\(e\\) { console.log\\('not found:', e.message\\); }\")",
       "Bash(node -e \"const m = require\\('next/cache'\\); console.log\\(typeof m.unstable_cache, m.unstable_cache.toString\\(\\).slice\\(0,300\\)\\)\")",
       "Bash(Remove-Item -Recurse -Force \"f:\\\\newdsigne2026\\\\brami_final_designe\\\\.next\\\\cache\\\\fetch-cache\")",
-      "Bash(Write-Output \"Deleted\")"
+      "Bash(Write-Output \"Deleted\")",
+      "PowerShell(Get-ChildItem -Path \"f:\\\\newdsigne2026\\\\brami_final_designe\\\\src\\\\components\" | Where-Object { $_.Name -match \"article|blog\" })"
     ]
   }
 }

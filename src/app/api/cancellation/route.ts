@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { createMailer, getSender } from "@/lib/order-mail/mailer";
+import { createMailer, getMailRecipient, getSender } from "@/lib/order-mail/mailer";
 
 export const runtime = "nodejs";
 
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
 
     await transporter.sendMail({
       from: getSender(),
-      to: "sales@brami.shop",
+      to: getMailRecipient("sales@brami.shop"),
       subject: `Brami формуляр за отказ – ${fields.customerName}`,
       text: [
         "ФОРМУЛЯР ЗА ОТКАЗ ОТ ДОГОВОР",

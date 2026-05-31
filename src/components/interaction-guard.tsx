@@ -1,38 +1,30 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 function isEditableTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-
-  const tagName = target.tagName;
-  return (
-    tagName === "INPUT" ||
-    tagName === "TEXTAREA" ||
-    target.isContentEditable
-  );
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable;
 }
 
 export function InteractionGuard() {
+  const pathname = usePathname();
+  const isAdmin = pathname.startsWith("/admin-panel");
+
   useEffect(() => {
-    function handleCopy(event: ClipboardEvent) {
-      if (!isEditableTarget(event.target)) {
-        event.preventDefault();
-      }
-    }
+    // Admin panel needs free selection and copy/paste — skip all guards
+    if (isAdmin) return;
 
-    function handleCut(event: ClipboardEvent) {
-      if (!isEditableTarget(event.target)) {
-        event.preventDefault();
-      }
+    function handleCopy(e: ClipboardEvent) {
+      if (!isEditableTarget(e.target)) e.preventDefault();
     }
-
-    function handleSelectStart(event: Event) {
-      if (!isEditableTarget(event.target)) {
-        event.preventDefault();
-      }
+    function handleCut(e: ClipboardEvent) {
+      if (!isEditableTarget(e.target)) e.preventDefault();
+    }
+    function handleSelectStart(e: Event) {
+      if (!isEditableTarget(e.target)) e.preventDefault();
     }
 
     document.addEventListener("copy", handleCopy);
@@ -44,7 +36,7 @@ export function InteractionGuard() {
       document.removeEventListener("cut", handleCut);
       document.removeEventListener("selectstart", handleSelectStart);
     };
-  }, []);
+  }, [isAdmin]);
 
   return null;
 }

@@ -8,14 +8,23 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "backup": "node scripts/backup-supabase.mjs",
+    "clone-schema": "node scripts/clone-supabase-schema.mjs",
+    "restore": "node scripts/restore-supabase.mjs",
+    "sync-sequences": "node scripts/sync-supabase-sequences.mjs",
     "seed": "node scripts/seed-supabase.mjs",
     "add-product": "node scripts/add-product.mjs",
     "clear-cache": "node -e \"require('fs').rmSync('.next/cache/fetch-cache', {recursive:true,force:true}); console.log('Cache cleared');\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.78.0",
+    "@tiptap/pm": "^3.23.1",
+    "@tiptap/react": "^3.23.1",
+    "@tiptap/starter-kit": "^3.23.1",
+    "bcryptjs": "^3.0.3",
     "next": "15.5.9",
     "nodemailer": "^8.0.5",
+    "pg": "^8.20.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },

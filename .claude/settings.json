@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node scripts/seed-blog.mjs)",
+      "Bash(node -e ' *)",
+      "Bash(Test-Path \"f:\\\\newdsigne2026\\\\brami_final_designe\\\\src\\\\app\\\\admin-panel\\\\blog\" -PathType Container)",
+      "Bash(npm list *)",
+      "Bash(findstr tiptap *)",
+      "Bash(node -e \"const {useEditor} = require\\('@tiptap/react'\\); console.log\\('ok'\\)\")",
+      "Bash(findstr \"exports\\\\.\")",
+      "Bash(node -e \"const t = require\\('@tiptap/react'\\); console.log\\(Object.keys\\(t\\).filter\\(k => !k.startsWith\\('_'\\)\\).join\\(', '\\)\\)\")",
+      "Bash(node -e \"const {useEditorState} = require\\('@tiptap/react'\\); console.log\\(useEditorState.toString\\(\\).substring\\(0, 200\\)\\)\")",
+      "Bash(npx supabase *)",
+      "Bash(findstr /n \"blog_blocks\\\\|type\\\\|content\\\\|CHECK\" supabase\\\\migrations\\\\001_create_products_schema.sql)",
+      "Bash(findstr /rn \"blog\" supabase\\\\migrations\\\\*.sql)",
+      "Bash(findstr SUPABASE_URL)",
+      "Bash(findstr /i supabase)",
+      "Bash(New-Item -ItemType Directory -Force \"f:\\\\newdsigne2026\\\\brami_final_designe\\\\src\\\\app\\\\api\\\\admin\\\\blog\\\\cleanup-images\")",
+      "Bash(Out-Null)",
+      "Bash(Write-Host \"done\")",
+      "Bash(Get-ChildItem -Path \"f:\\\\newdsigne2026\\\\brami_final_designe\" -Recurse -Directory)",
+      "Bash(Select-Object FullName)",
+      "Bash(Remove-Item \"f:\\\\newdsigne2026\\\\brami_final_designe\\\\src\\\\lib\\\\blog-cover-images.ts\" -Force)",
+      "Bash(node scripts/export-blog-to-production.mjs)",
+      "Bash(node scripts/migrate-blog-images-to-production.mjs)",
+      "Bash(node scripts/migrate-orders-to-production.mjs)",
+      "Bash(node -e \"require\\('pg'\\); console.log\\('pg OK'\\)\")",
+      "Bash(node scripts/run-migration-on-production.mjs)"
+    ]
+  }
+}

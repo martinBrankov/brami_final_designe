@@ -3,12 +3,10 @@ import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { CartProvider } from "@/components/cart-provider";
-import { BottomBar } from "@/components/bottom-bar";
-import { CookieConsentBanner } from "@/components/cookie-consent-banner";
 import { FavoritesProvider } from "@/components/favorites-provider";
 import { InteractionGuard } from "@/components/interaction-guard";
-import { Navbar } from "@/components/navbar";
 import { ProductsProvider } from "@/components/products-context";
+import { SiteChrome } from "@/components/site-chrome";
 import { getProducts } from "@/data/products";
 
 import "./globals.css";
@@ -83,7 +81,7 @@ export default async function RootLayout({
       lang="bg"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="content-protected min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -110,10 +108,7 @@ export default async function RootLayout({
         <ProductsProvider products={products}>
           <CartProvider>
             <FavoritesProvider>
-              <Navbar />
-              <div className="flex-1">{children}</div>
-              <BottomBar />
-              <CookieConsentBanner />
+              <SiteChrome>{children}</SiteChrome>
             </FavoritesProvider>
           </CartProvider>
         </ProductsProvider>

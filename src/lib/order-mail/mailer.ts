@@ -10,6 +10,14 @@ function requireEnv(name: string) {
   return value;
 }
 
+export function getMailRecipient(recipient: string | string[]) {
+  if (process.env.NODE_ENV !== "production") {
+    return "dev@brami.shop";
+  }
+
+  return recipient;
+}
+
 export function createMailer() {
   return nodemailer.createTransport({
     host: requireEnv("SMTP_HOST"),

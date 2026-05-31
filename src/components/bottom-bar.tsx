@@ -71,6 +71,7 @@ function PhoneIcon() {
 const shopLinks = [
   { href: "/products", label: "Продукти" },
   { href: "/about", label: "За нас" },
+  { href: "/beauty-care", label: "Красота & грижа" },
   { href: "/contact", label: "Контакти" },
   { href: "/cart", label: "Количка" },
 ];
