@@ -25,7 +25,10 @@
       "Bash(node scripts/migrate-blog-images-to-production.mjs)",
       "Bash(node scripts/migrate-orders-to-production.mjs)",
       "Bash(node -e \"require\\('pg'\\); console.log\\('pg OK'\\)\")",
-      "Bash(node scripts/run-migration-on-production.mjs)"
+      "Bash(node scripts/run-migration-on-production.mjs)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(exit 0)",
+      "PowerShell(Stop-Process -Name \"node\" -Force -ErrorAction SilentlyContinue)"
     ]
   }
 }
