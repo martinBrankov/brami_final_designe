@@ -28,7 +28,8 @@
       "Bash(node scripts/run-migration-on-production.mjs)",
       "Bash(taskkill /F /IM node.exe)",
       "Bash(exit 0)",
-      "PowerShell(Stop-Process -Name \"node\" -Force -ErrorAction SilentlyContinue)"
+      "PowerShell(Stop-Process -Name \"node\" -Force -ErrorAction SilentlyContinue)",
+      "Bash(git rm *)"
     ]
   }
 }

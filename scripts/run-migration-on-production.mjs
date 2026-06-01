@@ -9,11 +9,17 @@ import { readFileSync } from "fs";
 import pg from "pg";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import { loadEnvFile } from "node:process";
+try { loadEnvFile(".env.local"); } catch {}
 
 const { Client } = pg;
 
-const PROD_DB_URL =
-  "postgresql://postgres.dzvzfblmyixazofhrxrt:3Dsmax3dsmax@aws-0-eu-west-1.pooler.supabase.com:5432/postgres";
+const PROD_DB_URL = process.env.PROD_DATABASE_URL;
+
+if (!PROD_DB_URL) {
+  console.error("Missing PROD_DATABASE_URL in .env.local");
+  process.exit(1);
+}
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 

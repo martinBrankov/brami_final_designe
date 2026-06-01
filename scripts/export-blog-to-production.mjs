@@ -12,10 +12,16 @@
 
 import { writeFileSync } from "fs";
 import { createClient } from "@supabase/supabase-js";
+import { loadEnvFile } from "node:process";
+try { loadEnvFile(".env.local"); } catch {}
 
-const DEV_URL = "https://zjlhbkgjcrevfjlkgtzm.supabase.co";
-const DEV_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpqbGhia2dqY3JldmZqbGtndHptIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzgzNDc5NywiZXhwIjoyMDkzNDEwNzk3fQ.cpB0v60y99WEAwLW5iiF4cNEKgLyWmm_wwVz2bqsfhg";
+const DEV_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const DEV_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!DEV_URL || !DEV_KEY) {
+  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local");
+  process.exit(1);
+}
 
 const supabase = createClient(DEV_URL, DEV_KEY);
 

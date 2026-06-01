@@ -8,14 +8,21 @@
 
 import { writeFileSync } from "fs";
 import { createClient } from "@supabase/supabase-js";
+import { loadEnvFile } from "node:process";
+try { loadEnvFile(".env.local"); } catch {}
 
 // ── Dev ─────────────────────────────────────────────────────────────────────
-const DEV_URL  = "https://zjlhbkgjcrevfjlkgtzm.supabase.co";
-const DEV_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpqbGhia2dqY3JldmZqbGtndHptIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzgzNDc5NywiZXhwIjoyMDkzNDEwNzk3fQ.cpB0v60y99WEAwLW5iiF4cNEKgLyWmm_wwVz2bqsfhg";
+const DEV_URL  = process.env.DEV_SUPABASE_URL;
+const DEV_KEY  = process.env.DEV_SUPABASE_SERVICE_ROLE_KEY;
 
 // ── Production ───────────────────────────────────────────────────────────────
-const PROD_URL = "https://dzvzfblmyixazofhrxrt.supabase.co";
-const PROD_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6dnpmYmxteWl4YXpvZmhyeHJ0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjE4NjUyMywiZXhwIjoyMDkxNzYyNTIzfQ.5Jrbr5kr4USBjKXoR8Rk6jgRDMUMScibKsjnhv_Fxzg";
+const PROD_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const PROD_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!DEV_URL || !DEV_KEY || !PROD_URL || !PROD_KEY) {
+  console.error("Missing env vars. Add DEV_SUPABASE_URL, DEV_SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY in .env.local");
+  process.exit(1);
+}
 
 const BUCKET = "blog-images";
 
