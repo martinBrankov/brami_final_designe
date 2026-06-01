@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 
-import type { AdminOrderRecord, AdminUserProfile, AdminProductRecord } from "@/lib/admin-data";
+import type {
+  AdminOrderRecord,
+  AdminUserProfile,
+  AdminProductRecord,
+  AdminVisitRecord,
+} from "@/lib/admin-data";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -741,19 +746,286 @@ function ProductSalesStats({ orders }: { orders: AdminOrderRecord[] }) {
   );
 }
 
+// ── Visits ────────────────────────────────────────────────────────────────────
+
+function formatDuration(ms: number) {
+  if (ms < 1000) return "<1 сек";
+  const totalSec = Math.round(ms / 1000);
+  if (totalSec < 60) return `${totalSec} сек`;
+  const minutes = Math.floor(totalSec / 60);
+  const seconds = totalSec % 60;
+  if (minutes < 60) return seconds > 0 ? `${minutes} мин ${seconds} сек` : `${minutes} мин`;
+  const hours = Math.floor(minutes / 60);
+  const restMin = minutes % 60;
+  return restMin > 0 ? `${hours} ч ${restMin} мин` : `${hours} ч`;
+}
+
+function formatRelative(iso: string) {
+  const date = new Date(iso);
+  return date.toLocaleString("bg-BG", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function hostFromReferrer(ref: string | null) {
+  if (!ref) return null;
+  try {
+    return new URL(ref).hostname;
+  } catch {
+    return null;
+  }
+}
+
+function VisitRow({ visit }: { visit: AdminVisitRecord }) {
+  const [open, setOpen] = useState(false);
+  const durationMs =
+    new Date(visit.lastSeenAt).getTime() - new Date(visit.startedAt).getTime();
+  const refHost = hostFromReferrer(visit.referrer) ?? "директно";
+
+  return (
+    <div className="border-b border-[#f0ece4]">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="grid w-full grid-cols-[1fr_auto_auto_auto] items-center gap-3 py-3 text-left"
+      >
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-[#1d2733]">
+            {visit.landingPath ?? "—"}
+          </p>
+          <p className="truncate text-xs text-[#6a7480]">
+            {formatRelative(visit.startedAt)} · от {refHost}
+          </p>
+        </div>
+        <span className="shrink-0 text-xs font-semibold text-[#3d73b8]">
+          {visit.pageviewCount} стр.
+        </span>
+        <span className="shrink-0 text-xs text-[#7c8a96]">
+          {formatDuration(Math.max(durationMs, 0))}
+        </span>
+        <svg
+          className="h-4 w-4 shrink-0 text-[#8a9099] transition-transform"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open ? (
+        <div className="pb-4 pl-1 pr-1">
+          {visit.userAgent ? (
+            <p className="mb-2 text-[11px] text-[#8a9099]">{visit.userAgent}</p>
+          ) : null}
+          <ol className="space-y-1.5 border-l border-[#e7dfd1] pl-3">
+            {visit.pageviews.map((pv, i) => (
+              <li key={pv.id} className="text-xs text-[#4f5b66]">
+                <span className="mr-2 inline-block w-5 text-right text-[10px] font-semibold text-[#8a6f45]">
+                  {i + 1}.
+                </span>
+                <span className="font-medium text-[#1d2733]">{pv.path}</span>
+                {pv.title ? (
+                  <span className="ml-2 text-[#7c8a96]">— {pv.title}</span>
+                ) : null}
+                <span className="ml-2 text-[10px] text-[#8a9099]">
+                  {new Date(pv.viewedAt).toLocaleTimeString("bg-BG", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  })}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function VisitsStats({ visits }: { visits: AdminVisitRecord[] }) {
+  const now = new Date();
+  const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const weekAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+
+  const todayVisits = visits.filter((v) => new Date(v.startedAt).getTime() >= dayStart);
+  const weekVisits = visits.filter((v) => new Date(v.startedAt).getTime() >= weekAgo);
+  const totalPageviews = sumBy(visits, (v) => v.pageviewCount);
+  const avgPageviews = visits.length > 0 ? totalPageviews / visits.length : 0;
+  const avgDuration =
+    visits.length > 0
+      ? sumBy(visits, (v) =>
+          Math.max(new Date(v.lastSeenAt).getTime() - new Date(v.startedAt).getTime(), 0),
+        ) / visits.length
+      : 0;
+
+  // Top landing paths
+  const landingCounts = groupCount(
+    visits.filter((v) => v.landingPath),
+    (v) => v.landingPath as string,
+  );
+  const topLandings = Object.entries(landingCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+  const maxLanding = Math.max(...topLandings.map((e) => e[1]), 1);
+
+  // Top viewed paths (across all pageviews)
+  const pathCounts = visits
+    .flatMap((v) => v.pageviews.map((pv) => pv.path))
+    .reduce<Record<string, number>>((acc, path) => {
+      acc[path] = (acc[path] ?? 0) + 1;
+      return acc;
+    }, {});
+  const topPaths = Object.entries(pathCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+  const maxPath = Math.max(...topPaths.map((e) => e[1]), 1);
+
+  // Referrers
+  const referrerCounts = visits.reduce<Record<string, number>>((acc, v) => {
+    const host = hostFromReferrer(v.referrer) ?? "директно";
+    acc[host] = (acc[host] ?? 0) + 1;
+    return acc;
+  }, {});
+  const topReferrers = Object.entries(referrerCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
+  const maxReferrer = Math.max(...topReferrers.map((e) => e[1]), 1);
+
+  // Recent visits to show in expandable list
+  const recentVisits = visits.slice(0, 25);
+
+  return (
+    <Section title="Посещения" color="#0891b2">
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="Уникални посещения"
+          value={String(visits.length)}
+          sub="общо в базата"
+          accent="#0891b2"
+        />
+        <MetricCard
+          label="Днес"
+          value={String(todayVisits.length)}
+          sub={`${sumBy(todayVisits, (v) => v.pageviewCount)} прегледа`}
+          accent="#218a54"
+        />
+        <MetricCard
+          label="Последните 7 дни"
+          value={String(weekVisits.length)}
+          sub={`${sumBy(weekVisits, (v) => v.pageviewCount)} прегледа`}
+          accent="#3d73b8"
+        />
+        <MetricCard
+          label="Средно стр./сесия"
+          value={avgPageviews.toFixed(1)}
+          sub={`~${formatDuration(avgDuration)} средно`}
+          accent="#8a6f45"
+        />
+      </div>
+
+      <div className="mb-4 grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardTitle>Топ страници (всички прегледи)</CardTitle>
+          {topPaths.length === 0 ? (
+            <Empty />
+          ) : (
+            <div className="space-y-3">
+              {topPaths.map(([path, cnt]) => (
+                <HBar
+                  key={path}
+                  label={path}
+                  value={cnt}
+                  max={maxPath}
+                  color="#0891b2"
+                  note={`${cnt}`}
+                />
+              ))}
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <CardTitle>Топ входни страници</CardTitle>
+          {topLandings.length === 0 ? (
+            <Empty />
+          ) : (
+            <div className="space-y-3">
+              {topLandings.map(([path, cnt]) => (
+                <HBar
+                  key={path}
+                  label={path}
+                  value={cnt}
+                  max={maxLanding}
+                  color="#3d73b8"
+                  note={`${cnt}`}
+                />
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <div className="mb-4 grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardTitle>Източници (referrer)</CardTitle>
+          {topReferrers.length === 0 ? (
+            <Empty />
+          ) : (
+            <div className="space-y-3">
+              {topReferrers.map(([host, cnt]) => (
+                <HBar
+                  key={host}
+                  label={host}
+                  value={cnt}
+                  max={maxReferrer}
+                  color="#6a4fa3"
+                  note={`${cnt}`}
+                />
+              ))}
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <CardTitle>Последни {recentVisits.length} посещения</CardTitle>
+          {recentVisits.length === 0 ? (
+            <Empty />
+          ) : (
+            <div>
+              {recentVisits.map((visit) => (
+                <VisitRow key={visit.id} visit={visit} />
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+    </Section>
+  );
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export function AdminStats({
   orders,
   users,
   products,
+  visits,
 }: {
   orders: AdminOrderRecord[];
   users: AdminUserProfile[];
   products: AdminProductRecord[];
+  visits: AdminVisitRecord[];
 }) {
   return (
     <div className="space-y-3">
+      <VisitsStats visits={visits} />
       <OrdersStats orders={orders} />
       <ProductSalesStats orders={orders} />
       <UsersStats users={users} />

@@ -29,7 +29,8 @@
       "Bash(taskkill /F /IM node.exe)",
       "Bash(exit 0)",
       "PowerShell(Stop-Process -Name \"node\" -Force -ErrorAction SilentlyContinue)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(echo \"EXIT:$?\")"
     ]
   }
 }

@@ -129,6 +129,42 @@ type AdminOrderRow = {
 type CategoryRow = { id: number; slug: string };
 type AudienceRow = { id: number; slug: string };
 
+export type AdminVisitRecord = {
+  id: string;
+  sessionId: string;
+  startedAt: string;
+  lastSeenAt: string;
+  pageviewCount: number;
+  referrer: string | null;
+  userAgent: string | null;
+  landingPath: string | null;
+  pageviews: Array<{
+    id: string;
+    path: string;
+    title: string | null;
+    viewedAt: string;
+  }>;
+};
+
+type VisitPageviewRow = {
+  id: string;
+  path: string;
+  title: string | null;
+  viewed_at: string;
+};
+
+type VisitRow = {
+  id: string;
+  session_id: string;
+  started_at: string;
+  last_seen_at: string;
+  pageview_count: number;
+  referrer: string | null;
+  user_agent: string | null;
+  landing_path: string | null;
+  visit_pageviews?: VisitPageviewRow[];
+};
+
 function toSlugList(value: Array<string | undefined> | null | undefined) {
   return (value ?? []).filter((slug): slug is string => Boolean(slug));
 }
@@ -353,6 +389,48 @@ export async function getAdminOrderById(orderId: string) {
   }
 
   return data ? mapAdminOrder(data) : null;
+}
+
+export async function getAdminVisits({ limit = 500 }: { limit?: number } = {}): Promise<AdminVisitRecord[]> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("site_visits")
+    .select(`
+      id,
+      session_id,
+      started_at,
+      last_seen_at,
+      pageview_count,
+      referrer,
+      user_agent,
+      landing_path,
+      visit_pageviews(id, path, title, viewed_at)
+    `)
+    .order("started_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`Failed to fetch admin visits: ${error.message}`);
+  }
+
+  return ((data ?? []) as VisitRow[]).map((row) => ({
+    id: row.id,
+    sessionId: row.session_id,
+    startedAt: row.started_at,
+    lastSeenAt: row.last_seen_at,
+    pageviewCount: row.pageview_count,
+    referrer: row.referrer,
+    userAgent: row.user_agent,
+    landingPath: row.landing_path,
+    pageviews: [...(row.visit_pageviews ?? [])]
+      .sort((a, b) => new Date(a.viewed_at).getTime() - new Date(b.viewed_at).getTime())
+      .map((pv) => ({
+        id: pv.id,
+        path: pv.path,
+        title: pv.title,
+        viewedAt: pv.viewed_at,
+      })),
+  }));
 }
 
 export async function getAdminTaxonomy() {
