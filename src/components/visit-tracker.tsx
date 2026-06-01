@@ -34,6 +34,18 @@ export function VisitTracker() {
   useEffect(() => {
     if (!pathname) return;
 
+    const host = window.location.hostname;
+    const isLocal =
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host === "::1" ||
+      host.endsWith(".local") ||
+      host.startsWith("192.168.") ||
+      host.startsWith("10.") ||
+      /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+
+    if (isLocal) return;
+
     const search = searchParams?.toString();
     const fullPath = search ? `${pathname}?${search}` : pathname;
     const sessionId = readOrCreateSessionId();
