@@ -158,17 +158,30 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fffdf9_0%,#f7eef4_44%,#f5edf5_100%)]">
+      {/* Breadcrumb */}
+      <section className="h-[49px] w-full border-b border-[#ece6f1] bg-white">
+        <div className="flex h-full min-w-0 items-center px-6 sm:px-10 lg:px-14">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-[13px] font-medium text-[#7a688d]"
+          >
+            <Link href="/" className="shrink-0 transition hover:text-[#432855]">
+              Начало
+            </Link>
+            <span className="shrink-0 text-[#b7a8c3]">/</span>
+            <Link href="/beauty-care" className="shrink-0 transition hover:text-[#432855]">
+              Красота & грижа
+            </Link>
+            <span className="shrink-0 text-[#b7a8c3]">/</span>
+            <span className="min-w-0 truncate text-[#5f4b73]">{post.title}</span>
+          </nav>
+        </div>
+      </section>
+
       {/* Header */}
       <section className="border-b border-[#eadde4] bg-white">
         <div className="mx-auto max-w-5xl px-6 py-12 sm:px-10 lg:px-14 lg:py-16">
-          <Link
-            href="/beauty-care"
-            className="inline-flex h-11 items-center justify-center rounded-full border border-[#d9cce5] bg-white px-5 text-sm font-semibold uppercase tracking-[0.12em] text-[#6c3f8d] transition hover:border-[#cbb7d8] hover:text-[#432855]"
-          >
-            Назад към Красота & грижа
-          </Link>
-
-          <div className="mt-6 max-w-4xl">
+          <div className="max-w-4xl">
             {post.eyebrow ? (
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#8f72a7]">
                 {post.eyebrow}

@@ -164,6 +164,7 @@ export function Navbar() {
     { href: "/", label: "Начало" },
     { href: "/products", label: "Продукти" },
     { href: "/about", label: "За нас" },
+    { href: "/beauty-care", label: "Красота & грижа" },
     { href: "/contact", label: "Контакти" },
   ];
   const quickLinks = [
