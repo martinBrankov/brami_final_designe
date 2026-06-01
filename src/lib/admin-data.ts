@@ -132,18 +132,40 @@ type AudienceRow = { id: number; slug: string };
 export type AdminVisitRecord = {
   id: string;
   sessionId: string;
+  visitorId: string | null;
   startedAt: string;
   lastSeenAt: string;
   pageviewCount: number;
   referrer: string | null;
   userAgent: string | null;
   landingPath: string | null;
+  country: string | null;
+  countryCode: string | null;
+  region: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
   pageviews: Array<{
     id: string;
     path: string;
     title: string | null;
     viewedAt: string;
   }>;
+};
+
+export type AdminVisitorRecord = {
+  id: string;
+  visitorToken: string;
+  fingerprintHash: string | null;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  visitCount: number;
+  country: string | null;
+  countryCode: string | null;
+  region: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 type VisitPageviewRow = {
@@ -156,13 +178,35 @@ type VisitPageviewRow = {
 type VisitRow = {
   id: string;
   session_id: string;
+  visitor_id: string | null;
   started_at: string;
   last_seen_at: string;
   pageview_count: number;
   referrer: string | null;
   user_agent: string | null;
   landing_path: string | null;
+  country: string | null;
+  country_code: string | null;
+  region: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
   visit_pageviews?: VisitPageviewRow[];
+};
+
+type VisitorRow = {
+  id: string;
+  visitor_token: string;
+  fingerprint_hash: string | null;
+  first_seen_at: string;
+  last_seen_at: string;
+  visit_count: number;
+  country: string | null;
+  country_code: string | null;
+  region: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 function toSlugList(value: Array<string | undefined> | null | undefined) {
@@ -398,12 +442,19 @@ export async function getAdminVisits({ limit = 500 }: { limit?: number } = {}): 
     .select(`
       id,
       session_id,
+      visitor_id,
       started_at,
       last_seen_at,
       pageview_count,
       referrer,
       user_agent,
       landing_path,
+      country,
+      country_code,
+      region,
+      city,
+      latitude,
+      longitude,
       visit_pageviews(id, path, title, viewed_at)
     `)
     .order("started_at", { ascending: false })
@@ -416,12 +467,19 @@ export async function getAdminVisits({ limit = 500 }: { limit?: number } = {}): 
   return ((data ?? []) as VisitRow[]).map((row) => ({
     id: row.id,
     sessionId: row.session_id,
+    visitorId: row.visitor_id,
     startedAt: row.started_at,
     lastSeenAt: row.last_seen_at,
     pageviewCount: row.pageview_count,
     referrer: row.referrer,
     userAgent: row.user_agent,
     landingPath: row.landing_path,
+    country: row.country,
+    countryCode: row.country_code,
+    region: row.region,
+    city: row.city,
+    latitude: row.latitude,
+    longitude: row.longitude,
     pageviews: [...(row.visit_pageviews ?? [])]
       .sort((a, b) => new Date(a.viewed_at).getTime() - new Date(b.viewed_at).getTime())
       .map((pv) => ({
@@ -430,6 +488,36 @@ export async function getAdminVisits({ limit = 500 }: { limit?: number } = {}): 
         title: pv.title,
         viewedAt: pv.viewed_at,
       })),
+  }));
+}
+
+export async function getAdminVisitors({ limit = 500 }: { limit?: number } = {}): Promise<AdminVisitorRecord[]> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("site_visitors")
+    .select(
+      "id, visitor_token, fingerprint_hash, first_seen_at, last_seen_at, visit_count, country, country_code, region, city, latitude, longitude",
+    )
+    .order("last_seen_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`Failed to fetch admin visitors: ${error.message}`);
+  }
+
+  return ((data ?? []) as VisitorRow[]).map((row) => ({
+    id: row.id,
+    visitorToken: row.visitor_token,
+    fingerprintHash: row.fingerprint_hash,
+    firstSeenAt: row.first_seen_at,
+    lastSeenAt: row.last_seen_at,
+    visitCount: row.visit_count,
+    country: row.country,
+    countryCode: row.country_code,
+    region: row.region,
+    city: row.city,
+    latitude: row.latitude,
+    longitude: row.longitude,
   }));
 }
 

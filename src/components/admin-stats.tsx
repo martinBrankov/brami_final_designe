@@ -7,6 +7,7 @@ import type {
   AdminUserProfile,
   AdminProductRecord,
   AdminVisitRecord,
+  AdminVisitorRecord,
 } from "@/lib/admin-data";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -780,11 +781,32 @@ function hostFromReferrer(ref: string | null) {
   }
 }
 
-function VisitRow({ visit }: { visit: AdminVisitRecord }) {
+function flagFromCountryCode(code: string | null | undefined) {
+  if (!code || code.length !== 2) return "";
+  const base = 0x1f1e6;
+  const a = "A".charCodeAt(0);
+  const cc = code.toUpperCase();
+  return String.fromCodePoint(base + cc.charCodeAt(0) - a, base + cc.charCodeAt(1) - a);
+}
+
+function geoLabel(visit: { city: string | null; region: string | null; country: string | null }) {
+  const parts = [visit.city, visit.region, visit.country].filter(Boolean);
+  return parts.length > 0 ? parts.join(", ") : null;
+}
+
+function VisitRow({
+  visit,
+  isReturning,
+}: {
+  visit: AdminVisitRecord;
+  isReturning: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const durationMs =
     new Date(visit.lastSeenAt).getTime() - new Date(visit.startedAt).getTime();
   const refHost = hostFromReferrer(visit.referrer) ?? "директно";
+  const flag = flagFromCountryCode(visit.countryCode);
+  const geo = geoLabel(visit);
 
   return (
     <div className="border-b border-[#f0ece4]">
@@ -794,11 +816,21 @@ function VisitRow({ visit }: { visit: AdminVisitRecord }) {
         className="grid w-full grid-cols-[1fr_auto_auto_auto] items-center gap-3 py-3 text-left"
       >
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-[#1d2733]">
-            {visit.landingPath ?? "—"}
+          <p className="flex items-center gap-2 truncate text-sm font-medium text-[#1d2733]">
+            {flag ? <span aria-hidden>{flag}</span> : null}
+            <span className="truncate">{visit.landingPath ?? "—"}</span>
+            <span
+              className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${
+                isReturning
+                  ? "bg-[#e9f1e6] text-[#218a54]"
+                  : "bg-[#eef2f7] text-[#3d73b8]"
+              }`}
+            >
+              {isReturning ? "Връщащ се" : "Нов"}
+            </span>
           </p>
           <p className="truncate text-xs text-[#6a7480]">
-            {formatRelative(visit.startedAt)} · от {refHost}
+            {formatRelative(visit.startedAt)} · {geo ?? "неизвестна локация"} · от {refHost}
           </p>
         </div>
         <span className="shrink-0 text-xs font-semibold text-[#3d73b8]">
@@ -849,7 +881,13 @@ function VisitRow({ visit }: { visit: AdminVisitRecord }) {
   );
 }
 
-function VisitsStats({ visits }: { visits: AdminVisitRecord[] }) {
+function VisitsStats({
+  visits,
+  visitors,
+}: {
+  visits: AdminVisitRecord[];
+  visitors: AdminVisitorRecord[];
+}) {
   const now = new Date();
   const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const weekAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
@@ -864,6 +902,46 @@ function VisitsStats({ visits }: { visits: AdminVisitRecord[] }) {
           Math.max(new Date(v.lastSeenAt).getTime() - new Date(v.startedAt).getTime(), 0),
         ) / visits.length
       : 0;
+
+  // Unique vs returning visitors
+  const totalVisitors = visitors.length;
+  const returningVisitors = visitors.filter((v) => v.visitCount > 1).length;
+  const newVisitors = totalVisitors - returningVisitors;
+  const returningPct =
+    totalVisitors > 0 ? Math.round((returningVisitors / totalVisitors) * 100) : 0;
+  const todayVisitors = visitors.filter((v) => new Date(v.firstSeenAt).getTime() >= dayStart).length;
+
+  // Map visitor_id → visitCount so we can tag each visit as new/returning
+  const visitorCountMap = new Map(visitors.map((v) => [v.id, v.visitCount]));
+  const isReturningVisit = (visit: AdminVisitRecord) => {
+    if (!visit.visitorId) return false;
+    return (visitorCountMap.get(visit.visitorId) ?? 0) > 1;
+  };
+
+  // Geo aggregates from visits (so we see distribution by session, not by person)
+  const countryAgg = visits
+    .filter((v) => v.country)
+    .reduce<Record<string, { count: number; code: string | null }>>((acc, v) => {
+      const key = v.country as string;
+      acc[key] = {
+        count: (acc[key]?.count ?? 0) + 1,
+        code: acc[key]?.code ?? v.countryCode,
+      };
+      return acc;
+    }, {});
+  const topCountries = Object.entries(countryAgg)
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 8);
+  const maxCountry = Math.max(...topCountries.map((e) => e[1].count), 1);
+
+  const cityCounts = groupCount(
+    visits.filter((v) => v.city),
+    (v) => `${v.city}, ${v.countryCode ?? v.country ?? "?"}`,
+  );
+  const topCities = Object.entries(cityCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+  const maxCity = Math.max(...topCities.map((e) => e[1]), 1);
 
   // Top landing paths
   const landingCounts = groupCount(
@@ -905,29 +983,95 @@ function VisitsStats({ visits }: { visits: AdminVisitRecord[] }) {
     <Section title="Посещения" color="#0891b2">
       <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          label="Уникални посещения"
-          value={String(visits.length)}
-          sub="общо в базата"
+          label="Уникални потребители"
+          value={String(totalVisitors)}
+          sub={`${newVisitors} нови · ${returningVisitors} връщащи се`}
           accent="#0891b2"
         />
         <MetricCard
-          label="Днес"
-          value={String(todayVisits.length)}
-          sub={`${sumBy(todayVisits, (v) => v.pageviewCount)} прегледа`}
+          label="% връщащи се"
+          value={`${returningPct} %`}
+          sub={`${returningVisitors} от ${totalVisitors}`}
           accent="#218a54"
         />
         <MetricCard
-          label="Последните 7 дни"
-          value={String(weekVisits.length)}
-          sub={`${sumBy(weekVisits, (v) => v.pageviewCount)} прегледа`}
+          label="Сесии общо"
+          value={String(visits.length)}
+          sub={`${totalPageviews} прегледа на страница`}
           accent="#3d73b8"
         />
         <MetricCard
           label="Средно стр./сесия"
           value={avgPageviews.toFixed(1)}
-          sub={`~${formatDuration(avgDuration)} средно`}
+          sub={`~${formatDuration(avgDuration)} средна продължителност`}
           accent="#8a6f45"
         />
+      </div>
+
+      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+        <MetricCard
+          label="Нови потребители днес"
+          value={String(todayVisitors)}
+          sub="за първи път на сайта"
+          accent="#218a54"
+        />
+        <MetricCard
+          label="Сесии днес"
+          value={String(todayVisits.length)}
+          sub={`${sumBy(todayVisits, (v) => v.pageviewCount)} прегледа`}
+          accent="#0891b2"
+        />
+        <MetricCard
+          label="Сесии последните 7 дни"
+          value={String(weekVisits.length)}
+          sub={`${sumBy(weekVisits, (v) => v.pageviewCount)} прегледа`}
+          accent="#6a4fa3"
+        />
+      </div>
+
+      <div className="mb-4 grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardTitle>Топ държави</CardTitle>
+          {topCountries.length === 0 ? (
+            <Empty />
+          ) : (
+            <div className="space-y-3">
+              {topCountries.map(([country, info]) => {
+                const flag = flagFromCountryCode(info.code);
+                return (
+                  <HBar
+                    key={country}
+                    label={flag ? `${flag}  ${country}` : country}
+                    value={info.count}
+                    max={maxCountry}
+                    color="#0891b2"
+                    note={`${info.count}`}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <CardTitle>Топ градове</CardTitle>
+          {topCities.length === 0 ? (
+            <Empty />
+          ) : (
+            <div className="space-y-3">
+              {topCities.map(([city, cnt]) => (
+                <HBar
+                  key={city}
+                  label={city}
+                  value={cnt}
+                  max={maxCity}
+                  color="#3d73b8"
+                  note={`${cnt}`}
+                />
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
 
       <div className="mb-4 grid gap-4 lg:grid-cols-2">
@@ -1000,7 +1144,11 @@ function VisitsStats({ visits }: { visits: AdminVisitRecord[] }) {
           ) : (
             <div>
               {recentVisits.map((visit) => (
-                <VisitRow key={visit.id} visit={visit} />
+                <VisitRow
+                  key={visit.id}
+                  visit={visit}
+                  isReturning={isReturningVisit(visit)}
+                />
               ))}
             </div>
           )}
@@ -1017,15 +1165,17 @@ export function AdminStats({
   users,
   products,
   visits,
+  visitors,
 }: {
   orders: AdminOrderRecord[];
   users: AdminUserProfile[];
   products: AdminProductRecord[];
   visits: AdminVisitRecord[];
+  visitors: AdminVisitorRecord[];
 }) {
   return (
     <div className="space-y-3">
-      <VisitsStats visits={visits} />
+      <VisitsStats visits={visits} visitors={visitors} />
       <OrdersStats orders={orders} />
       <ProductSalesStats orders={orders} />
       <UsersStats users={users} />
