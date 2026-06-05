@@ -276,9 +276,12 @@ ${recentList}
     throw new Error(insertErr?.message || "Failed to create draft");
   }
 
+  // blog_blocks.type CHECK constraint allows only 'text' and 'image'.
+  // Headings are encoded as <h2>…</h2> inside content — the editor's
+  // parseDbBlock detects them and renders the heading block accordingly.
   const rows = article.blocks.map((block, i) => ({
     post_id: post.id,
-    type: block.type === "heading" ? "heading" : "paragraph",
+    type: "text",
     content: block.type === "heading" ? `<h2>${block.text}</h2>` : block.html,
     position: i + 1,
   }));
