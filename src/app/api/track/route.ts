@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import {
+  EMPTY_GEO,
+  getClientIp,
+  isPrivateOrInvalidIp,
+  resolveGeo,
+  type GeoLookup,
+} from "@/lib/visit-geo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,24 +21,6 @@ type TrackPayload = {
   title?: unknown;
   referrer?: unknown;
   timezone?: unknown;
-};
-
-type GeoLookup = {
-  country: string | null;
-  countryCode: string | null;
-  region: string | null;
-  city: string | null;
-  latitude: number | null;
-  longitude: number | null;
-};
-
-const EMPTY_GEO: GeoLookup = {
-  country: null,
-  countryCode: null,
-  region: null,
-  city: null,
-  latitude: null,
-  longitude: null,
 };
 
 function isNonEmptyString(value: unknown): value is string {
@@ -49,64 +38,6 @@ function getSalt() {
 function hashIp(ip: string | null) {
   if (!ip) return null;
   return createHash("sha256").update(`${getSalt()}:${ip}`).digest("hex").slice(0, 32);
-}
-
-function getClientIp(request: Request) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]?.trim() ?? null;
-  const real = request.headers.get("x-real-ip");
-  if (real) return real.trim();
-  return null;
-}
-
-function isPrivateOrInvalidIp(ip: string | null): boolean {
-  if (!ip) return true;
-  if (ip === "::1" || ip === "127.0.0.1") return true;
-  if (ip.startsWith("10.")) return true;
-  if (ip.startsWith("192.168.")) return true;
-  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(ip)) return true;
-  if (ip.startsWith("fc") || ip.startsWith("fd")) return true; // IPv6 ULA
-  if (ip.startsWith("fe80:")) return true; // link-local
-  return false;
-}
-
-// Best-effort IP geolocation via ipwho.is (no API key, free tier).
-// Times out fast and silently falls back to nulls.
-async function geolocateIp(ip: string | null): Promise<GeoLookup> {
-  if (isPrivateOrInvalidIp(ip)) return EMPTY_GEO;
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 2500);
-
-  try {
-    const res = await fetch(
-      `https://ipwho.is/${encodeURIComponent(ip!)}?fields=success,country,country_code,region,city,latitude,longitude`,
-      { signal: controller.signal, cache: "no-store" },
-    );
-    if (!res.ok) return EMPTY_GEO;
-    const data = (await res.json()) as {
-      success?: boolean;
-      country?: string;
-      country_code?: string;
-      region?: string;
-      city?: string;
-      latitude?: number;
-      longitude?: number;
-    };
-    if (data.success === false) return EMPTY_GEO;
-    return {
-      country: data.country ?? null,
-      countryCode: data.country_code ?? null,
-      region: data.region ?? null,
-      city: data.city ?? null,
-      latitude: typeof data.latitude === "number" ? data.latitude : null,
-      longitude: typeof data.longitude === "number" ? data.longitude : null,
-    };
-  } catch {
-    return EMPTY_GEO;
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 export async function POST(request: Request) {
@@ -127,8 +58,20 @@ export async function POST(request: Request) {
     ? clip(body.fingerprint.trim(), 128)
     : null;
   const userAgent = clip(request.headers.get("user-agent") ?? "", 512) || null;
-  const ip = getClientIp(request);
+  const { ip, source: ipSource } = getClientIp(request.headers);
   const ipHash = hashIp(ip);
+
+  if (!ip) {
+    console.warn("[track] no client IP detected", {
+      forwardedFor: request.headers.get("x-forwarded-for"),
+      vercelForwardedFor: request.headers.get("x-vercel-forwarded-for"),
+      realIp: request.headers.get("x-real-ip"),
+      cf: request.headers.get("cf-connecting-ip"),
+      path,
+    });
+  } else if (isPrivateOrInvalidIp(ip)) {
+    console.warn("[track] client IP is private/invalid — geo skipped", { ip, ipSource, path });
+  }
 
   const supabase = createSupabaseAdminClient();
   const now = new Date().toISOString();
@@ -198,8 +141,7 @@ export async function POST(request: Request) {
     isNewVisit = true;
 
     // Geo lookup only on new visits (one network hit per session, not per pageview).
-    // Reuse the visitor's cached geo when present and IP unchanged conceptually —
-    // we still re-fetch if the visitor has no geo yet.
+    // Reuse the visitor's cached geo when present; otherwise resolve fresh.
     if (visitor && visitor.country) {
       geo = {
         country: visitor.country,
@@ -208,9 +150,21 @@ export async function POST(request: Request) {
         city: visitor.city,
         latitude: visitor.latitude,
         longitude: visitor.longitude,
+        source: "visitor-cache",
       };
     } else {
-      geo = await geolocateIp(ip);
+      geo = await resolveGeo(request.headers, ip);
+      if (!geo.country) {
+        console.warn("[track] geo lookup returned empty", { ip, ipSource });
+      } else {
+        console.log("[track] geo resolved", {
+          ip,
+          ipSource,
+          source: geo.source,
+          country: geo.country,
+          city: geo.city,
+        });
+      }
     }
 
     // Create or upsert visitor first so we can link the visit.

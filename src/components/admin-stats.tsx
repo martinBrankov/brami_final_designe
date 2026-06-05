@@ -84,11 +84,13 @@ function MetricCard({
   label,
   value,
   sub,
+  hint,
   accent,
 }: {
   label: string;
   value: string;
   sub?: string;
+  hint?: string;
   accent: string;
 }) {
   return (
@@ -98,6 +100,9 @@ function MetricCard({
         {value}
       </p>
       {sub ? <p className="mt-0.5 text-xs text-[#7c8a96]">{sub}</p> : null}
+      {hint ? (
+        <p className="mt-1.5 text-[10px] leading-[1.35] text-[#9aa3ad]">{hint}</p>
+      ) : null}
     </div>
   );
 }
@@ -794,6 +799,226 @@ function geoLabel(visit: { city: string | null; region: string | null; country: 
   return parts.length > 0 ? parts.join(", ") : null;
 }
 
+// ── Visits time chart ─────────────────────────────────────────────────────────
+
+type Granularity = "day" | "week" | "month";
+
+type Bucket = { key: string; start: Date; end: Date; label: string };
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function startOfWeek(date: Date) {
+  // ISO week starting Monday
+  const d = startOfDay(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function startOfMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function buildBuckets(granularity: Granularity): Bucket[] {
+  const now = new Date();
+  const buckets: Bucket[] = [];
+
+  if (granularity === "day") {
+    // 24 hourly buckets covering today.
+    const todayStart = startOfDay(now);
+    for (let hour = 0; hour < 24; hour += 1) {
+      const start = new Date(todayStart.getTime() + hour * 60 * 60 * 1000);
+      const end = new Date(start.getTime() + 60 * 60 * 1000);
+      buckets.push({
+        key: start.toISOString(),
+        start,
+        end,
+        label: `${String(hour).padStart(2, "0")}h`,
+      });
+    }
+    return buckets;
+  }
+
+  if (granularity === "week") {
+    // 8 weekly buckets ending with the current week.
+    for (let i = 7; i >= 0; i -= 1) {
+      const start = startOfWeek(
+        new Date(now.getFullYear(), now.getMonth(), now.getDate() - i * 7),
+      );
+      const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+      buckets.push({
+        key: start.toISOString(),
+        start,
+        end,
+        label: start.toLocaleDateString("bg-BG", { day: "2-digit", month: "2-digit" }),
+      });
+    }
+    return buckets;
+  }
+
+  // 6 monthly buckets ending with the current month.
+  for (let i = 5; i >= 0; i -= 1) {
+    const start = startOfMonth(new Date(now.getFullYear(), now.getMonth() - i, 1));
+    const end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+    buckets.push({
+      key: start.toISOString(),
+      start,
+      end,
+      label: start.toLocaleDateString("bg-BG", { month: "short", year: "2-digit" }),
+    });
+  }
+  return buckets;
+}
+
+function VisitsTimeChart({
+  visits,
+  visitors,
+}: {
+  visits: AdminVisitRecord[];
+  visitors: AdminVisitorRecord[];
+}) {
+  const [granularity, setGranularity] = useState<Granularity>("day");
+  const buckets = buildBuckets(granularity);
+  const earliestStart = buckets[0]?.start.getTime() ?? 0;
+
+  // visitor_id → first session timestamp (so we can count "new visitors" per bucket)
+  const visitorFirstSeen = new Map<string, number>();
+  for (const v of visitors) {
+    visitorFirstSeen.set(v.id, new Date(v.firstSeenAt).getTime());
+  }
+
+  const data = buckets.map((bucket) => {
+    const startMs = bucket.start.getTime();
+    const endMs = bucket.end.getTime();
+    const inRange = visits.filter((v) => {
+      const t = new Date(v.startedAt).getTime();
+      return t >= startMs && t < endMs;
+    });
+    const uniqueVisitorIds = new Set(
+      inRange.map((v) => v.visitorId).filter((id): id is string => Boolean(id)),
+    );
+    const newVisitorIds = Array.from(uniqueVisitorIds).filter((id) => {
+      const first = visitorFirstSeen.get(id);
+      return first != null && first >= startMs && first < endMs;
+    });
+    return {
+      label: bucket.label,
+      sessions: inRange.length,
+      visitors: uniqueVisitorIds.size,
+      newVisitors: newVisitorIds.length,
+    };
+  });
+
+  const maxValue = Math.max(...data.map((d) => Math.max(d.sessions, d.visitors)), 1);
+  const totalSessions = sumBy(data, (d) => d.sessions);
+  const totalVisitors = (() => {
+    const set = new Set<string>();
+    for (const v of visits) {
+      if (!v.visitorId) continue;
+      const t = new Date(v.startedAt).getTime();
+      if (t >= earliestStart) set.add(v.visitorId);
+    }
+    return set.size;
+  })();
+
+  const granularityButtons: Array<{ value: Granularity; label: string }> = [
+    { value: "day", label: "Ден" },
+    { value: "week", label: "Седмица" },
+    { value: "month", label: "Месец" },
+  ];
+
+  return (
+    <Card>
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
+        <CardTitle>
+          {granularity === "day"
+            ? "Сесии и уникални потребители днес (по час)"
+            : "Сесии и уникални потребители във времето"}
+        </CardTitle>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] text-[#7c8a96]">
+            {totalVisitors} уник. · {totalSessions} сесии в периода
+          </span>
+          <div className="flex overflow-hidden rounded-full border border-[#e7dfd1]">
+            {granularityButtons.map((btn) => (
+              <button
+                key={btn.value}
+                type="button"
+                onClick={() => setGranularity(btn.value)}
+                className={`px-3 py-1 text-[11px] font-medium transition ${
+                  granularity === btn.value
+                    ? "bg-[#1d2733] text-white"
+                    : "bg-white text-[#4f5b66] hover:bg-[#f4efe5]"
+                }`}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-2 flex items-center gap-4 text-[10px] text-[#6a7480]">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2 w-3 rounded-sm bg-[#0891b2]" /> уник. потребители
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2 w-3 rounded-sm bg-[#3d73b8]" /> сесии
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2 w-3 rounded-sm bg-[#218a54]" /> нови потребители
+        </span>
+      </div>
+
+      <div
+        className={`flex items-end ${granularity === "day" ? "gap-1" : "gap-2"}`}
+        style={{ height: "160px" }}
+      >
+        {data.map((d, i) => {
+          const visitorH = Math.round((d.visitors / maxValue) * 120);
+          const sessionH = Math.round((d.sessions / maxValue) * 120);
+          const newH = Math.round((d.newVisitors / maxValue) * 120);
+          // For 24-hour day view, only label every 2 hours to avoid clutter.
+          const showLabel = granularity !== "day" || i % 2 === 0;
+          return (
+            <div key={i} className="flex flex-1 flex-col items-center gap-1">
+              <div
+                className="flex w-full items-end justify-center gap-[2px]"
+                style={{ height: "128px" }}
+              >
+                <div
+                  className="w-1/3 rounded-t-[3px] bg-[#0891b2]"
+                  style={{ height: `${Math.max(visitorH, d.visitors > 0 ? 3 : 0)}px` }}
+                  title={`${d.label}: ${d.visitors} уник.`}
+                />
+                <div
+                  className="w-1/3 rounded-t-[3px] bg-[#3d73b8]"
+                  style={{ height: `${Math.max(sessionH, d.sessions > 0 ? 3 : 0)}px` }}
+                  title={`${d.label}: ${d.sessions} сесии`}
+                />
+                <div
+                  className="w-1/3 rounded-t-[3px] bg-[#218a54]"
+                  style={{ height: `${Math.max(newH, d.newVisitors > 0 ? 3 : 0)}px` }}
+                  title={`${d.label}: ${d.newVisitors} нови`}
+                />
+              </div>
+              <p className="text-[9px] text-[#6a7480]">{showLabel ? d.label : " "}</p>
+              {(d.sessions > 0 || d.visitors > 0) && granularity !== "day" ? (
+                <p className="text-[9px] font-medium text-[#1d2733]">
+                  {d.visitors}/{d.sessions}
+                </p>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
 function VisitRow({
   visit,
   isReturning,
@@ -986,24 +1211,28 @@ function VisitsStats({
           label="Уникални потребители"
           value={String(totalVisitors)}
           sub={`${newVisitors} нови · ${returningVisitors} връщащи се`}
+          hint="Брой различни устройства/браузъри, които някога са посещавали сайта. Един човек = един потребител (на базата на постоянен токен в localStorage и фингърпринт)."
           accent="#0891b2"
         />
         <MetricCard
           label="% връщащи се"
           value={`${returningPct} %`}
           sub={`${returningVisitors} от ${totalVisitors}`}
+          hint="Какъв дял от уникалните потребители са се връщали поне още веднъж (имат повече от една сесия). Висок процент означава лоялна аудитория."
           accent="#218a54"
         />
         <MetricCard
           label="Сесии общо"
           value={String(visits.length)}
           sub={`${totalPageviews} прегледа на страница`}
+          hint="Брой посещения. Една сесия = един път, в който някой влиза на сайта. Ако напусне и се върне по-късно, броим нова сесия."
           accent="#3d73b8"
         />
         <MetricCard
           label="Средно стр./сесия"
           value={avgPageviews.toFixed(1)}
           sub={`~${formatDuration(avgDuration)} средна продължителност`}
+          hint="Средно колко страници разглежда един посетител в рамките на една сесия и колко време прекарва на сайта."
           accent="#8a6f45"
         />
       </div>
@@ -1013,20 +1242,27 @@ function VisitsStats({
           label="Нови потребители днес"
           value={String(todayVisitors)}
           sub="за първи път на сайта"
+          hint="Потребители, чието първо в историята посещение е днес. Не включва връщащи се хора, дори ако влизат за първи път за деня."
           accent="#218a54"
         />
         <MetricCard
           label="Сесии днес"
           value={String(todayVisits.length)}
           sub={`${sumBy(todayVisits, (v) => v.pageviewCount)} прегледа`}
+          hint="Общ брой посещения, започнали днес от 00:00. Включва както нови, така и връщащи се потребители."
           accent="#0891b2"
         />
         <MetricCard
           label="Сесии последните 7 дни"
           value={String(weekVisits.length)}
           sub={`${sumBy(weekVisits, (v) => v.pageviewCount)} прегледа`}
+          hint="Общ брой сесии за изминалата седмица. Полезно за бърз преглед на седмичния трафик."
           accent="#6a4fa3"
         />
+      </div>
+
+      <div className="mb-4">
+        <VisitsTimeChart visits={visits} visitors={visitors} />
       </div>
 
       <div className="mb-4 grid gap-4 lg:grid-cols-2">
