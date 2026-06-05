@@ -49,6 +49,13 @@ export async function POST(request: Request) {
 
   const sessionId = clip(body.sessionId.trim(), 64);
   const path = clip(body.path.trim(), 512);
+
+  // Exclude admin panel + admin APIs from analytics.
+  const pathOnly = path.split("?")[0] ?? path;
+  if (pathOnly.startsWith("/admin-panel") || pathOnly.startsWith("/api/admin")) {
+    return NextResponse.json({ ok: true, skipped: "admin" });
+  }
+
   const title = isNonEmptyString(body.title) ? clip(body.title.trim(), 256) : null;
   const referrer = isNonEmptyString(body.referrer) ? clip(body.referrer.trim(), 512) : null;
   const visitorToken = isNonEmptyString(body.visitorToken)

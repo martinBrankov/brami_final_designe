@@ -38,6 +38,42 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
   const [cleaning, setCleaning] = useState(false);
   const [cleanResult, setCleanResult] = useState<string | null>(null);
   const [editModal, setEditModal] = useState<EditModal | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiTopic, setAiTopic] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  async function handleGenerateAI() {
+    if (!aiTopic.trim()) return;
+    setAiGenerating(true);
+    setAiError(null);
+    try {
+      const res = await fetch("/api/admin/blog/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: aiTopic.trim() }),
+      });
+      const body = await res.json().catch(() => ({})) as {
+        id?: string;
+        error?: string;
+      };
+      if (!res.ok) {
+        setAiError(body.error ?? "Грешка при генериране.");
+        return;
+      }
+      setAiOpen(false);
+      setAiTopic("");
+      router.refresh();
+      if (body.id) {
+        // Open the generated draft for immediate review.
+        await handleOpenEdit(body.id);
+      }
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "Грешка при генериране.");
+    } finally {
+      setAiGenerating(false);
+    }
+  }
 
   async function handleOpenEdit(id: string) {
     setEditModal({ kind: "loading", id });
@@ -164,6 +200,16 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
               className="inline-flex h-10 items-center rounded-[10px] border border-[#d2c8b8] bg-white px-4 text-sm font-medium text-[#5f6b76] transition hover:bg-[#f8f4ec] disabled:opacity-60"
             >
               {cleaning ? "Почиства…" : "Почисти снимки"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAiOpen(true); setAiError(null); }}
+              className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#d8b36b] bg-[#fdf8ee] px-4 text-sm font-semibold text-[#8a6f45] transition hover:bg-[#faefd6]"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.9 5.8 21.3l2.4-7.4L2 9.4h7.6L12 2z"/>
+              </svg>
+              AI генерирай
             </button>
             <button
               type="button"
@@ -301,6 +347,76 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
           </div>
         )}
       </div>
+
+      {aiOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          onClick={() => { if (!aiGenerating) setAiOpen(false); }}
+        >
+          <div
+            className="w-full max-w-md rounded-[14px] bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#fdf8ee] text-[#8a6f45]">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.9 5.8 21.3l2.4-7.4L2 9.4h7.6L12 2z"/>
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-[#1d2733]">Генериране на статия с AI</h2>
+                <p className="mt-1 text-xs text-[#7c8a96]">
+                  Статията се създава като <strong>чернова</strong>. Можеш да я редактираш и да я публикуваш ръчно.
+                </p>
+              </div>
+            </div>
+
+            <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-[#8a6f45]">
+              Тема на статията
+            </label>
+            <textarea
+              value={aiTopic}
+              onChange={(e) => setAiTopic(e.target.value)}
+              placeholder="Напр.: Грижа за кожата на лицето през лятото — съвети и рутина"
+              rows={3}
+              disabled={aiGenerating}
+              className="mt-1.5 w-full rounded-[8px] border border-[#e0dbd2] px-3 py-2 text-sm text-[#1d2733] outline-none focus:border-[#d8b36b] focus:ring-1 focus:ring-[#d8b36b]/40 disabled:opacity-60"
+            />
+
+            {aiError && (
+              <p className="mt-2 text-xs font-medium text-red-600">{aiError}</p>
+            )}
+
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setAiOpen(false)}
+                disabled={aiGenerating}
+                className="inline-flex h-9 items-center rounded-[8px] border border-[#d2c8b8] bg-white px-4 text-sm font-medium text-[#5f6b76] transition hover:bg-[#f8f4ec] disabled:opacity-60"
+              >
+                Отказ
+              </button>
+              <button
+                type="button"
+                onClick={handleGenerateAI}
+                disabled={aiGenerating || aiTopic.trim().length < 3}
+                className="inline-flex h-9 items-center gap-2 rounded-[8px] bg-[#1d2733] px-5 text-sm font-semibold text-white transition hover:bg-[#2d3a47] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {aiGenerating ? (
+                  <>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                    </svg>
+                    Генерира се…
+                  </>
+                ) : (
+                  "Генерирай чернова"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editModal !== null && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-white">
