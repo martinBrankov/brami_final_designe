@@ -42,3 +42,6 @@ next-env.d.ts
 # backups (contain production data)
 /backups/
 scripts/supabase-backup*.json
+
+#migration scripts (contain production data)
+/supabase

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { syncMarketingSubscriberForProfile, unsubscribeMarketingEmail } from "@/lib/marketing-subscribers";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export type AdminUserProfile = {
@@ -11,8 +12,9 @@ export type AdminUserProfile = {
   city: string;
   postalCode: string;
   address: string;
-  role: "user" | "super_user" | "admin";
+  role: "user" | "merchant" | "admin";
   marketingSubscription: boolean;
+  merchantDiscountPercent: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -66,6 +68,7 @@ export type AdminUserUpdateInput = {
   address: string;
   role: AdminUserProfile["role"];
   marketingSubscription: boolean;
+  merchantDiscountPercent?: number;
 };
 
 export type AdminOrderRecord = {
@@ -331,7 +334,7 @@ export async function getAdminUsers() {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("user_profiles")
-    .select("id, username, email, phone, country, city, postal_code, address, role, marketing_subscription, created_at, updated_at")
+    .select("id, username, email, phone, country, city, postal_code, address, role, marketing_subscription, merchant_discount_percent, created_at, updated_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -349,6 +352,7 @@ export async function getAdminUsers() {
     address: row.address ?? "",
     role: row.role,
     marketingSubscription: Boolean(row.marketing_subscription),
+    merchantDiscountPercent: Number(row.merchant_discount_percent ?? 0),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   })) satisfies AdminUserProfile[];
@@ -682,25 +686,58 @@ export async function deleteAdminProduct(productId: number) {
 
 export async function updateAdminUser(input: AdminUserUpdateInput) {
   const supabase = createSupabaseAdminClient();
+  const { data: existing, error: existingError } = await supabase
+    .from("user_profiles")
+    .select("email")
+    .eq("id", input.id)
+    .maybeSingle<{ email: string | null }>();
+
+  if (existingError) {
+    throw new Error(`Failed to load existing user profile: ${existingError.message}`);
+  }
+
+  const updates: Record<string, unknown> = {
+    username: input.username,
+    email: input.email,
+    phone: input.phone,
+    country: input.country,
+    city: input.city,
+    postal_code: input.postalCode,
+    address: input.address,
+    role: input.role,
+    marketing_subscription: input.marketingSubscription,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (input.merchantDiscountPercent !== undefined) {
+    updates.merchant_discount_percent = Math.max(
+      0,
+      Math.min(100, Number(input.merchantDiscountPercent) || 0),
+    );
+  }
+
   const { error } = await supabase
     .from("user_profiles")
-    .update({
-      username: input.username,
-      email: input.email,
-      phone: input.phone,
-      country: input.country,
-      city: input.city,
-      postal_code: input.postalCode,
-      address: input.address,
-      role: input.role,
-      marketing_subscription: input.marketingSubscription,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updates)
     .eq("id", input.id);
 
   if (error) {
     throw new Error(`Failed to update user profile: ${error.message}`);
   }
+
+  if (
+    existing?.email &&
+    existing.email.toLowerCase() !== input.email.trim().toLowerCase()
+  ) {
+    await unsubscribeMarketingEmail({ email: existing.email });
+  }
+
+  await syncMarketingSubscriberForProfile({
+    userId: input.id,
+    email: input.email,
+    enabled: input.marketingSubscription,
+    source: "admin-user-edit",
+  });
 }
 
 export async function updateAdminOrderStatus(orderId: string, status: string) {
@@ -747,6 +784,15 @@ type SavedOrderInput = {
     shipping: number;
     total: number;
   };
+  promo?: {
+    id: string;
+    code: string;
+    merchantId: string;
+    discountPercent: number;
+    discountAmount: number;
+    commissionPercent: number;
+    commissionAmount: number;
+  } | null;
   rawPayload: unknown;
 };
 
@@ -769,6 +815,13 @@ export async function saveCustomerOrder(input: SavedOrderInput) {
         total: input.totals.total,
         order_created_at: input.createdAt,
         raw_payload: input.rawPayload,
+        promo_code_id: input.promo?.id ?? null,
+        promo_code_text: input.promo?.code ?? null,
+        promo_discount_percent: input.promo?.discountPercent ?? null,
+        promo_discount_amount: input.promo?.discountAmount ?? null,
+        promo_merchant_id: input.promo?.merchantId ?? null,
+        promo_commission_percent: input.promo?.commissionPercent ?? null,
+        promo_commission_amount: input.promo?.commissionAmount ?? null,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "order_number" },

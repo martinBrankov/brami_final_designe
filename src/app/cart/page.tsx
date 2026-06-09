@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { CartStepper } from "@/components/cart-stepper";
 import { useCart } from "@/components/cart-provider";
+import { useUser } from "@/components/user-provider";
 import { IconCircleButton } from "@/components/icon-circle-button";
 import { ProductCarouselSection } from "@/components/product-carousel-section";
 import {
@@ -205,6 +206,7 @@ export default function CartPage() {
   const deliveryDropdownRef = useRef<HTMLDivElement | null>(null);
   const products = useProducts();
   const { items, updateQuantity, removeItem, clearCart } = useCart();
+  const { user, profile: userProfile, discount: userDiscount } = useUser();
   const officeDropdownRef = useRef<HTMLDivElement | null>(null);
   const officeSearchInputRef = useRef<HTMLInputElement | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
@@ -224,6 +226,16 @@ export default function CartPage() {
   const [orderId, setOrderId] = useState("");
   const [orderEmailStatus, setOrderEmailStatus] = useState<OrderEmailStatus>("idle");
   const [orderEmailError, setOrderEmailError] = useState("");
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{
+    id: string;
+    code: string;
+    merchantId: string;
+    discountPercent: number;
+    commissionPercent: number;
+  } | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -232,6 +244,50 @@ export default function CartPage() {
       setCurrentStep(1);
     }
   }, []);
+
+  useEffect(() => {
+    if (!user && !userProfile) {
+      return;
+    }
+
+    setAddress((current) => ({
+      ...current,
+      fullName: current.fullName || userProfile?.fullName || "",
+      phone: current.phone || (userProfile?.phone ? formatPhoneInput(userProfile.phone) : ""),
+      email: current.email || user?.email || "",
+      city: current.city || userProfile?.city || "",
+      postcode: current.postcode || userProfile?.postalCode || "",
+      addressLine: current.addressLine || userProfile?.address || "",
+    }));
+  }, [user, userProfile]);
+
+  const hasInitializedPreferredOfficeRef = useRef(false);
+
+  useEffect(() => {
+    if (hasInitializedPreferredOfficeRef.current) {
+      return;
+    }
+
+    const office = userProfile?.preferredOffice;
+    const locker = userProfile?.preferredLocker;
+    const preferred = office
+      ? { kind: "office" as DeliveryMethod, slot: office }
+      : locker
+        ? { kind: "locker" as DeliveryMethod, slot: locker }
+        : null;
+
+    if (!preferred) {
+      return;
+    }
+
+    hasInitializedPreferredOfficeRef.current = true;
+    setDeliveryMethod(preferred.kind);
+    setAddress((current) => ({
+      ...current,
+      officeId: preferred.slot.id,
+    }));
+    setSelectedSpeedyOffice(preferred.slot.data as SpeedyOffice);
+  }, [userProfile]);
 
   const cartItems = useMemo(
     () =>
@@ -269,7 +325,37 @@ export default function CartPage() {
   const isHeavyShipment = totalWeight > HEAVY_THRESHOLD_KG;
   const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD_EUR;
   const shipping = cartItems.length && !isFreeShipping ? calcShipping(deliveryMethod, totalWeight) / BGN_TO_EUR : 0;
-  const total = subtotal + shipping;
+  const loyaltyPercent = userDiscount?.currentPercent ?? 0;
+  const merchantPercent =
+    user?.role === "merchant" ? userProfile?.merchantDiscountPercent ?? 0 : 0;
+  const personalDiscountPercent = Math.max(loyaltyPercent, merchantPercent);
+  const personalDiscountSource: "loyalty" | "merchant" | null =
+    personalDiscountPercent === 0
+      ? null
+      : merchantPercent >= loyaltyPercent && merchantPercent > 0
+        ? "merchant"
+        : "loyalty";
+  const promoEnteredPercent = appliedPromo?.discountPercent ?? 0;
+  const promoWins =
+    appliedPromo != null && promoEnteredPercent >= personalDiscountPercent && promoEnteredPercent > 0;
+  const discountSource: "promo" | "personal" | null =
+    promoWins ? "promo" : personalDiscountPercent > 0 ? "personal" : null;
+  const personalDiscountPercentApplied =
+    discountSource === "personal" ? personalDiscountPercent : 0;
+  const personalDiscountAmount =
+    discountSource === "personal" ? (subtotal * personalDiscountPercent) / 100 : 0;
+  const promoDiscountPercent = promoWins ? promoEnteredPercent : 0;
+  const promoDiscountAmount = promoWins ? (subtotal * promoEnteredPercent) / 100 : 0;
+  const promoCommissionPercent = promoWins ? appliedPromo?.commissionPercent ?? 0 : 0;
+  const promoCommissionAmount = promoWins
+    ? (subtotal * (appliedPromo?.commissionPercent ?? 0)) / 100
+    : 0;
+  const discountPercent = promoWins ? promoEnteredPercent : personalDiscountPercentApplied;
+  const discountAmount = promoWins ? promoDiscountAmount : personalDiscountAmount;
+  const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+  const total = discountedSubtotal + shipping;
+  const promoIgnoredByPersonal =
+    appliedPromo != null && !promoWins && personalDiscountPercent > 0;
   const relatedCartProducts = useMemo(() => {
     if (!cartItems.length) {
       return [];
@@ -475,19 +561,77 @@ export default function CartPage() {
   const isAddressValid = Object.values(fieldErrors).every((error) => !error);
   const step1HasError = step1ValidationFailed && (!isAddressValid || !hasAcceptedPolicies);
 
+  async function applyPromoCode() {
+    setPromoError(null);
+    const code = promoInput.trim();
+    if (!code) {
+      setPromoError("Въведете промо код.");
+      return;
+    }
+
+    setIsApplyingPromo(true);
+    try {
+      const response = await fetch("/api/auth/promo/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const result = (await response.json().catch(() => null)) as
+        | {
+            ok?: boolean;
+            error?: string;
+            promo?: {
+              id: string;
+              code: string;
+              merchantId: string;
+              discountPercent: number;
+              commissionPercent: number;
+            };
+          }
+        | null;
+
+      if (!response.ok || !result?.ok || !result.promo) {
+        setPromoError(result?.error || "Невалиден промо код.");
+        setAppliedPromo(null);
+        return;
+      }
+
+      setAppliedPromo(result.promo);
+      setPromoInput(result.promo.code);
+    } catch {
+      setPromoError("Грешка при проверка на кода.");
+    } finally {
+      setIsApplyingPromo(false);
+    }
+  }
+
+  function clearAppliedPromo() {
+    setAppliedPromo(null);
+    setPromoInput("");
+    setPromoError(null);
+  }
+
   function applyDeliveryMethod(nextMethod: DeliveryMethod) {
     setDeliveryMethod(nextMethod);
     setOfficeQuery("");
     setOfficeSearchResults([]);
-    setSelectedSpeedyOffice(null);
     setIsOfficeDropdownOpen(false);
     setIsDeliveryDropdownOpen(false);
+
+    const savedSlot =
+      nextMethod === "office"
+        ? userProfile?.preferredOffice ?? null
+        : nextMethod === "locker"
+          ? userProfile?.preferredLocker ?? null
+          : null;
+
+    setSelectedSpeedyOffice(savedSlot ? (savedSlot.data as SpeedyOffice) : null);
     setAddress((current) => ({
       ...current,
-      officeId: "",
-      city: "",
-      postcode: "",
-      addressLine: "",
+      officeId: savedSlot ? savedSlot.id : "",
+      city: nextMethod === "address" ? userProfile?.city ?? "" : "",
+      postcode: nextMethod === "address" ? userProfile?.postalCode ?? "" : "",
+      addressLine: nextMethod === "address" ? userProfile?.address ?? "" : "",
     }));
     setTouchedFields((current) => ({
       ...current,
@@ -554,10 +698,28 @@ export default function CartPage() {
         totalPrice: item.totalPrice,
       })),
       totals: {
-        subtotal,
+        subtotal: discountedSubtotal,
         shipping,
         total,
+        discountPercent,
+        discountAmount,
+        originalSubtotal: subtotal,
+        personalDiscountPercent: personalDiscountPercentApplied,
+        personalDiscountAmount,
+        personalDiscountSource: discountSource === "personal" ? personalDiscountSource : null,
       },
+      promo:
+        appliedPromo && promoWins
+          ? {
+              id: appliedPromo.id,
+              code: appliedPromo.code,
+              merchantId: appliedPromo.merchantId,
+              discountPercent: appliedPromo.discountPercent,
+              discountAmount: promoDiscountAmount,
+              commissionPercent: appliedPromo.commissionPercent,
+              commissionAmount: promoCommissionAmount,
+            }
+          : null,
     };
 
     const controller = new AbortController();
@@ -1322,6 +1484,36 @@ export default function CartPage() {
                     <span>Продукти</span>
                     <span className="font-medium text-[#432855]">{formatPrice(subtotal)}</span>
                   </div>
+                  {discountSource === "personal" ? (
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="flex flex-col gap-0.5">
+                        <span>
+                          {personalDiscountSource === "merchant"
+                            ? "Търговска отстъпка"
+                            : "Лоялна отстъпка"}
+                        </span>
+                        <span className="text-xs text-[#8f72a7]">
+                          {personalDiscountPercent}% от продуктите
+                        </span>
+                      </span>
+                      <span className="font-medium text-[#2e7d46]">
+                        −{formatPrice(personalDiscountAmount)}
+                      </span>
+                    </div>
+                  ) : null}
+                  {discountSource === "promo" && appliedPromo ? (
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="flex flex-col gap-0.5">
+                        <span>Промо код · {appliedPromo.code}</span>
+                        <span className="text-xs text-[#8f72a7]">
+                          {appliedPromo.discountPercent}% от продуктите
+                        </span>
+                      </span>
+                      <span className="font-medium text-[#2e7d46]">
+                        −{formatPrice(promoDiscountAmount)}
+                      </span>
+                    </div>
+                  ) : null}
                   <div className="flex items-center justify-between gap-4">
                     <span className="flex flex-col gap-0.5">
                       <span>Доставка</span>
@@ -1340,6 +1532,67 @@ export default function CartPage() {
                     <span>Общо</span>
                     <span>{formatPrice(total)}</span>
                   </div>
+                </div>
+
+                <div className="mt-5 border-t border-[#e4dbea] pt-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8f72a7]">
+                    Промо код
+                  </p>
+                  {appliedPromo ? (
+                    <>
+                      <div
+                        className={`mt-2 flex flex-wrap items-center justify-between gap-3 rounded-[14px] border px-3 py-2.5 ${
+                          promoWins
+                            ? "border-[#cce4d3] bg-[#f3faf4]"
+                            : "border-[#e7d6c1] bg-[#fdf6ec]"
+                        }`}
+                      >
+                        <span
+                          className={`text-sm font-semibold ${
+                            promoWins ? "text-[#2e6b3a]" : "text-[#8a6f45]"
+                          }`}
+                        >
+                          {appliedPromo.code} · −{appliedPromo.discountPercent}%
+                        </span>
+                        <button
+                          type="button"
+                          onClick={clearAppliedPromo}
+                          className="text-xs font-semibold uppercase tracking-[0.08em] text-[#9a3f3f] transition hover:underline"
+                        >
+                          Премахни
+                        </button>
+                      </div>
+                      {promoIgnoredByPersonal ? (
+                        <p className="mt-2 text-xs text-[#8a6f45]">
+                          Промо кодът не се прилага — личната ти отстъпка ({personalDiscountPercent}%) е по-висока. За поръчка може да се приложи само едната.
+                        </p>
+                      ) : null}
+                    </>
+                  ) : (
+                    <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                      <input
+                        type="text"
+                        value={promoInput}
+                        onChange={(event) => {
+                          setPromoInput(event.target.value.toUpperCase());
+                          setPromoError(null);
+                        }}
+                        placeholder="Въведи код"
+                        className="h-11 w-full rounded-[14px] border border-[#ddd3e4] bg-[#faf7fc] px-3 uppercase tracking-[0.08em] text-[#432855] outline-none transition focus:border-[#9f79ac]"
+                      />
+                      <button
+                        type="button"
+                        onClick={applyPromoCode}
+                        disabled={isApplyingPromo || !promoInput.trim()}
+                        className="inline-flex h-11 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-5 text-xs font-semibold uppercase tracking-[0.08em] text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isApplyingPromo ? "Проверка..." : "Приложи"}
+                      </button>
+                    </div>
+                  )}
+                  {promoError ? (
+                    <p className="mt-2 text-xs font-medium text-[#9a3f3f]">{promoError}</p>
+                  ) : null}
                 </div>
 
               </aside>

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { requireAdminSession } from "@/lib/admin-auth";
+import { isFullAdmin, requireAdminSession } from "@/lib/admin-auth";
 import { updateAdminUser } from "@/lib/admin-data";
 
 export const runtime = "nodejs";
@@ -13,11 +13,13 @@ type RouteContext = {
 };
 
 export async function PATCH(request: Request, { params }: RouteContext) {
-  await requireAdminSession();
+  const session = await requireAdminSession();
 
   try {
     const { id } = await params;
     const body = await request.json();
+    const canManageMerchant = isFullAdmin(session);
+
     await updateAdminUser({
       id,
       username: String(body.username ?? ""),
@@ -29,6 +31,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       address: String(body.address ?? ""),
       role: body.role,
       marketingSubscription: Boolean(body.marketingSubscription),
+      merchantDiscountPercent:
+        canManageMerchant && body.merchantDiscountPercent !== undefined
+          ? Number(body.merchantDiscountPercent)
+          : undefined,
     });
     return NextResponse.json({ ok: true });
   } catch (error) {

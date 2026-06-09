@@ -1,15 +1,46 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, useTransition, type FormEvent } from "react";
 
 export function ArticleSubscriptionForm() {
   const [email, setEmail] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [website, setWebsite] = useState("");
+  const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(
+    null,
+  );
+  const [isPending, startTransition] = useTransition();
+  const issuedAt = useMemo(() => Date.now(), []);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setIsSubmitted(true);
-    setEmail("");
+    setFeedback(null);
+
+    startTransition(async () => {
+      const response = await fetch("/api/marketing/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, website, issuedAt }),
+      });
+
+      const result = (await response.json().catch(() => null)) as
+        | { ok?: boolean; error?: string }
+        | null;
+
+      if (!response.ok || !result?.ok) {
+        setFeedback({
+          kind: "error",
+          message: result?.error || "Абонаментът не беше записан. Опитай отново.",
+        });
+        return;
+      }
+
+      setFeedback({
+        kind: "success",
+        message: "Благодарим. Имейлът е добавен към списъка за маркетинг съобщения.",
+      });
+      setEmail("");
+      setWebsite("");
+    });
   }
 
   return (
@@ -24,13 +55,24 @@ export function ArticleSubscriptionForm() {
               Абонирай се за следващите теми за красота и грижа
             </h2>
             <p className="mt-4 text-base leading-7 text-[#6b587f]">
-              Формата е демонстрационна и засега не записва данни. Използваме я,
-              за да подготвим секцията за бъдещ бюлетин.
+              Получавай нови статии, промоции и подбрани предложения от Brami.
+              Можеш да се отпишеш по всяко време от линка в имейлите.
             </p>
           </div>
 
           <div className="lg:border-l lg:border-[#ece3f2] lg:pl-12">
             <form onSubmit={handleSubmit} className="flex flex-col justify-center gap-3">
+              <label className="hidden" aria-hidden="true">
+                Website
+                <input
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={website}
+                  onChange={(event) => setWebsite(event.target.value)}
+                />
+              </label>
+
               <label htmlFor="article-email" className="text-sm font-medium text-[#5f4b73]">
                 Имейл адрес
               </label>
@@ -40,24 +82,27 @@ export function ArticleSubscriptionForm() {
                 value={email}
                 onChange={(event) => {
                   setEmail(event.target.value);
-                  if (isSubmitted) {
-                    setIsSubmitted(false);
-                  }
+                  setFeedback(null);
                 }}
                 placeholder="you@example.com"
                 required
-                className="h-[52px] rounded-full border border-[#ddd3e4] bg-white px-5 text-[#432855] outline-none transition focus:border-[#9f79ac]"
+                disabled={isPending}
+                className="h-[52px] rounded-full border border-[#ddd3e4] bg-white px-5 text-[#432855] outline-none transition focus:border-[#9f79ac] disabled:cursor-not-allowed disabled:opacity-70"
               />
               <button
                 type="submit"
-                className="inline-flex h-[52px] items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:opacity-95"
+                disabled={isPending}
+                className="inline-flex h-[52px] items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Абонирай ме
+                {isPending ? "Запис..." : "Абонирай ме"}
               </button>
-              <p className="min-h-6 text-sm leading-6 text-[#6b587f]">
-                {isSubmitted
-                  ? "Благодарим. Формата е тестова, но дизайнът е готов за свързване."
-                  : "Ще използваме този блок по-късно за реално записване към нови статии."}
+              <p
+                className={`min-h-6 text-sm leading-6 ${
+                  feedback?.kind === "error" ? "text-[#9a3f3f]" : "text-[#6b587f]"
+                }`}
+              >
+                {feedback?.message ??
+                  "Ще използваме имейла само за маркетинг съобщения от Brami."}
               </p>
             </form>
           </div>

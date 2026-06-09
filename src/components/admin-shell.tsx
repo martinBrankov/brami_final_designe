@@ -7,14 +7,18 @@ import type { AdminSession } from "@/lib/admin-auth";
 
 const ROLE_LABELS: Record<string, string> = {
   user: "Потребител",
-  super_user: "Супер потребител",
+  merchant: "Търговец",
   admin: "Админ",
 };
 
-const navItems = [
+type NavItem = { href: string; label: string; adminOnly?: boolean };
+
+const navItems: NavItem[] = [
   { href: "/admin-panel/products", label: "Продукти" },
   { href: "/admin-panel/users", label: "Потребители" },
   { href: "/admin-panel/orders", label: "Поръчки" },
+  { href: "/admin-panel/merchants", label: "Търговци", adminOnly: true },
+  { href: "/admin-panel/promo-codes", label: "Промо кодове", adminOnly: true },
   { href: "/admin-panel/stats", label: "Статистики" },
   { href: "/admin-panel/blog", label: "Блог" },
 ];
@@ -63,24 +67,37 @@ export function AdminShell({
           <div className="mb-6 border-t border-white/10" />
 
           <nav className="space-y-2">
-            {navItems.map((item) => {
-              const isActive = currentPath === item.href;
+            {navItems
+              .filter((item) => !item.adminOnly || session.role === "admin")
+              .map((item) => {
+                const isActive = currentPath === item.href;
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex rounded-[18px] px-4 py-3 text-sm font-medium transition ${
-                    isActive
-                      ? "bg-white text-[#1d2733]"
-                      : "bg-white/5 text-white/82 hover:bg-white/12 hover:text-white"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex rounded-[18px] px-4 py-3 text-sm font-medium transition ${
+                      isActive
+                        ? "bg-white text-[#1d2733]"
+                        : "bg-white/5 text-white/82 hover:bg-white/12 hover:text-white"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
           </nav>
+
+          <Link
+            href="/admin-panel/marketing"
+            className={`mt-2 flex rounded-[18px] px-4 py-3 text-sm font-medium transition ${
+              currentPath === "/admin-panel/marketing"
+                ? "bg-white text-[#1d2733]"
+                : "bg-white/5 text-white/82 hover:bg-white/12 hover:text-white"
+            }`}
+          >
+            Маркетинг имейли
+          </Link>
 
           <div className="mt-auto hidden border-t border-white/10 pt-6 lg:block">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/50">Технически съпорт</p>

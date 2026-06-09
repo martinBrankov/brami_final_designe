@@ -16,6 +16,7 @@ import {
 import { useCart } from "@/components/cart-provider";
 import { useFavorites } from "@/components/favorites-provider";
 import { useProducts } from "@/components/products-context";
+import { useUser } from "@/components/user-provider";
 import logo from "@/assets/images/logo.png";
 
 function BurgerIcon() {
@@ -69,6 +70,24 @@ function SearchIcon() {
     >
       <circle cx="11" cy="11" r="6.5" />
       <path d="m16 16 4 4" />
+    </svg>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-7 w-7"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20.5c1.6-3.6 4.7-5.5 8-5.5s6.4 1.9 8 5.5" />
     </svg>
   );
 }
@@ -142,6 +161,7 @@ function PhoneIcon() {
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isPhoneLandscapeMenuLayout, setIsPhoneLandscapeMenuLayout] =
     useState(false);
   const [searchViewportHeight, setSearchViewportHeight] = useState<number | null>(
@@ -154,9 +174,11 @@ export function Navbar() {
   const [showSearchResults, setShowSearchResults] = useState(true);
   const searchDialogRef = useRef<HTMLDivElement | null>(null);
   const searchResultsRef = useRef<HTMLDivElement | null>(null);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const { itemCount } = useCart();
   const { favoriteCount } = useFavorites();
+  const { isAuthenticated, logout } = useUser();
   const products = useProducts();
   const deferredSearchValue = useDeferredValue(searchValue);
 
@@ -197,6 +219,35 @@ export function Navbar() {
       document.body.style.overflow = previousOverflow;
     };
   }, [isSearchOpen]);
+
+  useEffect(() => {
+    if (!isUserMenuOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent | TouchEvent) {
+      const container = userMenuRef.current;
+      if (container && !container.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    }
+
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsUserMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+    document.addEventListener("keydown", handleKey);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [isUserMenuOpen]);
 
   useEffect(() => {
     if (!isSearchOpen) {
@@ -418,6 +469,65 @@ export function Navbar() {
                 </span>
               ) : null}
             </Link>
+
+            {isAuthenticated ? (
+              <div ref={userMenuRef} className="relative">
+                <button
+                  type="button"
+                  aria-label="Моят профил"
+                  aria-haspopup="menu"
+                  aria-expanded={isUserMenuOpen}
+                  onClick={() => setIsUserMenuOpen((value) => !value)}
+                  className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#e9ddf3] sm:h-12 sm:w-12"
+                >
+                  <UserIcon />
+                  <span className="absolute right-1.5 top-1.5 inline-flex h-2.5 w-2.5 rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)]" />
+                </button>
+
+                {isUserMenuOpen ? (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-[calc(100%+8px)] z-40 w-[208px] overflow-hidden rounded-[20px] border border-[#e6dcef] bg-white shadow-[0_24px_80px_rgba(67,40,85,0.18)]"
+                  >
+                    <Link
+                      role="menuitem"
+                      href="/account"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="block px-5 py-3 text-sm font-medium text-[#432855] transition hover:bg-[#faf7fc]"
+                    >
+                      Профил
+                    </Link>
+                    <Link
+                      role="menuitem"
+                      href="/my-orders"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="block border-t border-[#ece3f2] px-5 py-3 text-sm font-medium text-[#432855] transition hover:bg-[#faf7fc]"
+                    >
+                      Моите поръчки
+                    </Link>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        void logout();
+                      }}
+                      className="block w-full border-t border-[#ece3f2] px-5 py-3 text-left text-sm font-medium text-[#9a3f3f] transition hover:bg-[#fff6f6]"
+                    >
+                      Изход
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <Link
+                href="/account"
+                aria-label="Вход или регистрация"
+                className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#e9ddf3] sm:h-12 sm:w-12"
+              >
+                <UserIcon />
+              </Link>
+            )}
 
             <Link
               href="/cart"

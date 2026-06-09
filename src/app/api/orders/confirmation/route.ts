@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { saveCustomerOrder } from "@/lib/admin-data";
 import { createOrderEmail } from "@/lib/order-mail/email-template";
 import { createMailer, getMailRecipient, getSender } from "@/lib/order-mail/mailer";
+import { validatePromoCode } from "@/lib/promo-codes";
 import { getProducts, getProductById } from "@/data/products";
 
 export const runtime = "nodejs";
@@ -33,6 +34,9 @@ type OrderRequestBody = {
     shipping?: number;
     total?: number;
   };
+  promo?: {
+    code?: string;
+  } | null;
   status?: string;
   createdAt?: string;
 };
@@ -211,6 +215,37 @@ export async function POST(request: Request) {
       recipient: "sales",
     });
 
+    let resolvedPromo: {
+      id: string;
+      code: string;
+      merchantId: string;
+      discountPercent: number;
+      discountAmount: number;
+      commissionPercent: number;
+      commissionAmount: number;
+    } | null = null;
+
+    if (body.promo && typeof body.promo.code === "string" && body.promo.code.trim()) {
+      const validated = await validatePromoCode(body.promo.code);
+      if (validated) {
+        const itemsSubtotal = normalizedOrder.items.reduce(
+          (sum, item) => sum + item.totalPrice,
+          0,
+        );
+        const discountAmount = (itemsSubtotal * validated.discountPercent) / 100;
+        const commissionAmount = (itemsSubtotal * validated.commissionPercent) / 100;
+        resolvedPromo = {
+          id: validated.id,
+          code: validated.code,
+          merchantId: validated.merchantId,
+          discountPercent: validated.discountPercent,
+          discountAmount,
+          commissionPercent: validated.commissionPercent,
+          commissionAmount,
+        };
+      }
+    }
+
     await saveCustomerOrder({
       orderId: normalizedOrder.orderId,
       status: normalizedStatus,
@@ -219,6 +254,7 @@ export async function POST(request: Request) {
       delivery: normalizedOrder.delivery,
       items: normalizedOrder.items,
       totals: normalizedOrder.totals,
+      promo: resolvedPromo,
       rawPayload: body,
     });
 

@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 
 import type { AdminUserProfile } from "@/lib/admin-data";
 
-type UserDraft = Record<string, string | boolean>;
+type UserDraft = Record<string, string | boolean | number>;
 
 function toDraft(user: AdminUserProfile): UserDraft {
   return {
@@ -18,16 +18,23 @@ function toDraft(user: AdminUserProfile): UserDraft {
     address: user.address,
     role: user.role,
     marketingSubscription: user.marketingSubscription,
+    merchantDiscountPercent: user.merchantDiscountPercent,
   };
 }
 
 const ROLE_LABELS: Record<string, string> = {
   user: "Потребител",
-  super_user: "Супер потребител",
+  merchant: "Търговец",
   admin: "Админ",
 };
 
-export function AdminUsersManager({ users }: { users: AdminUserProfile[] }) {
+export function AdminUsersManager({
+  users,
+  canManageMerchant = false,
+}: {
+  users: AdminUserProfile[];
+  canManageMerchant?: boolean;
+}) {
   const router = useRouter();
   const [drafts, setDrafts] = useState<Record<string, UserDraft>>(
     Object.fromEntries(users.map((user) => [user.id, toDraft(user)])),
@@ -39,7 +46,7 @@ export function AdminUsersManager({ users }: { users: AdminUserProfile[] }) {
   const modalUser = modalUserId ? users.find((u) => u.id === modalUserId) ?? null : null;
   const modalDraft = modalUserId ? drafts[modalUserId] : null;
 
-  function updateDraft(userId: string, key: string, value: string | boolean) {
+  function updateDraft(userId: string, key: string, value: string | boolean | number) {
     setDrafts((current) => ({
       ...current,
       [userId]: { ...current[userId], [key]: value },
@@ -118,7 +125,7 @@ export function AdminUsersManager({ users }: { users: AdminUserProfile[] }) {
               <span className={`inline-flex w-fit items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
                 user.role === "admin"
                   ? "border-red-200 bg-red-50 text-red-700"
-                  : user.role === "super_user"
+                  : user.role === "merchant"
                   ? "border-amber-200 bg-amber-50 text-amber-700"
                   : "border-[#d2c8b8] bg-[#f8f4ec] text-[#5f6b76]"
               }`}>
@@ -252,7 +259,7 @@ export function AdminUsersManager({ users }: { users: AdminUserProfile[] }) {
                       className="h-11 w-full rounded-[16px] border border-[#d9d4ca] bg-white px-4"
                     >
                       <option value="user">Потребител</option>
-                      <option value="super_user">Супер потребител</option>
+                      <option value="merchant">Търговец</option>
                       <option value="admin">Админ</option>
                     </select>
                   </label>
@@ -267,6 +274,43 @@ export function AdminUsersManager({ users }: { users: AdminUserProfile[] }) {
                     Marketing subscription
                   </label>
                 </div>
+
+                {canManageMerchant && modalDraft.role === "merchant" ? (
+                  <div className="mt-6 rounded-[18px] border border-[#e7dfd1] bg-[#fbf8f1] p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8a6f45]">
+                      Търговец
+                    </p>
+                    <p className="mt-1 text-xs text-[#6a7480]">
+                      Само администратор може да задава лична отстъпка на търговец.
+                    </p>
+
+                    <div className="mt-4 grid gap-4 md:grid-cols-2">
+                      <label className="block">
+                        <span className="mb-2 block text-sm font-medium text-[#25313d]">
+                          Лична отстъпка на търговеца (%)
+                        </span>
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step={0.5}
+                          value={String(modalDraft.merchantDiscountPercent ?? 0)}
+                          onChange={(e) =>
+                            updateDraft(
+                              modalUser.id,
+                              "merchantDiscountPercent",
+                              Number(e.target.value),
+                            )
+                          }
+                          className="h-11 w-full rounded-[16px] border border-[#d9d4ca] bg-white px-4"
+                        />
+                        <span className="mt-1 block text-xs text-[#6a7480]">
+                          Прилага се автоматично върху продуктите в количката за този профил.
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                ) : null}
               </div>
           </div>
         </div>

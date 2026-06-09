@@ -7,7 +7,10 @@ import { FavoritesProvider } from "@/components/favorites-provider";
 import { InteractionGuard } from "@/components/interaction-guard";
 import { ProductsProvider } from "@/components/products-context";
 import { SiteChrome } from "@/components/site-chrome";
+import { UserProvider } from "@/components/user-provider";
 import { getProducts } from "@/data/products";
+import { getUserProfile, getUserSession, toPublicUser } from "@/lib/user-auth";
+import { getUserDiscountStatus } from "@/lib/user-discount";
 
 import "./globals.css";
 
@@ -75,6 +78,34 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const products = await getProducts();
+  const session = await getUserSession();
+  const profile = session ? await getUserProfile(session.id) : null;
+  const initialUser = session
+    ? { ...toPublicUser(session), role: profile?.role ?? session.role }
+    : null;
+  const initialProfile = profile
+    ? {
+        fullName: profile.fullName,
+        phone: profile.phone,
+        city: profile.city,
+        postalCode: profile.postalCode,
+        address: profile.address,
+        preferredOffice: profile.preferredOffice,
+        preferredLocker: profile.preferredLocker,
+        hasPassword: profile.hasPassword,
+        merchantDiscountPercent: profile.merchantDiscountPercent,
+      }
+    : null;
+  const discountStatus = session ? await getUserDiscountStatus(session.email) : null;
+  const initialDiscount = discountStatus
+    ? {
+        totalSpentEur: discountStatus.totalSpentEur,
+        currentPercent: discountStatus.currentPercent,
+        nextTierThresholdEur: discountStatus.nextTier?.thresholdEur ?? null,
+        nextTierPercent: discountStatus.nextTier?.percent ?? null,
+        amountToNextTierEur: discountStatus.amountToNextTierEur,
+      }
+    : null;
 
   return (
     <html
@@ -106,11 +137,17 @@ export default async function RootLayout({
         />
         <InteractionGuard />
         <ProductsProvider products={products}>
-          <CartProvider>
-            <FavoritesProvider>
-              <SiteChrome>{children}</SiteChrome>
-            </FavoritesProvider>
-          </CartProvider>
+          <UserProvider
+            initialUser={initialUser}
+            initialProfile={initialProfile}
+            initialDiscount={initialDiscount}
+          >
+            <CartProvider>
+              <FavoritesProvider>
+                <SiteChrome>{children}</SiteChrome>
+              </FavoritesProvider>
+            </CartProvider>
+          </UserProvider>
         </ProductsProvider>
       </body>
     </html>

@@ -333,7 +333,7 @@ function UsersStats({ users }: { users: AdminUserProfile[] }) {
   const roleCounts = groupCount(users, (u) => u.role);
   const roles = [
     { label: "Потребители", key: "user", color: "#3d73b8" },
-    { label: "Super User", key: "super_user", color: "#c9a227" },
+    { label: "Търговци", key: "merchant", color: "#c9a227" },
     { label: "Администратори", key: "admin", color: "#b64242" },
   ];
   const maxRole = Math.max(...roles.map((r) => roleCounts[r.key] ?? 0), 1);
