@@ -2,7 +2,14 @@
 
 import { useMemo, useState } from "react";
 
-import type { MarketingSubscriber } from "@/lib/marketing-subscribers";
+type MarketingSubscriber = {
+  id: string;
+  email: string;
+  source: string;
+  userId: string | null;
+  subscribedAt: string;
+  unsubscribeUrl: string;
+};
 
 export function AdminMarketingSubscribersManager({
   subscribers,

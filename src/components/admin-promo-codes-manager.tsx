@@ -134,7 +134,7 @@ export function AdminPromoCodesManager({
 
         {merchants.length === 0 ? (
           <p className="mt-4 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Няма маркирани търговци. Маркирай поне един потребител като търговец от "Потребители".
+            Няма маркирани търговци. Маркирай поне един потребител като търговец от &quot;Потребители&quot;.
           </p>
         ) : (
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
