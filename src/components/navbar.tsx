@@ -436,7 +436,7 @@ export function Navbar() {
 
           <Link
             href="/"
-            className="absolute left-1/2 -translate-x-1/2 text-center"
+            className="absolute left-1/2 hidden -translate-x-1/2 text-center sm:block"
             aria-label="Go to homepage"
           >
             <Image
