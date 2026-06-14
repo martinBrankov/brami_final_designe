@@ -18,6 +18,9 @@ import {
   getProductsByIds,
   getProducts,
 } from "@/data/products";
+import { getDisplayName } from "@/lib/display-name";
+import { getProductReviews } from "@/lib/product-reviews";
+import { getUserProfile, getUserSession } from "@/lib/user-auth";
 import homeScreenImgMobile from "@/assets/images/homeScreenImgMobile.png";
 
 export const dynamic = "force-dynamic";
@@ -233,6 +236,59 @@ export default async function ProductDetailPage({
     (relatedProduct) => relatedProduct.id !== product.id,
   );
 
+  // User-submitted reviews (stored in DB) merged with the seed testimonials.
+  const [session, userReviews] = await Promise.all([
+    getUserSession(),
+    getProductReviews(product.id),
+  ]);
+  const currentUserReview = session
+    ? userReviews.find((review) => review.userId === session.id) ?? null
+    : null;
+
+  // Prefill the review name with the profile name ("Име"), falling back to a
+  // readable name derived from the email when it's missing.
+  const sessionProfile = session ? await getUserProfile(session.id) : null;
+  const reviewerName = session
+    ? getDisplayName(sessionProfile?.fullName, session.email)
+    : "";
+
+  // Only reviews that include a written comment are listed; rating-only
+  // submissions still count toward the average below.
+  const displayReviews = [
+    ...userReviews
+      .filter((review) => review.comment.trim().length > 0)
+      .map((review) => ({
+        id: review.id,
+        kind: "review" as const,
+        name: review.authorName,
+        comment: review.comment,
+        rating: review.rating,
+        data: new Date(review.createdAt).toLocaleDateString("bg-BG", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        }),
+      })),
+    ...product.comments.map((comment) => ({
+      id: String(comment.id),
+      kind: "comment" as const,
+      name: comment.name,
+      comment: comment.comment,
+      rating: comment.rating,
+      data: comment.data,
+    })),
+  ];
+
+  const ratingValues = [
+    ...userReviews.map((review) => review.rating),
+    ...product.comments.map((comment) => comment.rating).filter((value) => value > 0),
+  ];
+  const reviewCount = ratingValues.length;
+  const averageRating =
+    reviewCount > 0
+      ? ratingValues.reduce((sum, value) => sum + value, 0) / reviewCount
+      : product.rating;
+
   const siteUrl = await resolveSiteUrl();
   const productImageUrl =
     typeof productImage === "object" && productImage !== null && "src" in productImage
@@ -266,11 +322,11 @@ export default async function ProductDetailPage({
       availability: "https://schema.org/InStock",
       seller: { "@type": "Organization", name: "Brami" },
     },
-    ...(product.comments.length > 0 && {
+    ...(reviewCount > 0 && {
       aggregateRating: {
         "@type": "AggregateRating",
-        ratingValue: product.rating,
-        reviewCount: product.comments.length,
+        ratingValue: Number(averageRating.toFixed(1)),
+        reviewCount,
       },
     }),
   };
@@ -346,9 +402,9 @@ export default async function ProductDetailPage({
                   {IN_STOCK_LABEL}
                 </div>
                 <div className="flex items-center gap-2">
-                  <StarRow rating={product.rating} />
+                  <StarRow rating={averageRating} />
                   <span className="text-sm font-medium text-[#6b587f]">
-                    ({product.comments.length} {REVIEWS_SUFFIX})
+                    ({reviewCount} {REVIEWS_SUFFIX})
                   </span>
                 </div>
               </div>
@@ -408,6 +464,7 @@ export default async function ProductDetailPage({
 
                 <AddToCartButton
                   productId={product.id}
+                  stock={product.stock}
                   className="mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-8 text-sm font-semibold uppercase tracking-[0.08em] text-white sm:text-base"
                 >
                   <CartLineIcon />
@@ -429,7 +486,15 @@ export default async function ProductDetailPage({
         productId={product.id}
         productName={product.name}
         description={productDescription}
-        comments={product.comments}
+        reviews={displayReviews}
+        isAuthenticated={Boolean(session)}
+        isAdmin={session?.role === "admin"}
+        userName={reviewerName}
+        initialUserReview={
+          currentUserReview
+            ? { rating: currentUserReview.rating, comment: currentUserReview.comment }
+            : null
+        }
       />
 
       <ProductCarouselSection

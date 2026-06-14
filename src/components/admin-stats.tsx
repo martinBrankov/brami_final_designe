@@ -809,19 +809,6 @@ function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function startOfWeek(date: Date) {
-  // ISO week starting Monday
-  const d = startOfDay(date);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
-  return d;
-}
-
-function startOfMonth(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
 function buildBuckets(granularity: Granularity): Bucket[] {
   const now = new Date();
   const buckets: Bucket[] = [];
@@ -842,32 +829,18 @@ function buildBuckets(granularity: Granularity): Bucket[] {
     return buckets;
   }
 
-  if (granularity === "week") {
-    // 8 weekly buckets ending with the current week.
-    for (let i = 7; i >= 0; i -= 1) {
-      const start = startOfWeek(
-        new Date(now.getFullYear(), now.getMonth(), now.getDate() - i * 7),
-      );
-      const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
-      buckets.push({
-        key: start.toISOString(),
-        start,
-        end,
-        label: start.toLocaleDateString("bg-BG", { day: "2-digit", month: "2-digit" }),
-      });
-    }
-    return buckets;
-  }
-
-  // 6 monthly buckets ending with the current month.
-  for (let i = 5; i >= 0; i -= 1) {
-    const start = startOfMonth(new Date(now.getFullYear(), now.getMonth() - i, 1));
-    const end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+  // "week" → last 7 days, "month" → last 30 days, both as daily buckets
+  // ending with today.
+  const dayCount = granularity === "week" ? 7 : 30;
+  const todayStart = startOfDay(now);
+  for (let i = dayCount - 1; i >= 0; i -= 1) {
+    const start = new Date(todayStart.getFullYear(), todayStart.getMonth(), todayStart.getDate() - i);
+    const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
     buckets.push({
       key: start.toISOString(),
       start,
       end,
-      label: start.toLocaleDateString("bg-BG", { month: "short", year: "2-digit" }),
+      label: start.toLocaleDateString("bg-BG", { day: "2-digit", month: "2-digit" }),
     });
   }
   return buckets;
@@ -936,7 +909,9 @@ function VisitsTimeChart({
         <CardTitle>
           {granularity === "day"
             ? "Сесии и уникални потребители днес (по час)"
-            : "Сесии и уникални потребители във времето"}
+            : granularity === "week"
+              ? "Сесии и уникални потребители за последните 7 дни"
+              : "Сесии и уникални потребители за последния месец"}
         </CardTitle>
         <div className="flex items-center gap-3">
           <span className="text-[10px] text-[#7c8a96]">
@@ -974,43 +949,56 @@ function VisitsTimeChart({
       </div>
 
       <div
-        className={`flex items-end ${granularity === "day" ? "gap-1" : "gap-2"}`}
+        className={`flex items-end ${granularity === "week" ? "gap-2" : "gap-1"}`}
         style={{ height: "160px" }}
       >
         {data.map((d, i) => {
-          const visitorH = Math.round((d.visitors / maxValue) * 120);
-          const sessionH = Math.round((d.sessions / maxValue) * 120);
-          const newH = Math.round((d.newVisitors / maxValue) * 120);
-          // For 24-hour day view, only label every 2 hours to avoid clutter.
-          const showLabel = granularity !== "day" || i % 2 === 0;
+          const visitorH = Math.round((d.visitors / maxValue) * 100);
+          const sessionH = Math.round((d.sessions / maxValue) * 100);
+          const newH = Math.round((d.newVisitors / maxValue) * 100);
+          // Thin out labels on dense charts to avoid clutter:
+          // day = every 2 hours, month = every 5 days, week = every day.
+          const showLabel =
+            granularity === "day"
+              ? i % 2 === 0
+              : granularity === "month"
+                ? i % 5 === 0
+                : true;
+          // Show each metric's count above its own bar, for every view
+          // including the hourly day view.
+          const bars = [
+            { value: d.visitors, h: visitorH, color: "#0891b2", title: `${d.label}: ${d.visitors} уник.` },
+            { value: d.sessions, h: sessionH, color: "#3d73b8", title: `${d.label}: ${d.sessions} сесии` },
+            { value: d.newVisitors, h: newH, color: "#218a54", title: `${d.label}: ${d.newVisitors} нови` },
+          ];
           return (
             <div key={i} className="flex flex-1 flex-col items-center gap-1">
               <div
                 className="flex w-full items-end justify-center gap-[2px]"
                 style={{ height: "128px" }}
               >
-                <div
-                  className="w-1/3 rounded-t-[3px] bg-[#0891b2]"
-                  style={{ height: `${Math.max(visitorH, d.visitors > 0 ? 3 : 0)}px` }}
-                  title={`${d.label}: ${d.visitors} уник.`}
-                />
-                <div
-                  className="w-1/3 rounded-t-[3px] bg-[#3d73b8]"
-                  style={{ height: `${Math.max(sessionH, d.sessions > 0 ? 3 : 0)}px` }}
-                  title={`${d.label}: ${d.sessions} сесии`}
-                />
-                <div
-                  className="w-1/3 rounded-t-[3px] bg-[#218a54]"
-                  style={{ height: `${Math.max(newH, d.newVisitors > 0 ? 3 : 0)}px` }}
-                  title={`${d.label}: ${d.newVisitors} нови`}
-                />
+                {bars.map((b, bi) => (
+                  <div key={bi} className="flex w-1/3 flex-col items-center justify-end">
+                    {b.value > 0 ? (
+                      <p
+                        className="mb-0.5 text-[8px] font-semibold leading-none"
+                        style={{ color: b.color }}
+                      >
+                        {b.value}
+                      </p>
+                    ) : null}
+                    <div
+                      className="w-full rounded-t-[3px]"
+                      style={{
+                        height: `${Math.max(b.h, b.value > 0 ? 3 : 0)}px`,
+                        backgroundColor: b.color,
+                      }}
+                      title={b.title}
+                    />
+                  </div>
+                ))}
               </div>
               <p className="text-[9px] text-[#6a7480]">{showLabel ? d.label : " "}</p>
-              {(d.sessions > 0 || d.visitors > 0) && granularity !== "day" ? (
-                <p className="text-[9px] font-medium text-[#1d2733]">
-                  {d.visitors}/{d.sessions}
-                </p>
-              ) : null}
             </div>
           );
         })}

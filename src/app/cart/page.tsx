@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { HTMLInputTypeAttribute } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { CartQuantityStepper } from "@/components/cart-quantity-stepper";
 import { CartStepper } from "@/components/cart-stepper";
 import { useCart } from "@/components/cart-provider";
 import { useUser } from "@/components/user-provider";
@@ -902,26 +903,13 @@ export default function CartPage() {
                                     </p>
                                   ) : null}
                                 </div>
-                                <div className="mt-3 flex flex-col items-start gap-2">
-                                  <div className="inline-flex items-center rounded-full border border-[#ddd3e4] bg-white p-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                                      className="flex h-8 w-8 items-center justify-center rounded-full text-xl text-[#432855] transition hover:bg-[#f2e8f6]"
-                                    >
-                                      −
-                                    </button>
-                                    <span className="min-w-8 text-center text-sm font-semibold text-[#432855]">
-                                      {item.quantity}
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                                      className="flex h-8 w-8 items-center justify-center rounded-full text-xl text-[#432855] transition hover:bg-[#f2e8f6]"
-                                    >
-                                      +
-                                    </button>
-                                  </div>
+                                <div className="mt-3">
+                                  <CartQuantityStepper
+                                    quantity={item.quantity}
+                                    stock={item.product.stock}
+                                    onChange={(next) => updateQuantity(item.product.id, next)}
+                                    size="sm"
+                                  />
                                 </div>
                               </div>
                             </div>
@@ -969,26 +957,12 @@ export default function CartPage() {
                                   ) : null}
                                 </div>
 
-                                <div className="mt-4 flex flex-wrap items-center gap-2">
-                                  <div className="inline-flex items-center rounded-full border border-[#ddd3e4] bg-white p-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                                      className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-[#432855] transition hover:bg-[#f2e8f6]"
-                                    >
-                                      −
-                                    </button>
-                                    <span className="min-w-10 text-center text-sm font-semibold text-[#432855]">
-                                      {item.quantity}
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                                      className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-[#432855] transition hover:bg-[#f2e8f6]"
-                                    >
-                                      +
-                                    </button>
-                                  </div>
+                                <div className="mt-4">
+                                  <CartQuantityStepper
+                                    quantity={item.quantity}
+                                    stock={item.product.stock}
+                                    onChange={(next) => updateQuantity(item.product.id, next)}
+                                  />
                                 </div>
                               </div>
                             </div>

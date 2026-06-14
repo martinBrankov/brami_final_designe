@@ -30,6 +30,7 @@ export type AdminProductRecord = {
   packaging: string;
   weight: number;
   rating: number;
+  stock: number;
   description: string;
   categories: string[];
   audiences: string[];
@@ -49,6 +50,7 @@ export type AdminProductInput = {
   packaging: string;
   weight: number;
   rating: number;
+  stock: number;
   description: string;
   categories: string[];
   audiences: string[];
@@ -84,6 +86,7 @@ export type AdminOrderRecord = {
   subtotal: number;
   shipping: number;
   total: number;
+  promoCode: string | null;
   orderCreatedAt: string;
   createdAt: string;
   items: Array<{
@@ -124,6 +127,7 @@ type AdminOrderRow = {
   subtotal: number;
   shipping: number;
   total: number;
+  promo_code_text: string | null;
   order_created_at: string;
   created_at: string;
   customer_order_items?: AdminOrderItemRow[];
@@ -254,6 +258,7 @@ function mapAdminOrder(row: AdminOrderRow): AdminOrderRecord {
     subtotal: Number(row.subtotal ?? 0),
     shipping: Number(row.shipping ?? 0),
     total: Number(row.total ?? 0),
+    promoCode: row.promo_code_text ?? null,
     orderCreatedAt: row.order_created_at,
     createdAt: row.created_at,
     items: (row.customer_order_items ?? []).map((item) => ({
@@ -285,6 +290,7 @@ export async function getAdminProducts() {
       packaging,
       weight,
       rating,
+      stock_quantity,
       description,
       product_categories(categories(slug)),
       product_audiences(audiences(slug)),
@@ -309,6 +315,7 @@ export async function getAdminProducts() {
     packaging: row.packaging ?? "",
     weight: Number(row.weight ?? 0),
     rating: Number(row.rating ?? 0),
+    stock: Math.max(0, Math.trunc(Number(row.stock_quantity ?? 0))),
     description: row.description ?? "",
     categories: toSlugList(
       (row.product_categories ?? []).map((entry) => getNestedSlug(entry, "categories")),
@@ -375,6 +382,7 @@ export async function getAdminOrders() {
       subtotal,
       shipping,
       total,
+      promo_code_text,
       order_created_at,
       created_at,
       customer_order_items(
@@ -415,6 +423,7 @@ export async function getAdminOrderById(orderId: string) {
       subtotal,
       shipping,
       total,
+      promo_code_text,
       order_created_at,
       created_at,
       customer_order_items(
@@ -606,6 +615,7 @@ export async function saveAdminProduct(input: AdminProductInput) {
     packaging: normalizedInput.packaging,
     weight: normalizedInput.weight,
     rating: normalizedInput.rating,
+    stock_quantity: Math.max(0, Math.trunc(Number(normalizedInput.stock) || 0)),
     description: normalizedInput.description,
   });
 
@@ -742,17 +752,29 @@ export async function updateAdminUser(input: AdminUserUpdateInput) {
 
 export async function updateAdminOrderStatus(orderId: string, status: string) {
   const supabase = createSupabaseAdminClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("customer_orders")
     .update({
       status,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", orderId);
+    .eq("id", orderId)
+    .select("order_number, customer_full_name, customer_email")
+    .single<{
+      order_number: string;
+      customer_full_name: string;
+      customer_email: string;
+    }>();
 
   if (error) {
     throw new Error(`Failed to update order status: ${error.message}`);
   }
+
+  return {
+    orderNumber: data.order_number,
+    customerFullName: data.customer_full_name,
+    customerEmail: data.customer_email,
+  };
 }
 
 type SavedOrderInput = {

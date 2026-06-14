@@ -6,7 +6,7 @@ import { useState } from "react";
 import type { UserOrder } from "@/lib/user-orders";
 
 function formatPrice(value: number) {
-  return `${value.toFixed(2)} лв.`;
+  return `€${value.toFixed(2)}`;
 }
 
 function formatOrderDate(value: string) {
@@ -41,6 +41,11 @@ function ChevronIcon({ isOpen }: { isOpen: boolean }) {
 export function OrderCard({ order }: { order: UserOrder }) {
   const [isOpen, setIsOpen] = useState(false);
   const itemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  // The stored subtotal is already discounted, while each item keeps its full
+  // price — so the difference is the discount that applied to this order.
+  const itemsTotal = order.items.reduce((sum, item) => sum + item.totalPrice, 0);
+  const discountAmount = itemsTotal - order.subtotal;
+  const hasDiscount = discountAmount > 0.005;
 
   return (
     <article className="border-b border-[#ece3f2]">
@@ -143,12 +148,22 @@ export function OrderCard({ order }: { order: UserOrder }) {
             </div>
             <div className="flex justify-between gap-4 border-t border-[#ece3f2] pt-2">
               <dt className="text-[#6b587f]">Продукти</dt>
-              <dd className="text-right text-[#432855]">{formatPrice(order.subtotal)}</dd>
+              <dd className="text-right text-[#432855]">{formatPrice(itemsTotal)}</dd>
             </div>
             <div className="flex justify-between gap-4 border-t border-[#ece3f2] pt-2">
               <dt className="text-[#6b587f]">Транспорт</dt>
               <dd className="text-right text-[#432855]">{formatPrice(order.shipping)}</dd>
             </div>
+            {hasDiscount ? (
+              <div className="flex justify-between gap-4 border-t border-[#ece3f2] pt-2 sm:col-span-2">
+                <dt className="text-[#6b587f]">
+                  {order.promoCode ? `Отстъпка · промо код ${order.promoCode}` : "Отстъпка"}
+                </dt>
+                <dd className="text-right font-medium text-[#2e7d46]">
+                  −{formatPrice(discountAmount)}
+                </dd>
+              </div>
+            ) : null}
             <div className="flex justify-between gap-4 border-t border-[#ece3f2] pt-2 sm:col-span-2">
               <dt className="font-semibold text-[#432855]">Общо</dt>
               <dd className="text-right text-base font-semibold text-[#432855]">

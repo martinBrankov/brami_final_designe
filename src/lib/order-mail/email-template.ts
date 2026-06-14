@@ -16,6 +16,57 @@ function formatCurrency(value: number) {
   return `\u20AC${eur.toFixed(2)} / ${bgn.toFixed(2)} лв.`;
 }
 
+const STATUS_MESSAGES: Record<string, string> = {
+  "Потвърдена": "Поръчката ви е потвърдена и предстои обработка.",
+  "В обработка": "Поръчката ви се обработва в момента.",
+  "Изпратена": "Поръчката ви е изпратена и вече пътува към вас.",
+  "Доставена": "Поръчката ви е доставена. Благодарим ви, че избрахте Brami!",
+  "Отказана": "Поръчката ви беше отказана. Ако смятате, че това е грешка, моля свържете се с нас.",
+};
+
+type OrderStatusEmailPayload = {
+  orderNumber: string;
+  customerFullName: string;
+  status: string;
+};
+
+export function createOrderStatusUpdateEmail({
+  orderNumber,
+  customerFullName,
+  status,
+}: OrderStatusEmailPayload) {
+  const subject = `Brami поръчка ${orderNumber} - ${status}`;
+  const message =
+    STATUS_MESSAGES[status] ??
+    `Статусът на поръчката ви беше променен на „${status}".`;
+
+  const html = `
+    <div style="margin:0;padding:24px;background:#f7f2fb;font-family:Arial,sans-serif;color:#432855;">
+      <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e6dcef;border-radius:24px;overflow:hidden;">
+        <div style="padding:24px 28px;background:linear-gradient(100deg,#9f79ac 0%,#432855 100%);color:#ffffff;">
+          <p style="margin:0 0 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.86;">Промяна на статус</p>
+          <h1 style="margin:0;font-size:26px;line-height:1.2;">Поръчка ${escapeHtml(orderNumber)}</h1>
+          <p style="margin:10px 0 0;font-size:14px;line-height:1.6;">Нов статус: <strong>${escapeHtml(status)}</strong></p>
+        </div>
+        <div style="padding:28px;">
+          <p style="margin:0 0 14px;font-size:15px;line-height:1.7;">Здравейте, ${escapeHtml(customerFullName)}.</p>
+          <p style="margin:0;font-size:15px;line-height:1.7;">${escapeHtml(message)}</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const text = [
+    `Поръчка ${orderNumber}`,
+    `Нов статус: ${status}`,
+    "",
+    `Здравейте, ${customerFullName}.`,
+    message,
+  ].join("\n");
+
+  return { subject, html, text };
+}
+
 type OrderItem = {
   id?: string;
   name: string;

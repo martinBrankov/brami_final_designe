@@ -178,7 +178,7 @@ export function Navbar() {
   const router = useRouter();
   const { itemCount } = useCart();
   const { favoriteCount } = useFavorites();
-  const { isAuthenticated, logout } = useUser();
+  const { isAuthenticated, logout, user } = useUser();
   const products = useProducts();
   const deferredSearchValue = useDeferredValue(searchValue);
 
@@ -187,6 +187,7 @@ export function Navbar() {
     { href: "/products", label: "Продукти" },
     { href: "/about", label: "За нас" },
     { href: "/beauty-care", label: "Красота & грижа" },
+    { href: "/partners", label: "Партньори" },
     { href: "/contact", label: "Контакти" },
   ];
   const quickLinks = [
@@ -505,6 +506,26 @@ export function Navbar() {
                     >
                       Моите поръчки
                     </Link>
+                    {user?.role === "merchant" ? (
+                      <Link
+                        role="menuitem"
+                        href="/account/merchant"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="block border-t border-[#ece3f2] px-5 py-3 text-sm font-medium text-[#432855] transition hover:bg-[#faf7fc]"
+                      >
+                        Търговец
+                      </Link>
+                    ) : null}
+                    {user?.role === "admin" ? (
+                      <Link
+                        role="menuitem"
+                        href="/admin-panel"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="block border-t border-[#ece3f2] px-5 py-3 text-sm font-medium text-[#432855] transition hover:bg-[#faf7fc]"
+                      >
+                        Админ панел
+                      </Link>
+                    ) : null}
                     <button
                       type="button"
                       role="menuitem"

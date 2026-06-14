@@ -16,6 +16,7 @@ type ProductDraft = {
   packaging: string;
   weight: string;
   rating: string;
+  stock: string;
   description: string;
   categories: string;
   audiences: string;
@@ -35,6 +36,7 @@ const emptyDraft: ProductDraft = {
   packaging: "",
   weight: "",
   rating: "",
+  stock: "",
   description: "",
   categories: "",
   audiences: "",
@@ -55,6 +57,7 @@ function toDraft(product: AdminProductRecord): ProductDraft {
     packaging: product.packaging,
     weight: String(product.weight),
     rating: String(product.rating),
+    stock: String(product.stock),
     description: product.description,
     categories: product.categories.join(", "),
     audiences: product.audiences.join(", "),
@@ -275,6 +278,7 @@ export function AdminProductsManager({
       packaging: modalDraft.packaging.trim(),
       weight: Number(modalDraft.weight),
       rating: Number(modalDraft.rating),
+      stock: Math.max(0, Math.trunc(Number(modalDraft.stock) || 0)),
       description: modalDraft.description.trim(),
       categories: parseCsvList(modalDraft.categories),
       audiences: parseCsvList(modalDraft.audiences),
@@ -554,6 +558,19 @@ export function AdminProductsManager({
                     step="0.1"
                     value={modalDraft.rating}
                     onChange={(e) => updateDraft("rating", e.target.value)}
+                    className="h-11 w-full rounded-[16px] border border-[#d9d4ca] bg-white px-4"
+                    required
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-[#25313d]">Количество (наличност)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={modalDraft.stock}
+                    onChange={(e) => updateDraft("stock", e.target.value)}
                     className="h-11 w-full rounded-[16px] border border-[#d9d4ca] bg-white px-4"
                     required
                   />

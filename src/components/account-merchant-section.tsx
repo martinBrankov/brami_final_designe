@@ -34,13 +34,7 @@ export function AccountMerchantSection({
 
   return (
     <section className="w-full">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8f72a7]">
-        Търговец
-      </p>
-      <h2 className="mt-2 font-serif text-3xl text-[#432855]">
-        Профил на търговец
-      </h2>
-      <p className="mt-2 text-sm text-[#6b587f]">
+      <p className="text-sm text-[#6b587f]">
         Тук виждаш своята лична отстъпка, промо кодове и поръчки, направени през тях.
       </p>
 

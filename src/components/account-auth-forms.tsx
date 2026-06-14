@@ -75,6 +75,85 @@ function SocialButtons({ providers }: { providers: SocialProvider[] }) {
   );
 }
 
+const inputClass =
+  "h-12 w-full rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] px-4 text-[#432855] outline-none transition focus:border-[#9f79ac]";
+
+function EyeIcon({ visible }: { visible: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-5 w-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.7}
+      aria-hidden="true"
+    >
+      {visible ? (
+        <>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M3.98 8.22A10.48 10.48 0 0 0 1.93 12c1.3 4.34 5.31 7.5 10.07 7.5.99 0 1.95-.14 2.86-.4M6.23 6.23A10.45 10.45 0 0 1 12 4.5c4.76 0 8.77 3.16 10.07 7.5a10.52 10.52 0 0 1-4.3 5.77M6.23 6.23 3 3m3.23 3.23 3.65 3.65m7.89 7.89L21 21m-3.23-3.23-3.65-3.65m0 0a3 3 0 1 0-4.24-4.24"
+          />
+        </>
+      ) : (
+        <>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M2.04 12.32a1 1 0 0 1 0-.64C3.42 7.51 7.36 4.5 12 4.5c4.64 0 8.57 3.01 9.96 7.18.07.21.07.43 0 .64C20.58 16.49 16.64 19.5 12 19.5c-4.64 0-8.58-3.01-9.96-7.18Z"
+          />
+          <circle cx="12" cy="12" r="3" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+function PasswordField({
+  value,
+  onChange,
+  autoComplete,
+  minLength,
+  hint,
+}: {
+  value: string;
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  autoComplete: string;
+  minLength?: number;
+  hint?: string;
+}) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-medium text-[#432855]">Парола</span>
+      <div className="relative">
+        <input
+          type={visible ? "text" : "password"}
+          value={value}
+          onChange={onChange}
+          className={`${inputClass} pr-12`}
+          autoComplete={autoComplete}
+          minLength={minLength}
+          required
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          aria-label={visible ? "Скрий паролата" : "Покажи паролата"}
+          className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8f72a7] transition hover:text-[#432855]"
+        >
+          <EyeIcon visible={visible} />
+        </button>
+      </div>
+      {hint ? (
+        <span className="mt-1 block text-xs text-[#8f72a7]">{hint}</span>
+      ) : null}
+    </label>
+  );
+}
+
 type AccountAuthFormsProps = {
   providers?: SocialProvider[];
   oauthError?: string | null;
@@ -158,8 +237,6 @@ export function AccountAuthForms({
     "flex-1 rounded-full px-4 py-2 text-sm font-semibold uppercase tracking-[0.08em] transition";
   const activeTab = "bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] text-white shadow";
   const inactiveTab = "text-[#6b587f] hover:text-[#432855]";
-  const inputClass =
-    "h-12 w-full rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] px-4 text-[#432855] outline-none transition focus:border-[#9f79ac]";
 
   return (
     <div className="w-full max-w-[460px]">
@@ -214,19 +291,11 @@ export function AccountAuthForms({
             />
           </label>
 
-          <label className="block">
-            <span className="mb-2 block text-sm font-medium text-[#432855]">
-              Парола
-            </span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className={inputClass}
-              autoComplete="current-password"
-              required
-            />
-          </label>
+          <PasswordField
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="current-password"
+          />
 
           {errorMessage ? (
             <div className="rounded-[18px] border border-[#e8c7c7] bg-[#fff6f6] px-4 py-3 text-sm text-[#9a3f3f]">
@@ -291,23 +360,13 @@ export function AccountAuthForms({
             />
           </label>
 
-          <label className="block">
-            <span className="mb-2 block text-sm font-medium text-[#432855]">
-              Парола
-            </span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className={inputClass}
-              autoComplete="new-password"
-              minLength={8}
-              required
-            />
-            <span className="mt-1 block text-xs text-[#8f72a7]">
-              Минимум 8 символа.
-            </span>
-          </label>
+          <PasswordField
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="new-password"
+            minLength={8}
+            hint="Минимум 8 символа."
+          />
 
           {errorMessage ? (
             <div className="rounded-[18px] border border-[#e8c7c7] bg-[#fff6f6] px-4 py-3 text-sm text-[#9a3f3f]">

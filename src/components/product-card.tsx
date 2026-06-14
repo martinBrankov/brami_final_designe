@@ -294,7 +294,8 @@ export function ProductCard({
       >
         <AddToCartButton
           productId={product.id}
-          className={`mt-auto inline-flex w-full items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] font-semibold uppercase tracking-[0.08em] text-white ${
+          stock={product.stock}
+          className={`mt-auto flex w-full items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] text-center font-semibold uppercase leading-tight tracking-[0.08em] text-white ${
             compact
               ? "h-8 px-3 text-[10px] sm:h-10 sm:px-4 sm:text-[11px]"
               : "h-12 px-6 text-sm"

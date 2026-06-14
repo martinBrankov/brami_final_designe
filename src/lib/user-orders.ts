@@ -23,6 +23,7 @@ export type UserOrder = {
   subtotal: number;
   shipping: number;
   total: number;
+  promoCode: string | null;
   orderCreatedAt: string;
   createdAt: string;
   items: UserOrderItem[];
@@ -49,6 +50,7 @@ type OrderRow = {
   subtotal: number;
   shipping: number;
   total: number;
+  promo_code_text: string | null;
   order_created_at: string;
   created_at: string;
   customer_order_items?: OrderItemRow[];
@@ -67,7 +69,8 @@ export async function getOrdersForEmail(email: string): Promise<UserOrder[]> {
     .from("customer_orders")
     .select(
       `id, order_number, status, customer_full_name, delivery_method_label,
-       delivery_destination, subtotal, shipping, total, order_created_at, created_at,
+       delivery_destination, subtotal, shipping, total, promo_code_text,
+       order_created_at, created_at,
        customer_order_items ( id, product_name, packaging, image_url, product_url,
          quantity, unit_price, total_price )`,
     )
@@ -89,6 +92,7 @@ export async function getOrdersForEmail(email: string): Promise<UserOrder[]> {
     subtotal: Number(row.subtotal),
     shipping: Number(row.shipping),
     total: Number(row.total),
+    promoCode: row.promo_code_text,
     orderCreatedAt: row.order_created_at,
     createdAt: row.created_at,
     items: (row.customer_order_items ?? []).map((item) => ({

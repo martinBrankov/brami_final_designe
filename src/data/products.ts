@@ -75,6 +75,7 @@ export const SHIPPING_RATES = {
 } as const;
 
 export interface Comment {
+  id: number;
   name: string;
   comment: string;
   rating: number;
@@ -96,6 +97,7 @@ export type Product = {
   packaging: string;
   weight: number;
   rating: number;
+  stock: number;
   comments: Comment[];
   description: string;
   relatedProductIds: number[];
@@ -230,7 +232,8 @@ function mapDbProduct(row: any): Product {
     .map((h: { text: string }) => h.text);
 
   const comments: Comment[] = (row.product_comments ?? []).map(
-    (c: { author_name: string; comment: string; rating: number | null; comment_date: string }) => ({
+    (c: { id: number; author_name: string; comment: string; rating: number | null; comment_date: string }) => ({
+      id: c.id,
       name: c.author_name,
       comment: c.comment,
       rating: c.rating ?? 5,
@@ -256,6 +259,7 @@ function mapDbProduct(row: any): Product {
     packaging: row.packaging,
     weight: Number(row.weight) || 0.2,
     rating: Number(row.rating),
+    stock: Math.max(0, Math.trunc(Number(row.stock_quantity ?? 0))),
     comments,
     description: row.description ?? "",
     relatedProductIds,
@@ -273,7 +277,7 @@ export const getProducts = cache(async (): Promise<Product[]> => {
       product_audiences(audiences(slug)),
       product_images(image_src, sort_order),
       product_highlights(text, sort_order),
-      product_comments(author_name, comment, rating, comment_date),
+      product_comments(id, author_name, comment, rating, comment_date),
       related_products!product_id(related_product_id)
     `)
     .order("id");

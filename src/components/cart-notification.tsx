@@ -3,39 +3,80 @@
 import Image, { type StaticImageData } from "next/image";
 
 type CartNotificationProps = {
+  variant?: "success" | "error";
+  message?: string;
   productName: string;
   productImage?: string | StaticImageData;
   onClose: () => void;
 };
 
 export function CartNotification({
+  variant = "success",
+  message,
   productName,
   productImage,
   onClose,
 }: CartNotificationProps) {
+  const isError = variant === "error";
+  const heading = isError
+    ? message ?? "Не може да добавите повече от наличното."
+    : "Продуктът е добавен в количката.";
+
   return (
     <div className="pointer-events-none fixed inset-x-4 bottom-4 z-[120] sm:bottom-6">
-      <div className="pointer-events-auto mx-auto w-full max-w-[360px] rounded-[24px] border border-[#ddd3e4] bg-white/95 p-4 shadow-[0_18px_45px_rgba(67,40,85,0.14)] backdrop-blur sm:max-w-none">
+      <div
+        className={`pointer-events-auto mx-auto w-full max-w-[360px] rounded-[24px] border bg-white/95 p-4 shadow-[0_18px_45px_rgba(67,40,85,0.14)] backdrop-blur sm:max-w-none ${
+          isError ? "border-[#eccaca]" : "border-[#ddd3e4]"
+        }`}
+      >
         <div className="flex items-start gap-3 sm:items-center sm:gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(100deg,#2e7d46_0%,#1a5c30_100%)] text-white">
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 20 20"
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M4.5 10.5 8 14l7.5-8" />
-            </svg>
+          <div
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white ${
+              isError
+                ? "bg-[linear-gradient(100deg,#e86969_0%,#c43c3c_100%)]"
+                : "bg-[linear-gradient(100deg,#2e7d46_0%,#1a5c30_100%)]"
+            }`}
+          >
+            {isError ? (
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M10 6v5" />
+                <path d="M10 14h.01" />
+              </svg>
+            ) : (
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4.5 10.5 8 14l7.5-8" />
+              </svg>
+            )}
           </div>
 
           <div className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-4">
             <div className="min-w-0 sm:flex-1">
-              <p className="font-serif text-[1.15rem] leading-6 text-[#432855] sm:text-[1.2rem] sm:leading-7">
-                Продуктът е добавен в количката.
+              <p
+                className={
+                  isError
+                    ? "text-sm font-medium leading-5 text-[#c43c3c] sm:text-[0.95rem]"
+                    : "font-serif text-[1.15rem] leading-6 text-[#432855] sm:text-[1.2rem] sm:leading-7"
+                }
+              >
+                {heading}
               </p>
             </div>
 

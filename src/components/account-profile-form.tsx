@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useTransition, type ReactNode } from "react";
 
 import { AccountDiscountProgress } from "@/components/account-discount-progress";
@@ -254,7 +253,7 @@ export function AccountProfileForm({
   initialPreferredLocker?: PreferredOfficeValue | null;
   initialHasPassword?: boolean;
 }) {
-  const { user, profile: contextProfile, setProfile: setUserProfile } = useUser();
+  const { profile: contextProfile, setProfile: setUserProfile } = useUser();
   const [values, setValues] = useState<AccountProfileFormValues>(initial);
   const [preferredOffice, setPreferredOffice] = useState<PreferredOfficeValue | null>(
     initialPreferredOffice,
@@ -276,7 +275,6 @@ export function AccountProfileForm({
   );
   const [isSaving, startSaving] = useTransition();
   const [isSavingPassword, startSavingPassword] = useTransition();
-  const canAccessAdmin = user?.role === "admin";
 
   const inputClass =
     "h-11 w-full min-w-0 rounded-[14px] border border-[#ddd3e4] bg-[#faf7fc] px-3 text-[#432855] outline-none transition focus:border-[#9f79ac]";
@@ -732,16 +730,6 @@ export function AccountProfileForm({
         </div>
       ) : null}
 
-      {canAccessAdmin ? (
-        <div className="mt-8">
-          <Link
-            href="/admin-panel"
-            className="inline-flex h-12 items-center justify-center rounded-full border border-[#432855] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-[#432855] transition hover:bg-[#432855] hover:text-white"
-          >
-            Към админ панел
-          </Link>
-        </div>
-      ) : null}
     </div>
   );
 }

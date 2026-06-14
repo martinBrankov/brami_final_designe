@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AdminOrderItemThumb } from "@/components/admin-order-item-thumb";
 import { AdminOrderStatusControl } from "@/components/admin-order-status-control";
 import { AdminPrintButton } from "@/components/admin-print-button";
 import { AdminShell } from "@/components/admin-shell";
@@ -27,6 +28,15 @@ export default async function AdminOrderDetailPage({
   if (!order) {
     notFound();
   }
+
+  // The stored subtotal is already discounted, while each item keeps its full
+  // price — so the difference is the discount that applied to this order.
+  const itemsTotal = order.items.reduce((sum, item) => sum + item.totalPrice, 0);
+  const discountAmount = itemsTotal - order.subtotal;
+  const hasDiscount = discountAmount > 0.005;
+  const discountLabel = order.promoCode
+    ? `Отстъпка · промо код ${order.promoCode}`
+    : "Отстъпка";
 
   return (
     <AdminShell
@@ -109,8 +119,14 @@ export default async function AdminOrderDetailPage({
             <tbody>
               <tr>
                 <td style={{ padding: '2px 20px 2px 0', color: '#4f5b66' }}>Подсума</td>
-                <td style={{ textAlign: 'right', color: '#1d2733' }}>{order.subtotal.toFixed(2)} €</td>
+                <td style={{ textAlign: 'right', color: '#1d2733' }}>{itemsTotal.toFixed(2)} €</td>
               </tr>
+              {hasDiscount ? (
+                <tr>
+                  <td style={{ padding: '2px 20px 2px 0', color: '#4f5b66' }}>{discountLabel}</td>
+                  <td style={{ textAlign: 'right', color: '#1d7a3e' }}>−{discountAmount.toFixed(2)} €</td>
+                </tr>
+              ) : null}
               <tr>
                 <td style={{ padding: '2px 20px 2px 0', color: '#4f5b66' }}>Доставка</td>
                 <td style={{ textAlign: 'right', color: '#1d2733' }}>{order.shipping.toFixed(2)} €</td>
@@ -172,17 +188,29 @@ export default async function AdminOrderDetailPage({
                     key={item.id}
                     className="grid gap-3 px-4 py-4 md:grid-cols-[1fr_110px_90px_120px] md:items-center"
                   >
-                    <div>
-                      <p className="text-sm font-semibold text-[#1d2733]">{item.productName}</p>
-                      <p className="mt-1 text-sm text-[#5f6b76]">{item.packaging}</p>
-                      {item.productUrl ? (
-                        <a
-                          href={item.productUrl}
-                          className="mt-2 inline-flex text-sm font-medium text-[#6f5a33] underline-offset-4 hover:underline"
-                        >
-                          Отвори продукта
-                        </a>
-                      ) : null}
+                    <div className="flex items-start gap-3">
+                      <AdminOrderItemThumb src={item.imageUrl} alt={item.productName} />
+                      <div className="min-w-0">
+                        {item.productUrl ? (
+                          <a
+                            href={item.productUrl}
+                            className="text-sm font-semibold text-[#1d2733] underline-offset-4 hover:underline"
+                          >
+                            {item.productName}
+                          </a>
+                        ) : (
+                          <p className="text-sm font-semibold text-[#1d2733]">{item.productName}</p>
+                        )}
+                        <p className="mt-1 text-sm text-[#5f6b76]">{item.packaging}</p>
+                        {item.productUrl ? (
+                          <a
+                            href={item.productUrl}
+                            className="mt-2 inline-flex text-sm font-medium text-[#6f5a33] underline-offset-4 hover:underline"
+                          >
+                            Отвори продукта
+                          </a>
+                        ) : null}
+                      </div>
                     </div>
 
                     <p className="text-sm text-[#4f5b66]">{item.unitPrice.toFixed(2)} €</p>
@@ -241,8 +269,14 @@ export default async function AdminOrderDetailPage({
             <div className="mt-4 space-y-3 text-sm text-[#4f5b66]">
               <div className="flex items-center justify-between">
                 <span>Междинна сума</span>
-                <span>{order.subtotal.toFixed(2)} €</span>
+                <span>{itemsTotal.toFixed(2)} €</span>
               </div>
+              {hasDiscount ? (
+                <div className="flex items-center justify-between">
+                  <span>{discountLabel}</span>
+                  <span className="font-medium text-[#1d7a3e]">−{discountAmount.toFixed(2)} €</span>
+                </div>
+              ) : null}
               <div className="flex items-center justify-between">
                 <span>Доставка</span>
                 <span>{order.shipping.toFixed(2)} €</span>
