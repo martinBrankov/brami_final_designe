@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
+import { getProductImage } from "@/data/product-images";
 import type { AdminProductRecord } from "@/lib/admin-data";
 
 type ProductDraft = {
@@ -124,11 +126,25 @@ function ProductPreview({ draft }: { draft: ProductDraft }) {
         <div className="space-y-3">
           {imageKeys.length > 0 ? (
             <div className="grid grid-cols-2 gap-2">
-              {imageKeys.map((key) => (
-                <div key={key} className="flex aspect-square items-center justify-center rounded-[16px] bg-[#f4eef8] text-xs font-mono text-[#8f72a7]">
-                  {key}
-                </div>
-              ))}
+              {imageKeys.map((key) => {
+                const image = getProductImage(key);
+                return (
+                  <div
+                    key={key}
+                    className="flex aspect-square items-center justify-center overflow-hidden rounded-[16px] bg-[#f4eef8] text-xs font-mono text-[#8f72a7]"
+                  >
+                    {image ? (
+                      <Image
+                        src={image}
+                        alt={key}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      key
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="flex aspect-square items-center justify-center rounded-[20px] bg-[#f4eef8] text-sm text-[#9e8aae]">
@@ -354,13 +370,28 @@ export function AdminProductsManager({
               key={product.id}
               className="flex flex-col gap-2 py-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
             >
-              <div className="min-w-0 flex-1 lg:order-first">
-                <p className="text-sm font-semibold text-[#1d2733]">
-                  #{product.id} {product.name}
-                </p>
-                <p className="mt-0.5 text-xs text-[#67727d]">
-                  {product.brand} · {product.badge} · €{product.priceEur.toFixed(2)}
-                </p>
+              <div className="flex min-w-0 flex-1 items-center gap-3 lg:order-first">
+                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-[8px] border border-[#e7dfd1] bg-[#f8f4ec]">
+                  {getProductImage(product.imageKeys[0]) ? (
+                    <Image
+                      src={getProductImage(product.imageKeys[0])!}
+                      alt={product.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-[#c4b9a3]">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="m4 17 4-4 4 4 4-4 4 4"/><circle cx="9" cy="8.5" r="1.5"/></svg>
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[#1d2733]">
+                    #{product.id} {product.name}
+                  </p>
+                  <p className="mt-0.5 text-xs text-[#67727d]">
+                    {product.brand} · {product.badge} · €{product.priceEur.toFixed(2)}
+                  </p>
+                </div>
               </div>
 
               <div className="order-first flex shrink-0 items-center justify-end gap-1 lg:order-last">
@@ -429,9 +460,28 @@ export function AdminProductsManager({
                   ✕
                 </button>
               </div>
-              <h2 className="text-lg font-semibold text-[#1d2733]">
-                {modalDraft.id ? `Продукт #${modalDraft.id}` : "Нов продукт"}
-              </h2>
+              <div className="flex items-center gap-3">
+                {(() => {
+                  const key = modalDraft.imageKeys.split(",")[0]?.trim();
+                  const image = getProductImage(key);
+                  return image ? (
+                    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-[8px] border border-[#e7dfd1] bg-[#f8f4ec]">
+                      <Image
+                        src={image}
+                        alt={modalDraft.name || "Продукт"}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  ) : null;
+                })()}
+                <h2 className="text-lg font-semibold text-[#1d2733]">
+                  {modalDraft.name
+                    ? modalDraft.name
+                    : modalDraft.id
+                      ? `Продукт #${modalDraft.id}`
+                      : "Нов продукт"}
+                </h2>
+              </div>
             </div>
               <div className={`border-t border-[#e7dfd1] pt-5${showPreview ? " hidden" : ""}`}>
               <div className="grid gap-4 md:grid-cols-2">
