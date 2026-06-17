@@ -1,6 +1,7 @@
 import "server-only";
 
 import { syncMarketingSubscriberForProfile, unsubscribeMarketingEmail } from "@/lib/marketing-subscribers";
+import { normalizeOrderImageUrl } from "@/lib/order-image";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export type AdminUserProfile = {
@@ -266,7 +267,7 @@ function mapAdminOrder(row: AdminOrderRow): AdminOrderRecord {
       productId: item.product_id,
       productName: item.product_name,
       packaging: item.packaging,
-      imageUrl: item.image_url,
+      imageUrl: normalizeOrderImageUrl(item.image_url),
       productUrl: item.product_url,
       quantity: Number(item.quantity ?? 0),
       unitPrice: Number(item.unit_price ?? 0),

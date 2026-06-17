@@ -1,5 +1,6 @@
 import "server-only";
 
+import { normalizeOrderImageUrl } from "@/lib/order-image";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export type UserOrderItem = {
@@ -99,7 +100,7 @@ export async function getOrdersForEmail(email: string): Promise<UserOrder[]> {
       id: item.id,
       productName: item.product_name,
       packaging: item.packaging,
-      imageUrl: item.image_url,
+      imageUrl: normalizeOrderImageUrl(item.image_url),
       productUrl: item.product_url,
       quantity: item.quantity,
       unitPrice: Number(item.unit_price),
