@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
 
 import { getBlogPosts } from "@/lib/blog";
+import { SITE_URL } from "@/lib/site-url";
 import { getProducts } from "@/data/products";
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://brami.shop";
+const BASE_URL = SITE_URL;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [allProducts, blogPosts] = await Promise.all([getProducts(), getBlogPosts()]);

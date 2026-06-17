@@ -20,12 +20,13 @@ import {
 } from "@/data/products";
 import { getDisplayName } from "@/lib/display-name";
 import { getProductReviews } from "@/lib/product-reviews";
+import { SITE_URL, isVercelHost } from "@/lib/site-url";
 import { getUserProfile, getUserSession } from "@/lib/user-auth";
 import homeScreenImgMobile from "@/assets/images/homeScreenImgMobile.png";
 
 export const dynamic = "force-dynamic";
 
-const fallbackSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://brami.shop";
+const fallbackSiteUrl = SITE_URL;
 
 async function resolveSiteUrl() {
   const requestHeaders = await headers();
@@ -34,6 +35,10 @@ async function resolveSiteUrl() {
   const host = forwardedHost || requestHeaders.get("host");
 
   if (host) {
+    // Never expose the *.vercel.app deployment host in canonical/OG metadata.
+    if (isVercelHost(host)) {
+      return fallbackSiteUrl;
+    }
     const protocol =
       forwardedProto || (host.includes("localhost") || host.startsWith("192.168.") ? "http" : "https");
     return `${protocol}://${host}`;
