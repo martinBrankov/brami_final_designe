@@ -344,6 +344,9 @@ export function AccountProfileForm({
         preferredLocker: lockerForPayload,
         hasPassword,
         merchantDiscountPercent: contextProfile?.merchantDiscountPercent ?? 0,
+        effectiveMerchantDiscountPercent:
+          contextProfile?.effectiveMerchantDiscountPercent ?? 0,
+        merchantTermsAccepted: contextProfile?.merchantTermsAccepted ?? false,
       });
       setFeedback({ kind: "success", message: "Профилът е обновен." });
       onSuccess?.();

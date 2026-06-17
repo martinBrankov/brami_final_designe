@@ -45,3 +45,4 @@ scripts/supabase-backup*.json
 
 #migration scripts (contain production data)
 /supabase
+/scripts

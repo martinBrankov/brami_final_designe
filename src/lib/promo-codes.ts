@@ -1,5 +1,7 @@
 import "server-only";
 
+import { COMMISSION_ELIGIBLE_STATUS } from "@/lib/commission-status";
+import { getMerchantPoolPercent } from "@/lib/merchant-tier";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export type PromoCodeRecord = {
@@ -58,7 +60,7 @@ export function normalizeCode(value: string): string {
 }
 
 function isValidCode(value: string): boolean {
-  return /^[A-Z0-9]{5}$/.test(value);
+  return /^[A-Z0-9%]{5}$/.test(value);
 }
 
 const CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -122,7 +124,7 @@ export async function createPromoCode(
 ): Promise<PromoCodeRecord> {
   const code = normalizeCode(input.code);
   if (!isValidCode(code)) {
-    throw new Error("Кодът трябва да е точно 5 символа (A–Z, 0–9).");
+    throw new Error("Кодът трябва да е точно 5 символа (A–Z, 0–9, %).");
   }
   if (!input.merchantId) {
     throw new Error("Изберете търговец.");
@@ -184,7 +186,7 @@ export async function updatePromoCode(
   if (input.code !== undefined) {
     const code = normalizeCode(input.code);
     if (!isValidCode(code)) {
-      throw new Error("Кодът трябва да е точно 5 символа (A–Z, 0–9).");
+      throw new Error("Кодът трябва да е точно 5 символа (A–Z, 0–9, %).");
     }
     updates.code = code;
   }
@@ -221,6 +223,215 @@ export async function deletePromoCode(id: string): Promise<void> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Merchant self-service (scoped to the signed-in merchant, pool-constrained)
+// ---------------------------------------------------------------------------
+
+/**
+ * The customer discount plus the merchant dividend split a single pool — the
+ * merchant's effective discount percentage. Their sum may not exceed it.
+ */
+export function assertSplitWithinPool(
+  discountPercent: number,
+  commissionPercent: number,
+  poolPercent: number,
+): void {
+  const discount = clampPercent(discountPercent);
+  const commission = clampPercent(commissionPercent);
+  // Tolerate floating-point noise on the boundary.
+  if (discount + commission > poolPercent + 1e-9) {
+    throw new Error(
+      `Сборът от отстъпка за клиента и твоя дивидент (${discount + commission}%) не може да надвишава общия пул от ${poolPercent}%.`,
+    );
+  }
+}
+
+async function getMerchantCodeOwner(
+  id: string,
+): Promise<{ merchantId: string; discountPercent: number; commissionPercent: number } | null> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("promo_codes")
+    .select("merchant_id, discount_percent, commission_percent")
+    .eq("id", id)
+    .maybeSingle<{
+      merchant_id: string;
+      discount_percent: number | string | null;
+      commission_percent: number | string | null;
+    }>();
+
+  if (error) {
+    throw new Error(`Failed to load promo code: ${error.message}`);
+  }
+  if (!data) {
+    return null;
+  }
+  return {
+    merchantId: data.merchant_id,
+    discountPercent: Number(data.discount_percent ?? 0),
+    commissionPercent: Number(data.commission_percent ?? 0),
+  };
+}
+
+export type CreateMerchantPromoCodeInput = {
+  merchantId: string;
+  poolPercent: number;
+  code: string;
+  discountPercent: number;
+  commissionPercent: number;
+  isActive?: boolean;
+};
+
+export async function createMerchantPromoCode(
+  input: CreateMerchantPromoCodeInput,
+): Promise<PromoCodeRecord> {
+  assertSplitWithinPool(
+    input.discountPercent,
+    input.commissionPercent,
+    input.poolPercent,
+  );
+
+  return createPromoCode({
+    code: input.code,
+    merchantId: input.merchantId,
+    discountPercent: input.discountPercent,
+    commissionPercent: input.commissionPercent,
+    isActive: input.isActive ?? true,
+  });
+}
+
+export type UpdateMerchantPromoCodeInput = {
+  merchantId: string;
+  poolPercent: number;
+  id: string;
+  discountPercent?: number;
+  commissionPercent?: number;
+  isActive?: boolean;
+  code?: string;
+};
+
+export async function updateMerchantPromoCode(
+  input: UpdateMerchantPromoCodeInput,
+): Promise<PromoCodeRecord> {
+  const existing = await getMerchantCodeOwner(input.id);
+  if (!existing) {
+    throw new Error("Кодът не е намерен.");
+  }
+  if (existing.merchantId !== input.merchantId) {
+    throw new Error("Нямаш достъп до този код.");
+  }
+
+  // Validate the resulting split (only re-check when a percentage changes).
+  const resultingDiscount =
+    input.discountPercent !== undefined
+      ? input.discountPercent
+      : existing.discountPercent;
+  const resultingCommission =
+    input.commissionPercent !== undefined
+      ? input.commissionPercent
+      : existing.commissionPercent;
+
+  if (
+    input.isActive === true ||
+    input.discountPercent !== undefined ||
+    input.commissionPercent !== undefined
+  ) {
+    assertSplitWithinPool(resultingDiscount, resultingCommission, input.poolPercent);
+  }
+
+  return updatePromoCode({
+    id: input.id,
+    code: input.code,
+    discountPercent: input.discountPercent,
+    commissionPercent: input.commissionPercent,
+    isActive: input.isActive,
+  });
+}
+
+/**
+ * Auto-deactivates the merchant's active codes whose customer discount + dividend
+ * currently exceeds the merchant's pool (e.g. after the admin lowers the merchant's
+ * starting discount). Returns the ids that were deactivated.
+ */
+export async function deactivateCodesOverPool(
+  merchantId: string,
+  poolPercent: number,
+): Promise<string[]> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("promo_codes")
+    .select("id, discount_percent, commission_percent")
+    .eq("merchant_id", merchantId)
+    .eq("is_active", true)
+    .returns<
+      Array<{
+        id: string;
+        discount_percent: number | string | null;
+        commission_percent: number | string | null;
+      }>
+    >();
+
+  if (error) {
+    throw new Error(`Failed to load promo codes: ${error.message}`);
+  }
+
+  const overIds = (data ?? [])
+    .filter(
+      (row) =>
+        Number(row.discount_percent ?? 0) + Number(row.commission_percent ?? 0) >
+        poolPercent + 1e-9,
+    )
+    .map((row) => row.id);
+
+  if (overIds.length === 0) {
+    return [];
+  }
+
+  const { error: updateError } = await supabase
+    .from("promo_codes")
+    .update({ is_active: false, updated_at: new Date().toISOString() })
+    .in("id", overIds);
+
+  if (updateError) {
+    throw new Error(`Failed to deactivate promo codes: ${updateError.message}`);
+  }
+
+  return overIds;
+}
+
+/**
+ * Deactivates every promo code of a merchant. Used when the merchant withdraws
+ * their consent to the terms — codes stay in the DB but become unusable.
+ */
+export async function deactivateAllMerchantCodes(
+  merchantId: string,
+): Promise<void> {
+  const supabase = createSupabaseAdminClient();
+  const { error } = await supabase
+    .from("promo_codes")
+    .update({ is_active: false, updated_at: new Date().toISOString() })
+    .eq("merchant_id", merchantId)
+    .eq("is_active", true);
+
+  if (error) {
+    throw new Error(`Failed to deactivate promo codes: ${error.message}`);
+  }
+}
+
+export async function deleteMerchantPromoCode(
+  merchantId: string,
+  id: string,
+): Promise<void> {
+  const existing = await getMerchantCodeOwner(id);
+  if (!existing) {
+    throw new Error("Кодът не е намерен.");
+  }
+  if (existing.merchantId !== merchantId) {
+    throw new Error("Нямаш достъп до този код.");
+  }
+  await deletePromoCode(id);
+}
+
 export async function validatePromoCode(
   rawCode: string,
 ): Promise<PromoValidation | null> {
@@ -250,12 +461,27 @@ export async function validatePromoCode(
     return null;
   }
 
+  const discountPercent = Number(data.discount_percent ?? 0);
+  const commissionPercent = Number(data.commission_percent ?? 0);
+
+  // If the merchant's pool is now below this code's split (e.g. the admin lowered
+  // the starting discount), auto-deactivate it and reject — keeps DB consistent
+  // even without a dashboard visit.
+  const poolPercent = await getMerchantPoolPercent(data.merchant_id);
+  if (discountPercent + commissionPercent > poolPercent + 1e-9) {
+    await supabase
+      .from("promo_codes")
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq("id", data.id);
+    return null;
+  }
+
   return {
     id: data.id,
     code: data.code,
     merchantId: data.merchant_id,
-    discountPercent: Number(data.discount_percent ?? 0),
-    commissionPercent: Number(data.commission_percent ?? 0),
+    discountPercent,
+    commissionPercent,
   };
 }
 
@@ -338,11 +564,19 @@ export async function markCommissionsPaid(
         updated_at: new Date().toISOString(),
       };
 
-  const { error } = await supabase
+  let query = supabase
     .from("customer_orders")
     .update(updates)
     .in("id", orderIds)
     .not("promo_merchant_id", "is", null);
+
+  // A commission can only be paid out once the order is delivered. Reversing a
+  // payout (paid = false) stays allowed regardless of status.
+  if (paid) {
+    query = query.eq("status", COMMISSION_ELIGIBLE_STATUS);
+  }
+
+  const { error } = await query;
 
   if (error) {
     throw new Error(`Failed to update commission status: ${error.message}`);
@@ -375,6 +609,10 @@ export type MerchantAdminRow = {
   username: string;
   email: string;
   merchantDiscountPercent: number;
+  merchantTermsAccepted: boolean;
+  bankAccountHolder: string;
+  bankIban: string;
+  bankBic: string;
   codeCount: number;
   orderCount: number;
   totalCommission: number;
@@ -382,23 +620,53 @@ export type MerchantAdminRow = {
   orders: MerchantOrderSummary[];
 };
 
+type MerchantProfileRow = {
+  id: string;
+  username: string;
+  email: string;
+  merchant_discount_percent: number | string | null;
+  merchant_terms_accepted_at?: string | null;
+  bank_account_holder?: string | null;
+  bank_iban?: string | null;
+  bank_bic?: string | null;
+};
+
+const MERCHANT_ADMIN_SELECT_FULL =
+  "id, username, email, merchant_discount_percent, merchant_terms_accepted_at, bank_account_holder, bank_iban, bank_bic";
+const MERCHANT_ADMIN_SELECT_BASE =
+  "id, username, email, merchant_discount_percent";
+
+function isMissingMerchantColumn(error: { message?: string } | null): boolean {
+  return /merchant_terms_accepted_at|bank_account_holder|bank_iban|bank_bic/.test(
+    error?.message ?? "",
+  );
+}
+
+async function loadMerchantProfiles(): Promise<MerchantProfileRow[]> {
+  const supabase = createSupabaseAdminClient();
+  for (const select of [MERCHANT_ADMIN_SELECT_FULL, MERCHANT_ADMIN_SELECT_BASE]) {
+    const { data, error } = await supabase
+      .from("user_profiles")
+      .select(select)
+      .eq("role", "merchant")
+      .order("username", { ascending: true })
+      .returns<MerchantProfileRow[]>();
+    if (!error) {
+      return data ?? [];
+    }
+    // Retry without the new columns until migrations 020/021 are applied.
+    if (!isMissingMerchantColumn(error)) {
+      throw new Error(`Failed to load merchants: ${error.message}`);
+    }
+  }
+  return [];
+}
+
 export async function listMerchantsForAdmin(): Promise<MerchantAdminRow[]> {
   const supabase = createSupabaseAdminClient();
 
-  const [merchantsResult, codesResult, ordersResult] = await Promise.all([
-    supabase
-      .from("user_profiles")
-      .select("id, username, email, merchant_discount_percent")
-      .eq("role", "merchant")
-      .order("username", { ascending: true })
-      .returns<
-        Array<{
-          id: string;
-          username: string;
-          email: string;
-          merchant_discount_percent: number | string | null;
-        }>
-      >(),
+  const [merchants, codesResult, ordersResult] = await Promise.all([
+    loadMerchantProfiles(),
     supabase
       .from("promo_codes")
       .select(RECORD_SELECT)
@@ -417,9 +685,6 @@ export async function listMerchantsForAdmin(): Promise<MerchantAdminRow[]> {
       .returns<Array<MerchantOrderRow & { promo_merchant_id: string }>>(),
   ]);
 
-  if (merchantsResult.error) {
-    throw new Error(`Failed to load merchants: ${merchantsResult.error.message}`);
-  }
   if (codesResult.error) {
     throw new Error(`Failed to load promo codes: ${codesResult.error.message}`);
   }
@@ -427,7 +692,6 @@ export async function listMerchantsForAdmin(): Promise<MerchantAdminRow[]> {
     throw new Error(`Failed to load orders: ${ordersResult.error.message}`);
   }
 
-  const merchants = merchantsResult.data ?? [];
   const codes = (codesResult.data ?? []).map(mapRecord);
   const orders = ordersResult.data ?? [];
 
@@ -446,6 +710,8 @@ export async function listMerchantsForAdmin(): Promise<MerchantAdminRow[]> {
     ordersByMerchant.set(order.promo_merchant_id, bucket);
   }
 
+  // Only current merchants (role 'merchant') are listed. Users who declined and
+  // were demoted no longer appear here, even if they have historical data.
   return merchants.map((merchant) => {
     const merchantCodes = codesByMerchant.get(merchant.id) ?? [];
     const merchantOrders = ordersByMerchant.get(merchant.id) ?? [];
@@ -459,6 +725,10 @@ export async function listMerchantsForAdmin(): Promise<MerchantAdminRow[]> {
       username: merchant.username,
       email: merchant.email,
       merchantDiscountPercent: Number(merchant.merchant_discount_percent ?? 0),
+      merchantTermsAccepted: (merchant.merchant_terms_accepted_at ?? null) !== null,
+      bankAccountHolder: merchant.bank_account_holder ?? "",
+      bankIban: merchant.bank_iban ?? "",
+      bankBic: merchant.bank_bic ?? "",
       codeCount: merchantCodes.length,
       orderCount: merchantOrders.length,
       totalCommission,

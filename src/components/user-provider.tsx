@@ -5,6 +5,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -41,6 +42,10 @@ export type CurrentUserProfile = {
   preferredLocker: SpeedyLocationSnapshot | null;
   hasPassword: boolean;
   merchantDiscountPercent: number;
+  /** max(volume tier, admin manual) — the discount applied in the cart. */
+  effectiveMerchantDiscountPercent: number;
+  /** Whether a merchant has accepted the terms (gates access + discounts). */
+  merchantTermsAccepted: boolean;
 };
 
 export type CurrentUserDiscount = {
@@ -78,6 +83,18 @@ export function UserProvider({
   const [user, setUser] = useState<CurrentUser | null>(initialUser);
   const [profile, setProfile] = useState<CurrentUserProfile | null>(initialProfile);
   const [discount, setDiscount] = useState<CurrentUserDiscount | null>(initialDiscount);
+
+  // Re-sync from the server on router.refresh()/navigation so consent, profile
+  // and discount changes are reflected without a hard reload.
+  useEffect(() => {
+    setUser(initialUser);
+  }, [initialUser]);
+  useEffect(() => {
+    setProfile(initialProfile);
+  }, [initialProfile]);
+  useEffect(() => {
+    setDiscount(initialDiscount);
+  }, [initialDiscount]);
 
   const logout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST" });

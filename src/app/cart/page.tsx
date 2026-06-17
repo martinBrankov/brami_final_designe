@@ -326,9 +326,14 @@ export default function CartPage() {
   const isHeavyShipment = totalWeight > HEAVY_THRESHOLD_KG;
   const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD_EUR;
   const shipping = cartItems.length && !isFreeShipping ? calcShipping(deliveryMethod, totalWeight) / BGN_TO_EUR : 0;
-  const loyaltyPercent = userDiscount?.currentPercent ?? 0;
-  const merchantPercent =
-    user?.role === "merchant" ? userProfile?.merchantDiscountPercent ?? 0 : 0;
+  // Only active (consented) merchants are on the merchant programme; otherwise
+  // they accumulate the normal loyalty discount like any user.
+  const isActiveMerchant =
+    user?.role === "merchant" && Boolean(userProfile?.merchantTermsAccepted);
+  const loyaltyPercent = isActiveMerchant ? 0 : userDiscount?.currentPercent ?? 0;
+  const merchantPercent = isActiveMerchant
+    ? userProfile?.effectiveMerchantDiscountPercent ?? 0
+    : 0;
   const personalDiscountPercent = Math.max(loyaltyPercent, merchantPercent);
   const personalDiscountSource: "loyalty" | "merchant" | null =
     personalDiscountPercent === 0

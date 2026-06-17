@@ -80,7 +80,11 @@ export function AdminPromoCodesManager({
     refresh();
   }
 
-  async function patchCode(id: string, body: Record<string, unknown>) {
+  // Edit feedback is surfaced inline in the row (not in the top create form).
+  async function patchCode(
+    id: string,
+    body: Record<string, unknown>,
+  ): Promise<{ ok: boolean; error?: string }> {
     const response = await fetch(`/api/admin/promo-codes/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -91,14 +95,13 @@ export function AdminPromoCodesManager({
       | null;
 
     if (!response.ok || !result?.code) {
-      setFeedback({ kind: "error", message: result?.error || "Грешка." });
-      return;
+      return { ok: false, error: result?.error || "Грешка при запис." };
     }
     setCodes((current) =>
       current.map((item) => (item.id === id ? (result.code as PromoCodeRecord) : item)),
     );
-    setFeedback({ kind: "success", message: "Промените са записани." });
     refresh();
+    return { ok: true };
   }
 
   async function deleteCode(id: string) {
@@ -147,17 +150,17 @@ export function AdminPromoCodesManager({
                     setNewCode(
                       event.target.value
                         .toUpperCase()
-                        .replace(/[^A-Z0-9]/g, "")
+                        .replace(/[^A-Z0-9%]/g, "")
                         .slice(0, 5),
                     )
                   }
-                  placeholder="AB12C"
+                  placeholder="MB05%"
                   className="h-11 w-full rounded-[16px] border border-[#d9d4ca] bg-[#fcfbf8] px-4 font-mono tracking-[0.16em] uppercase"
                   required
                   minLength={5}
                   maxLength={5}
-                  pattern="[A-Z0-9]{5}"
-                  title="5 символа: A-Z, 0-9"
+                  pattern="[A-Z0-9%]{5}"
+                  title="5 символа: A-Z, 0-9, %"
                 />
                 <button
                   type="button"
@@ -181,7 +184,7 @@ export function AdminPromoCodesManager({
                 </button>
               </div>
               <span className="mt-1 block text-xs text-[#6a7480]">
-                Точно 5 символа (A–Z, 0–9).
+                Точно 5 символа (A–Z, 0–9, %).
               </span>
             </label>
 
@@ -268,87 +271,185 @@ export function AdminPromoCodesManager({
         ) : (
           <ul className="divide-y divide-[#e7dfd1]">
             {codes.map((item) => (
-              <li
+              <AdminPromoCodeRow
                 key={item.id}
-                className="grid gap-3 px-5 py-4 lg:grid-cols-[180px_1fr_120px_120px_120px_120px] lg:items-center"
-              >
-                <span className="font-mono text-sm font-semibold tracking-[0.08em] text-[#1d2733]">
-                  {item.code}
-                </span>
-                <span className="text-sm text-[#4f5b66]">
-                  {item.merchantUsername || item.merchantEmail}
-                </span>
-                <label className="block">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-                    Отстъпка %
-                  </span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={0.5}
-                    value={item.discountPercent}
-                    onChange={(event) =>
-                      setCodes((current) =>
-                        current.map((c) =>
-                          c.id === item.id
-                            ? { ...c, discountPercent: Number(event.target.value) }
-                            : c,
-                        ),
-                      )
-                    }
-                    onBlur={(event) =>
-                      patchCode(item.id, { discountPercent: Number(event.target.value) })
-                    }
-                    className="h-9 w-full rounded-[12px] border border-[#d9d4ca] bg-white px-3 text-sm"
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-                    Комисиона %
-                  </span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={0.5}
-                    value={item.commissionPercent}
-                    onChange={(event) =>
-                      setCodes((current) =>
-                        current.map((c) =>
-                          c.id === item.id
-                            ? { ...c, commissionPercent: Number(event.target.value) }
-                            : c,
-                        ),
-                      )
-                    }
-                    onBlur={(event) =>
-                      patchCode(item.id, { commissionPercent: Number(event.target.value) })
-                    }
-                    className="h-9 w-full rounded-[12px] border border-[#d9d4ca] bg-white px-3 text-sm"
-                  />
-                </label>
-                <label className="flex items-center gap-2 text-sm font-medium text-[#25313d]">
-                  <input
-                    type="checkbox"
-                    checked={item.isActive}
-                    onChange={(event) => patchCode(item.id, { isActive: event.target.checked })}
-                    className="h-4 w-4 rounded border-[#bca5cc] accent-[#1d2733]"
-                  />
-                  Активен
-                </label>
-                <button
-                  type="button"
-                  onClick={() => deleteCode(item.id)}
-                  className="inline-flex h-9 items-center justify-center rounded-full border border-red-200 px-3 text-xs font-semibold text-red-700 transition hover:bg-red-50"
-                >
-                  Изтрий
-                </button>
-              </li>
+                item={item}
+                onSave={patchCode}
+                onDelete={deleteCode}
+              />
             ))}
           </ul>
         )}
       </div>
     </div>
+  );
+}
+
+function AdminPromoCodeRow({
+  item,
+  onSave,
+  onDelete,
+}: {
+  item: PromoCodeRecord;
+  onSave: (
+    id: string,
+    body: Record<string, unknown>,
+  ) => Promise<{ ok: boolean; error?: string }>;
+  onDelete: (id: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [discount, setDiscount] = useState(item.discountPercent);
+  const [commission, setCommission] = useState(item.commissionPercent);
+  const [active, setActive] = useState(item.isActive);
+
+  function startEdit() {
+    setDiscount(item.discountPercent);
+    setCommission(item.commissionPercent);
+    setActive(item.isActive);
+    setError(null);
+    setEditing(true);
+  }
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    const result = await onSave(item.id, {
+      discountPercent: discount,
+      commissionPercent: commission,
+      isActive: active,
+    });
+    setSaving(false);
+    if (result.ok) {
+      setEditing(false);
+    } else {
+      setError(result.error || "Грешка при запис.");
+    }
+  }
+
+  if (!editing) {
+    return (
+      <li className="grid gap-3 px-5 py-4 lg:grid-cols-[160px_1fr_110px_110px_110px_180px] lg:items-center">
+        <span className="font-mono text-sm font-semibold tracking-[0.08em] text-[#1d2733]">
+          {item.code}
+        </span>
+        <span className="text-sm text-[#4f5b66]">
+          {item.merchantUsername || item.merchantEmail}
+        </span>
+        <div>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
+            Отстъпка
+          </span>
+          <p className="mt-0.5 text-sm font-semibold text-[#1d2733]">
+            {item.discountPercent}%
+          </p>
+        </div>
+        <div>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
+            Комисиона
+          </span>
+          <p className="mt-0.5 text-sm font-semibold text-[#1d2733]">
+            {item.commissionPercent}%
+          </p>
+        </div>
+        <div className="flex items-center">
+          <span
+            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${
+              item.isActive
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-red-50 text-red-700"
+            }`}
+          >
+            {item.isActive ? "Активен" : "Неактивен"}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 lg:justify-end">
+          <button
+            type="button"
+            onClick={startEdit}
+            className="inline-flex h-9 items-center justify-center rounded-full border border-[#d9d4ca] px-3 text-xs font-semibold text-[#1d2733] transition hover:bg-[#f8f4ec]"
+          >
+            Редактирай
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete(item.id)}
+            className="inline-flex h-9 items-center justify-center rounded-full border border-red-200 px-3 text-xs font-semibold text-red-700 transition hover:bg-red-50"
+          >
+            Изтрий
+          </button>
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <li className="grid gap-3 bg-[#fcfbf8] px-5 py-4 lg:grid-cols-[160px_1fr_110px_110px_110px_180px] lg:items-end">
+      <span className="font-mono text-sm font-semibold tracking-[0.08em] text-[#1d2733] lg:flex lg:h-9 lg:items-center">
+        {item.code}
+      </span>
+      <span className="text-sm text-[#4f5b66] lg:flex lg:h-9 lg:items-center">
+        {item.merchantUsername || item.merchantEmail}
+      </span>
+      <label className="block">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
+          Отстъпка %
+        </span>
+        <input
+          type="number"
+          min={0}
+          max={100}
+          step={0.5}
+          value={discount}
+          onChange={(event) => setDiscount(Number(event.target.value))}
+          className="mt-1 h-9 w-full rounded-[12px] border border-[#d9d4ca] bg-white px-3 text-sm"
+        />
+      </label>
+      <label className="block">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
+          Комисиона %
+        </span>
+        <input
+          type="number"
+          min={0}
+          max={100}
+          step={0.5}
+          value={commission}
+          onChange={(event) => setCommission(Number(event.target.value))}
+          className="mt-1 h-9 w-full rounded-[12px] border border-[#d9d4ca] bg-white px-3 text-sm"
+        />
+      </label>
+      <label className="flex items-center gap-2 text-sm font-medium text-[#25313d] lg:h-9">
+        <input
+          type="checkbox"
+          checked={active}
+          onChange={(event) => setActive(event.target.checked)}
+          className="h-4 w-4 rounded border-[#bca5cc] accent-[#1d2733]"
+        />
+        Активен
+      </label>
+      <div className="flex items-center gap-2 lg:justify-end">
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving}
+          className="inline-flex h-9 items-center justify-center rounded-full bg-[#1d2733] px-4 text-xs font-semibold text-white transition hover:bg-[#2b3847] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {saving ? "Запазване…" : "Запази"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setEditing(false)}
+          disabled={saving}
+          className="inline-flex h-9 items-center justify-center rounded-full border border-[#d9d4ca] px-4 text-xs font-semibold text-[#5f6b76] transition hover:bg-white disabled:opacity-60"
+        >
+          Откажи
+        </button>
+      </div>
+      {error ? (
+        <p className="text-sm font-medium text-red-600 lg:col-span-6">{error}</p>
+      ) : null}
+    </li>
   );
 }

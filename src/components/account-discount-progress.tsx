@@ -7,7 +7,13 @@ function formatEur(value: number) {
 }
 
 export function AccountDiscountProgress() {
-  const { discount } = useUser();
+  const { discount, user, profile } = useUser();
+
+  // Only active merchants (consented) are on the merchant programme; until then
+  // they accumulate turnover toward the normal loyalty discount like any user.
+  if (user?.role === "merchant" && profile?.merchantTermsAccepted) {
+    return null;
+  }
 
   if (!discount) {
     return null;

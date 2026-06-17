@@ -9,7 +9,13 @@ import { ProductsProvider } from "@/components/products-context";
 import { SiteChrome } from "@/components/site-chrome";
 import { UserProvider } from "@/components/user-provider";
 import { getProducts } from "@/data/products";
-import { getUserProfile, getUserSession, toPublicUser } from "@/lib/user-auth";
+import { getMerchantTierStatus } from "@/lib/merchant-tier";
+import {
+  getUserProfile,
+  getUserSession,
+  isConsentedMerchant,
+  toPublicUser,
+} from "@/lib/user-auth";
 import { getUserDiscountStatus } from "@/lib/user-discount";
 
 import "./globals.css";
@@ -83,6 +89,16 @@ export default async function RootLayout({
   const initialUser = session
     ? { ...toPublicUser(session), role: profile?.role ?? session.role }
     : null;
+  // Merchant discount only applies once the merchant has accepted the terms.
+  const effectiveMerchantDiscountPercent = isConsentedMerchant(profile)
+    ? (
+        await getMerchantTierStatus(
+          profile!.id,
+          profile!.email,
+          profile!.merchantDiscountPercent,
+        )
+      ).poolPercent
+    : 0;
   const initialProfile = profile
     ? {
         fullName: profile.fullName,
@@ -94,6 +110,8 @@ export default async function RootLayout({
         preferredLocker: profile.preferredLocker,
         hasPassword: profile.hasPassword,
         merchantDiscountPercent: profile.merchantDiscountPercent,
+        effectiveMerchantDiscountPercent,
+        merchantTermsAccepted: profile.merchantTermsAcceptedAt !== null,
       }
     : null;
   const discountStatus = session ? await getUserDiscountStatus(session.email) : null;

@@ -34,7 +34,10 @@
       "PowerShell([Convert]::ToHexString\\([System.Security.Cryptography.RandomNumberGenerator]::GetBytes\\(32\\)\\).ToLower\\(\\))",
       "PowerShell($bytes = New-Object byte[] 32; [System.Security.Cryptography.RandomNumberGenerator]::Create\\(\\).GetBytes\\($bytes\\); -join \\($bytes | ForEach-Object { $_.ToString\\(\"x2\"\\) }\\))",
       "Bash(grep -n \"isAuthenticated\\\\|^        <\\\\/div>\\\\|cart\\\\|currency\\\\|Cart\\\\|My Cart\\\\|favoriteCount\" f:/newdsigne2026/brami_final_designe/src/components/navbar.tsx)",
-      "Bash(npx next *)"
+      "Bash(npx next *)",
+      "PowerShell(npm run lint 2>&1)",
+      "PowerShell(npm run build 2>&1)",
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"Name='node.exe'\" | Select-Object ProcessId, @{n='Cmd';e={$_.CommandLine}} | Format-Table -AutoSize -Wrap)"
     ]
   }
 }

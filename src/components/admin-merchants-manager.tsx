@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
+import { isCommissionEligible, isOrderCancelled } from "@/lib/commission-status";
 import type { MerchantAdminRow } from "@/lib/promo-codes";
 
 function formatEur(value: number) {
@@ -70,11 +71,24 @@ function MerchantRow({
         .reduce((sum, o) => sum + o.promoCommissionAmount, 0),
     [merchant.orders],
   );
-  const unpaidTotal = merchant.totalCommission - paidTotal;
-  const unpaidOrderIds = useMemo(
+  // "Payable" = delivered but not yet paid; "awaiting" = not yet delivered.
+  const payableTotal = useMemo(
     () =>
       merchant.orders
-        .filter((order) => !order.promoCommissionPaidAt)
+        .filter(
+          (order) =>
+            !order.promoCommissionPaidAt && isCommissionEligible(order.status),
+        )
+        .reduce((sum, o) => sum + o.promoCommissionAmount, 0),
+    [merchant.orders],
+  );
+  const payableOrderIds = useMemo(
+    () =>
+      merchant.orders
+        .filter(
+          (order) =>
+            !order.promoCommissionPaidAt && isCommissionEligible(order.status),
+        )
         .map((order) => order.id),
     [merchant.orders],
   );
@@ -92,19 +106,19 @@ function MerchantRow({
     }
   }
 
-  async function markAllUnpaid() {
-    if (!unpaidOrderIds.length) return;
+  async function markAllPayable() {
+    if (!payableOrderIds.length) return;
     if (
       !confirm(
-        `Маркирай ${unpaidOrderIds.length} поръчк${
-          unpaidOrderIds.length === 1 ? "а" : "и"
+        `Маркирай ${payableOrderIds.length} доставен${
+          payableOrderIds.length === 1 ? "а поръчка" : "и поръчки"
         } като изплатени?`,
       )
     )
       return;
     setError(null);
     try {
-      await postCommissionMark(unpaidOrderIds, true);
+      await postCommissionMark(payableOrderIds, true);
       startTransition(() => router.refresh());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Грешка.");
@@ -146,15 +160,15 @@ function MerchantRow({
 
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-            Комисиона (изплатена / дължима)
+            Комисиона (изплатена / готова)
           </p>
           <p className="mt-0.5 text-sm">
             <span className="font-semibold text-emerald-700">
               {formatEur(paidTotal)}
             </span>
             <span className="text-[#8a6f45]"> / </span>
-            <span className="font-semibold text-[#b64242]">
-              {formatEur(unpaidTotal)}
+            <span className="font-semibold text-[#3d5a92]">
+              {formatEur(payableTotal)}
             </span>
           </p>
         </div>
@@ -166,6 +180,57 @@ function MerchantRow({
 
       {isOpen ? (
         <div className="border-t border-[#e7dfd1] bg-[#fbf8f1] px-4 py-5 sm:px-5">
+          <div className="mb-6 rounded-[14px] border border-[#e7dfd1] bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
+                Банкова сметка за изплащане
+              </p>
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${
+                  merchant.merchantTermsAccepted
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "bg-amber-50 text-amber-700"
+                }`}
+              >
+                {merchant.merchantTermsAccepted
+                  ? "Приети условия"
+                  : "Без съгласие"}
+              </span>
+            </div>
+            {merchant.bankIban ? (
+              <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
+                <div>
+                  <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
+                    Титуляр
+                  </dt>
+                  <dd className="mt-0.5 text-[#1d2733]">
+                    {merchant.bankAccountHolder || "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
+                    IBAN
+                  </dt>
+                  <dd className="mt-0.5 font-mono text-[#1d2733]">
+                    {merchant.bankIban}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
+                    BIC
+                  </dt>
+                  <dd className="mt-0.5 font-mono text-[#1d2733]">
+                    {merchant.bankBic || "—"}
+                  </dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="mt-2 text-sm text-[#5f6b76]">
+                Търговецът още не е въвел банкова сметка.
+              </p>
+            )}
+          </div>
+
           <div className="grid gap-6 lg:grid-cols-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
@@ -209,13 +274,13 @@ function MerchantRow({
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
                   Поръчки ({merchant.orders.length})
                 </p>
-                {unpaidOrderIds.length > 0 ? (
+                {payableOrderIds.length > 0 ? (
                   <button
                     type="button"
-                    onClick={markAllUnpaid}
+                    onClick={markAllPayable}
                     className="inline-flex h-8 items-center justify-center rounded-full border border-emerald-300 px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-emerald-700 transition hover:bg-emerald-50"
                   >
-                    Маркирай всички ({unpaidOrderIds.length}) като изплатени
+                    Маркирай доставените ({payableOrderIds.length}) като изплатени
                   </button>
                 ) : null}
               </div>
@@ -231,7 +296,9 @@ function MerchantRow({
                   <ul className="mt-3 space-y-2 lg:hidden">
                     {merchant.orders.map((order) => {
                       const isPaid = Boolean(order.promoCommissionPaidAt);
+                      const isDelivered = isCommissionEligible(order.status);
                       const isPending = pendingId === order.id;
+                      const canPay = isPaid || isDelivered;
                       return (
                         <li
                           key={order.id}
@@ -246,14 +313,8 @@ function MerchantRow({
                                 {formatDate(order.orderCreatedAt || order.createdAt)}
                               </p>
                             </div>
-                            <span
-                              className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${
-                                isPaid
-                                  ? "bg-emerald-50 text-emerald-700"
-                                  : "bg-red-50 text-red-700"
-                              }`}
-                            >
-                              {isPaid ? "Изплатена" : "Дължима"}
+                            <span className="inline-flex shrink-0 items-center rounded-full bg-[#f3f4f6] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#4f5b66]">
+                              {order.status}
                             </span>
                           </div>
 
@@ -283,24 +344,34 @@ function MerchantRow({
                               {isPaid ? "" : "+"}
                               {formatEur(order.promoCommissionAmount)}
                             </span>
-                            <label className="inline-flex cursor-pointer items-center gap-2 text-xs">
-                              <input
-                                type="checkbox"
-                                checked={isPaid}
-                                disabled={isPending}
-                                onChange={() => toggleOne(order.id, isPaid)}
-                                className="h-4 w-4 rounded border-[#bca5cc] accent-emerald-600"
-                              />
-                              <span
-                                className={`font-medium ${
-                                  isPaid ? "text-emerald-700" : "text-[#b64242]"
-                                }`}
-                              >
-                                {isPaid
-                                  ? `Изплатена ${formatDate(order.promoCommissionPaidAt!)}`
-                                  : "Маркирай като изплатена"}
+                            {canPay ? (
+                              <label className="inline-flex cursor-pointer items-center gap-2 text-xs">
+                                <input
+                                  type="checkbox"
+                                  checked={isPaid}
+                                  disabled={isPending}
+                                  onChange={() => toggleOne(order.id, isPaid)}
+                                  className="h-4 w-4 rounded border-[#bca5cc] accent-emerald-600"
+                                />
+                                <span
+                                  className={`font-medium ${
+                                    isPaid ? "text-emerald-700" : "text-[#3d5a92]"
+                                  }`}
+                                >
+                                  {isPaid
+                                    ? `Изплатена ${formatDate(order.promoCommissionPaidAt!)}`
+                                    : "Маркирай като изплатена"}
+                                </span>
+                              </label>
+                            ) : isOrderCancelled(order.status) ? (
+                              <span className="text-xs font-semibold text-[#b64242]">
+                                Отказана
                               </span>
-                            </label>
+                            ) : (
+                              <span className="text-xs font-medium text-[#8a6f45]">
+                                Очаква доставка
+                              </span>
+                            )}
                           </div>
                         </li>
                       );
@@ -314,15 +385,18 @@ function MerchantRow({
                           <th className="py-2 pr-3 font-semibold">Поръчка</th>
                           <th className="py-2 pr-3 font-semibold">Клиент</th>
                           <th className="py-2 pr-3 font-semibold">Код</th>
+                          <th className="py-2 pr-3 font-semibold">Статус</th>
                           <th className="py-2 pr-3 text-right font-semibold">Стойност</th>
                           <th className="py-2 pr-3 text-right font-semibold">Комисиона</th>
-                          <th className="py-2 pl-3 font-semibold">Изплатена</th>
+                          <th className="py-2 pl-3 font-semibold">Изплащане</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#e7dfd1]">
                         {merchant.orders.map((order) => {
                           const isPaid = Boolean(order.promoCommissionPaidAt);
+                          const isDelivered = isCommissionEligible(order.status);
                           const isPending = pendingId === order.id;
+                          const canPay = isPaid || isDelivered;
                           return (
                             <tr key={order.id} className="text-[#1d2733]">
                               <td className="py-2 pr-3">
@@ -344,6 +418,11 @@ function MerchantRow({
                               <td className="py-2 pr-3 font-mono text-xs">
                                 {order.promoCodeText}
                               </td>
+                              <td className="py-2 pr-3">
+                                <span className="inline-flex items-center rounded-full bg-[#f3f4f6] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#4f5b66]">
+                                  {order.status}
+                                </span>
+                              </td>
                               <td className="py-2 pr-3 text-right text-xs font-medium">
                                 {formatEur(order.total)}
                               </td>
@@ -356,24 +435,34 @@ function MerchantRow({
                                 {formatEur(order.promoCommissionAmount)}
                               </td>
                               <td className="py-2 pl-3">
-                                <label className="inline-flex cursor-pointer items-center gap-2 text-xs">
-                                  <input
-                                    type="checkbox"
-                                    checked={isPaid}
-                                    disabled={isPending}
-                                    onChange={() => toggleOne(order.id, isPaid)}
-                                    className="h-4 w-4 rounded border-[#bca5cc] accent-emerald-600"
-                                  />
-                                  <span
-                                    className={`font-medium ${
-                                      isPaid ? "text-emerald-700" : "text-[#b64242]"
-                                    }`}
-                                  >
-                                    {isPaid
-                                      ? formatDate(order.promoCommissionPaidAt!)
-                                      : "Дължима"}
+                                {canPay ? (
+                                  <label className="inline-flex cursor-pointer items-center gap-2 text-xs">
+                                    <input
+                                      type="checkbox"
+                                      checked={isPaid}
+                                      disabled={isPending}
+                                      onChange={() => toggleOne(order.id, isPaid)}
+                                      className="h-4 w-4 rounded border-[#bca5cc] accent-emerald-600"
+                                    />
+                                    <span
+                                      className={`font-medium ${
+                                        isPaid ? "text-emerald-700" : "text-[#3d5a92]"
+                                      }`}
+                                    >
+                                      {isPaid
+                                        ? formatDate(order.promoCommissionPaidAt!)
+                                        : "Готова"}
+                                    </span>
+                                  </label>
+                                ) : isOrderCancelled(order.status) ? (
+                                  <span className="text-xs font-semibold text-[#b64242]">
+                                    Отказана
                                   </span>
-                                </label>
+                                ) : (
+                                  <span className="text-xs font-medium text-[#8a6f45]">
+                                    Очаква доставка
+                                  </span>
+                                )}
                               </td>
                             </tr>
                           );
@@ -422,8 +511,15 @@ export function AdminMerchantsManager({
         .reduce((s, o) => s + o.promoCommissionAmount, 0),
     0,
   );
-  const totalUnpaid =
-    visibleMerchants.reduce((sum, m) => sum + m.totalCommission, 0) - totalPaid;
+  // Ready for payout = delivered orders whose commission is not yet paid.
+  const totalPayable = visibleMerchants.reduce(
+    (sum, m) =>
+      sum +
+      m.orders
+        .filter((o) => !o.promoCommissionPaidAt && isCommissionEligible(o.status))
+        .reduce((s, o) => s + o.promoCommissionAmount, 0),
+    0,
+  );
   const totalOrders = visibleMerchants.reduce((sum, m) => sum + m.orderCount, 0);
 
   const isFiltered = selectedId !== "all";
@@ -484,10 +580,10 @@ export function AdminMerchantsManager({
         </div>
         <div className="rounded-[18px] border border-[#e7dfd1] bg-white p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-            Дължими комисиони
+            Готови за изплащане
           </p>
-          <p className="mt-1 text-2xl font-semibold text-[#b64242]">
-            {formatEur(totalUnpaid)}
+          <p className="mt-1 text-2xl font-semibold text-[#3d5a92]">
+            {formatEur(totalPayable)}
           </p>
         </div>
       </div>

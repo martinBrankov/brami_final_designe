@@ -298,6 +298,10 @@ export type UserProfile = {
   preferredLocker: PreferredSpeedyLocation | null;
   hasPassword: boolean;
   merchantDiscountPercent: number;
+  merchantTermsAcceptedAt: string | null;
+  bankAccountHolder: string;
+  bankIban: string;
+  bankBic: string;
 };
 
 type UserProfileFullRow = {
@@ -317,10 +321,31 @@ type UserProfileFullRow = {
   preferred_locker_data: SpeedyOfficeSnapshot | null;
   password_hash: string | null;
   merchant_discount_percent: number | string | null;
+  merchant_terms_accepted_at: string | null;
+  bank_account_holder: string | null;
+  bank_iban: string | null;
+  bank_bic: string | null;
 };
 
-const PROFILE_SELECT =
+const PROFILE_SELECT_BASE =
   "id, username, email, role, full_name, phone, city, postal_code, address, marketing_subscription, preferred_office_id, preferred_office_data, preferred_locker_id, preferred_locker_data, password_hash, merchant_discount_percent";
+const PROFILE_SELECT_CONSENT = `${PROFILE_SELECT_BASE}, merchant_terms_accepted_at`;
+const PROFILE_SELECT = `${PROFILE_SELECT_CONSENT}, bank_account_holder, bank_iban, bank_bic`;
+
+// Newest-first selects: until migrations 020/021 are applied the new columns may
+// be absent, so fall back progressively (missing fields treated as null/empty).
+const PROFILE_SELECTS_IN_ORDER = [
+  PROFILE_SELECT,
+  PROFILE_SELECT_CONSENT,
+  PROFILE_SELECT_BASE,
+];
+
+function isMissingNewColumn(error: { message?: string } | null): boolean {
+  const message = error?.message ?? "";
+  return /merchant_terms_accepted_at|bank_account_holder|bank_iban|bank_bic/.test(
+    message,
+  );
+}
 
 function mapLocation(
   id: string | null,
@@ -348,16 +373,28 @@ function mapProfile(row: UserProfileFullRow): UserProfile {
     preferredLocker: mapLocation(row.preferred_locker_id, row.preferred_locker_data),
     hasPassword: Boolean(row.password_hash),
     merchantDiscountPercent: Number(row.merchant_discount_percent ?? 0),
+    merchantTermsAcceptedAt: row.merchant_terms_accepted_at ?? null,
+    bankAccountHolder: row.bank_account_holder ?? "",
+    bankIban: row.bank_iban ?? "",
+    bankBic: row.bank_bic ?? "",
   };
 }
 
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
   const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase
-    .from("user_profiles")
-    .select(PROFILE_SELECT)
-    .eq("id", userId)
-    .maybeSingle<UserProfileFullRow>();
+
+  let data: UserProfileFullRow | null = null;
+  let error: { message?: string } | null = null;
+  for (const select of PROFILE_SELECTS_IN_ORDER) {
+    const result = await supabase
+      .from("user_profiles")
+      .select(select)
+      .eq("id", userId)
+      .maybeSingle<UserProfileFullRow>();
+    data = result.data;
+    error = result.error;
+    if (!error || !isMissingNewColumn(error)) break;
+  }
 
   if (error) {
     throw new Error(`Failed to load profile: ${error.message}`);
@@ -368,6 +405,134 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
   }
 
   return mapProfile(data);
+}
+
+export type MerchantSession = {
+  session: UserSession;
+  profile: UserProfile;
+};
+
+/**
+ * Returns the signed-in merchant's session + profile, or null when there is no
+ * session or the user is not a merchant. Used to guard merchant-only routes.
+ */
+export async function requireMerchantSession(): Promise<MerchantSession | null> {
+  const session = await getUserSession();
+  if (!session) {
+    return null;
+  }
+  const profile = await getUserProfile(session.id);
+  if (!profile || profile.role !== "merchant") {
+    return null;
+  }
+  return { session, profile };
+}
+
+/** A merchant who has accepted the terms — the gate for access + discounts. */
+export function isConsentedMerchant(
+  profile: { role: string; merchantTermsAcceptedAt: string | null } | null,
+): boolean {
+  return (
+    !!profile &&
+    profile.role === "merchant" &&
+    profile.merchantTermsAcceptedAt !== null
+  );
+}
+
+export type BankDetails = {
+  bankAccountHolder: string;
+  bankIban: string;
+  bankBic: string;
+};
+
+export type BankValidation =
+  | { ok: true; value: BankDetails }
+  | { ok: false; message: string };
+
+/** Validates and normalizes the merchant's bank payout details. */
+export function validateBankDetails(input: {
+  bankAccountHolder?: unknown;
+  bankIban?: unknown;
+  bankBic?: unknown;
+}): BankValidation {
+  const holder = String(input.bankAccountHolder ?? "").trim();
+  const iban = String(input.bankIban ?? "").replace(/\s+/g, "").toUpperCase();
+  const bic = String(input.bankBic ?? "").trim().toUpperCase();
+
+  if (holder.length < 2) {
+    return { ok: false, message: "Въведи валиден титуляр на сметката." };
+  }
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(iban)) {
+    return { ok: false, message: "Въведи валиден IBAN." };
+  }
+  if (!/^[A-Z0-9]{8}([A-Z0-9]{3})?$/.test(bic)) {
+    return { ok: false, message: "Въведи валиден BIC/SWIFT код." };
+  }
+
+  return {
+    ok: true,
+    value: { bankAccountHolder: holder, bankIban: iban, bankBic: bic },
+  };
+}
+
+export async function setMerchantBankDetails(
+  userId: string,
+  details: BankDetails,
+): Promise<void> {
+  const supabase = createSupabaseAdminClient();
+  const { error } = await supabase
+    .from("user_profiles")
+    .update({
+      bank_account_holder: details.bankAccountHolder,
+      bank_iban: details.bankIban,
+      bank_bic: details.bankBic,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId);
+
+  if (error) {
+    throw new Error(`Failed to save bank details: ${error.message}`);
+  }
+}
+
+/** Records the merchant's acceptance of the terms. */
+export async function setMerchantConsent(
+  userId: string,
+  accepted: boolean,
+): Promise<void> {
+  const supabase = createSupabaseAdminClient();
+  const { error } = await supabase
+    .from("user_profiles")
+    .update({
+      merchant_terms_accepted_at: accepted ? new Date().toISOString() : null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId);
+
+  if (error) {
+    throw new Error(`Failed to update merchant consent: ${error.message}`);
+  }
+}
+
+/**
+ * Declining/withdrawing demotes the user back to a normal 'user' role and clears
+ * consent. Their data (codes, orders, commissions) is preserved; re-activation
+ * requires an admin to set the role back to 'merchant'.
+ */
+export async function demoteMerchantToUser(userId: string): Promise<void> {
+  const supabase = createSupabaseAdminClient();
+  const { error } = await supabase
+    .from("user_profiles")
+    .update({
+      role: "user",
+      merchant_terms_accepted_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId);
+
+  if (error) {
+    throw new Error(`Failed to update role: ${error.message}`);
+  }
 }
 
 export type UpdateUserProfileInput = {
@@ -417,12 +582,19 @@ export async function updateUserProfile(
     }
   }
 
-  const { data, error } = await supabase
-    .from("user_profiles")
-    .update(updates)
-    .eq("id", userId)
-    .select(PROFILE_SELECT)
-    .single<UserProfileFullRow>();
+  let data: UserProfileFullRow | null = null;
+  let error: { message?: string } | null = null;
+  for (const select of PROFILE_SELECTS_IN_ORDER) {
+    const result = await supabase
+      .from("user_profiles")
+      .update(updates)
+      .eq("id", userId)
+      .select(select)
+      .single<UserProfileFullRow>();
+    data = result.data;
+    error = result.error;
+    if (!error || !isMissingNewColumn(error)) break;
+  }
 
   if (error || !data) {
     throw new Error(`Failed to update profile: ${error?.message || "unknown"}`);

@@ -178,7 +178,7 @@ export function Navbar() {
   const router = useRouter();
   const { itemCount } = useCart();
   const { favoriteCount } = useFavorites();
-  const { isAuthenticated, logout, user } = useUser();
+  const { isAuthenticated, logout, user, profile } = useUser();
   const products = useProducts();
   const deferredSearchValue = useDeferredValue(searchValue);
 
@@ -513,7 +513,9 @@ export function Navbar() {
                         onClick={() => setIsUserMenuOpen(false)}
                         className="block border-t border-[#ece3f2] px-5 py-3 text-sm font-medium text-[#432855] transition hover:bg-[#faf7fc]"
                       >
-                        Търговец
+                        {profile?.merchantTermsAccepted
+                          ? "Търговец"
+                          : "Активирай търговец"}
                       </Link>
                     ) : null}
                     {user?.role === "admin" ? (

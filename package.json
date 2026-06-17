@@ -12,6 +12,7 @@
     "clone-schema": "node scripts/clone-supabase-schema.mjs",
     "restore": "node scripts/restore-supabase.mjs",
     "sync-sequences": "node scripts/sync-supabase-sequences.mjs",
+    "migrate:merchant-terms": "node scripts/apply-merchant-terms-migration.mjs",
     "seed": "node scripts/seed-supabase.mjs",
     "add-product": "node scripts/add-product.mjs",
     "clear-cache": "node -e \"require('fs').rmSync('.next/cache/fetch-cache', {recursive:true,force:true}); console.log('Cache cleared');\""
