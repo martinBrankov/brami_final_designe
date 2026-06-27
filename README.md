@@ -34,3 +34,22 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## AI Marketing Agents
+
+The multi-agent marketing system (manager / influencer / editor / marketing specialist)
+runs on Claude and publishes social posts to Meta. Configure in `.env.local`:
+
+| Variable | Purpose |
+| --- | --- |
+| `ANTHROPIC_API_KEY` | Claude API key — powers all four AI agents (`src/lib/ai/`). |
+| `META_PAGE_ID` | Facebook Page ID for publishing Page posts. |
+| `META_PAGE_ACCESS_TOKEN` | Long-lived Page access token (also used for Instagram). |
+| `IG_BUSINESS_ACCOUNT_ID` | Instagram Business account ID linked to the Page. |
+| `META_GRAPH_VERSION` | Optional Graph API version (default `v21.0`). |
+
+Existing vars reused: `CRON_SECRET` guards `/api/cron/ai-marketing` (weekly manager run),
+`BLOG_NOTIFY_EMAIL`/`SALES_ORDER_EMAIL` receive the campaign summary email.
+
+The agents only create **drafts**; an admin reviews and publishes from
+`/admin-panel/ai`. Instagram posts require a publicly reachable image URL.

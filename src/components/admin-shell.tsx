@@ -21,6 +21,7 @@ const navItems: NavItem[] = [
   { href: "/admin-panel/promo-codes", label: "Промо кодове", adminOnly: true },
   { href: "/admin-panel/stats", label: "Статистики" },
   { href: "/admin-panel/blog", label: "Блог" },
+  { href: "/admin-panel/ai", label: "AI агенти", adminOnly: true },
 ];
 
 export function AdminShell({
