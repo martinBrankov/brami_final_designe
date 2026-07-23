@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { generateAndSaveBlogDraft, type GenerateResult } from "@/lib/blog-generate";
+import {
+  DraftLimitReachedError,
+  generateAndSaveBlogDraft,
+  type GenerateResult,
+} from "@/lib/blog-generate";
 import { createMailer, getSender } from "@/lib/order-mail/mailer";
 
 export const runtime = "nodejs";
@@ -199,6 +203,17 @@ async function handle(request: Request) {
   try {
     result = await generateAndSaveBlogDraft({ auto: true });
   } catch (err) {
+    // Draft ceiling reached — expected back-off, not a failure. Skip quietly.
+    if (err instanceof DraftLimitReachedError) {
+      console.info("[cron blog-daily] skipped:", err.message);
+      return NextResponse.json({
+        ok: true,
+        skipped: true,
+        reason: "draft-limit-reached",
+        unpublishedCount: err.unpublishedCount,
+        message: err.message,
+      });
+    }
     console.error("[cron blog-daily] generation failed:", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Generation failed" },

@@ -43,6 +43,29 @@ export type GenerateOptions = {
   auto?: boolean;
 };
 
+/**
+ * Ceiling on unpublished drafts for AUTOMATIC (cron) runs only. Once this many
+ * drafts are waiting for review, the daily cron stops piling on new ones.
+ * Manual generation from the admin panel is never limited.
+ */
+export const MAX_UNPUBLISHED_DRAFTS = 50;
+
+/**
+ * Thrown by an automatic run when the unpublished-draft ceiling is reached.
+ * This is an expected back-off, not a failure — callers should treat it as a
+ * skip (e.g. the cron returns 200 "skipped" instead of a 502 error).
+ */
+export class DraftLimitReachedError extends Error {
+  readonly unpublishedCount: number;
+  constructor(unpublishedCount: number) {
+    super(
+      `Достигнат е лимитът от ${MAX_UNPUBLISHED_DRAFTS} непубликувани чернови — автоматичното генериране е спряно, докато не публикувате или изтриете част от тях.`,
+    );
+    this.name = "DraftLimitReachedError";
+    this.unpublishedCount = unpublishedCount;
+  }
+}
+
 export type RecentArticleSummary = {
   title: string;
   eyebrow: string | null;
@@ -226,6 +249,21 @@ export async function generateAndSaveBlogDraft(
   const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
   const supabase = createSupabaseAdminClient();
+
+  // Automatic runs back off once too many drafts are waiting for review, so the
+  // cron doesn't flood the admin with unpublished articles. Manual runs skip this.
+  if (opts.auto) {
+    const { count, error: countErr } = await supabase
+      .from("blog_posts")
+      .select("id", { count: "exact", head: true })
+      .eq("published", false);
+    if (countErr) {
+      throw new Error(`Неуспешна проверка на черновите: ${countErr.message}`);
+    }
+    if ((count ?? 0) >= MAX_UNPUBLISHED_DRAFTS) {
+      throw new DraftLimitReachedError(count ?? 0);
+    }
+  }
 
   // Always pull recent titles — the AI uses them either to avoid duplicates
   // (manual topic) or to pick a fresh angle (autonomous run).
