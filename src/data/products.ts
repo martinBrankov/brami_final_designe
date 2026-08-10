@@ -83,6 +83,10 @@ export type Product = {
   packaging: string;
   weight: number;
   rating: number;
+  /** Average of all rating votes (user reviews + seed comments), or the curated `rating` when there are no votes. */
+  averageRating: number;
+  /** Number of rating votes the average is based on (user reviews + seed comments with a rating). */
+  reviewCount: number;
   stock: number;
   comments: Comment[];
   description: string;
@@ -177,7 +181,7 @@ function formatBgDate(isoDate: string): string {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapDbProduct(row: any): Product {
+function mapDbProduct(row: any, reviewRatings: number[] = []): Product {
   const eur = Number(row.price_eur);
   const price = `€${eur.toFixed(2)}`;
 
@@ -214,6 +218,17 @@ function mapDbProduct(row: any): Product {
     (r: { related_product_id: number }) => r.related_product_id,
   );
 
+  // A "vote" is any rating: a user review from `product_reviews` plus every seed
+  // comment that carries a rating. Kept identical to the product detail page so
+  // the star count matches everywhere.
+  const commentRatings = comments.map((c) => c.rating).filter((value) => value > 0);
+  const ratingValues = [...reviewRatings, ...commentRatings];
+  const reviewCount = ratingValues.length;
+  const averageRating =
+    reviewCount > 0
+      ? ratingValues.reduce((sum, value) => sum + value, 0) / reviewCount
+      : Number(row.rating);
+
   return {
     id: row.id,
     name: row.name,
@@ -228,6 +243,8 @@ function mapDbProduct(row: any): Product {
     packaging: row.packaging,
     weight: Number(row.weight) || 0.2,
     rating: Number(row.rating),
+    averageRating,
+    reviewCount,
     stock: Math.max(0, Math.trunc(Number(row.stock_quantity ?? 0))),
     comments,
     description: row.description ?? "",
@@ -238,21 +255,41 @@ function mapDbProduct(row: any): Product {
 
 export const getProducts = cache(async (): Promise<Product[]> => {
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select(`
-      *,
-      product_categories(categories(slug)),
-      product_audiences(audiences(slug)),
-      product_images(image_src, sort_order),
-      product_highlights(text, sort_order),
-      product_comments(id, author_name, comment, rating, comment_date),
-      related_products!product_id(related_product_id)
-    `)
-    .order("id");
+  const [productsResult, reviewsResult] = await Promise.all([
+    supabase
+      .from("products")
+      .select(`
+        *,
+        product_categories(categories(slug)),
+        product_audiences(audiences(slug)),
+        product_images(image_src, sort_order),
+        product_highlights(text, sort_order),
+        product_comments(id, author_name, comment, rating, comment_date),
+        related_products!product_id(related_product_id)
+      `)
+      .order("id"),
+    supabase.from("product_reviews").select("product_id, rating"),
+  ]);
 
+  const { data, error } = productsResult;
   if (error) throw new Error(`Failed to fetch products: ${error.message}`);
-  return (data ?? []).map(mapDbProduct);
+
+  // Group user-submitted review ratings by product. If the reviews table is
+  // unavailable (e.g. RLS/missing table) we simply fall back to the seed votes,
+  // rather than breaking the storefront.
+  const reviewRatingsByProduct = new Map<number, number[]>();
+  if (!reviewsResult.error) {
+    for (const review of reviewsResult.data ?? []) {
+      const productId = Number(review.product_id);
+      const ratings = reviewRatingsByProduct.get(productId) ?? [];
+      ratings.push(Number(review.rating));
+      reviewRatingsByProduct.set(productId, ratings);
+    }
+  }
+
+  return (data ?? []).map((row) =>
+    mapDbProduct(row, reviewRatingsByProduct.get(Number(row.id)) ?? []),
+  );
 });
 
 export function getProductById(

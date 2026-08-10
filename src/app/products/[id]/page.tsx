@@ -62,7 +62,6 @@ const categoryLabels = {
 const HOME_LABEL = "Начало";
 const PRODUCTS_LABEL = "Продукти";
 const IN_STOCK_LABEL = "В наличност";
-const REVIEWS_SUFFIX = "отзива";
 const PACKAGING_LABEL = "Разфасовка";
 const ADD_TO_CART_LABEL = "Добави в количката";
 const EURO_SYMBOL = "€";
@@ -266,15 +265,10 @@ export default async function ProductDetailPage({
     })),
   ];
 
-  const ratingValues = [
-    ...userReviews.map((review) => review.rating),
-    ...product.comments.map((comment) => comment.rating).filter((value) => value > 0),
-  ];
-  const reviewCount = ratingValues.length;
-  const averageRating =
-    reviewCount > 0
-      ? ratingValues.reduce((sum, value) => sum + value, 0) / reviewCount
-      : product.rating;
+  // Same source as the product cards (computed in getProducts) so the star
+  // rating and vote count are identical everywhere.
+  const reviewCount = product.reviewCount;
+  const averageRating = product.averageRating;
 
   const siteUrl = await resolveSiteUrl();
   const productImageUrl =
@@ -391,7 +385,7 @@ export default async function ProductDetailPage({
                 <div className="flex items-center gap-2">
                   <StarRow rating={averageRating} />
                   <span className="text-sm font-medium text-[#6b587f]">
-                    ({reviewCount} {REVIEWS_SUFFIX})
+                    ({reviewCount} {reviewCount === 1 ? "оценка" : "оценки"})
                   </span>
                 </div>
               </div>

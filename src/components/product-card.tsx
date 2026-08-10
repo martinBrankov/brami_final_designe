@@ -186,13 +186,13 @@ export function ProductCard({
           }`}
         >
           <div className={`flex min-w-0 items-center ${compact ? "gap-1.5" : "gap-2"}`}>
-            <StarRow rating={product.rating} compact={compact} />
+            <StarRow rating={product.averageRating} compact={compact} />
             <span
               className={`${
                 compact ? "text-xs" : "text-sm"
               } shrink-0 font-medium text-[#6b587f]`}
             >
-              ({product.comments.length} оценки)
+              ({product.reviewCount} {product.reviewCount === 1 ? "оценка" : "оценки"})
             </span>
           </div>
           <div

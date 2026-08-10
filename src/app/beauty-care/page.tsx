@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 
 import { ArticleSubscriptionForm } from "@/components/article-subscription-form";
 import { getBlogPosts } from "@/lib/blog";
@@ -168,8 +168,8 @@ function ArticleCard({ post }: { post: BlogPost }) {
           ) : null}
 
           <div className="mt-5 flex items-center justify-between">
-            <span className="inline-flex items-center text-sm font-semibold uppercase tracking-[0.12em] text-[#6c3f8d] transition group-hover:text-[#432855]">
-              Прочети
+            <span className="inline-flex items-center whitespace-nowrap rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-5 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white transition group-hover:opacity-95">
+              Прочети →
             </span>
             <div className="flex items-center gap-2 text-xs text-[#9e8aae]">
               {post.readTime ? <span>{post.readTime}</span> : null}
@@ -235,37 +235,32 @@ function ArticleCard({ post }: { post: BlogPost }) {
   );
 }
 
-function CompactArticleCard({ post }: { post: BlogPost }) {
+// A full-width article row without a cover image: title + a bit of the article,
+// keeping the reading-time detail and the "Прочети" button.
+function WideArticleCard({ post }: { post: BlogPost }) {
   return (
     <Link
       href={`/beauty-care/${post.slug}`}
-      className="group relative flex flex-1 flex-col overflow-hidden rounded-[22px] border border-[#e2d3e6] bg-[linear-gradient(160deg,#f9f2fa_0%,#efe4f0_55%,#e6d6e9_100%)] p-5 shadow-[0_14px_40px_rgba(67,40,85,0.05)] transition hover:shadow-[0_18px_50px_rgba(67,40,85,0.10)]"
+      className="group col-span-full flex flex-col gap-4 rounded-[26px] border border-[#eadde4] bg-white px-6 py-6 shadow-[0_16px_50px_rgba(67,40,85,0.05)] transition hover:shadow-[0_20px_60px_rgba(67,40,85,0.10)] sm:px-8 sm:py-7 md:flex-row md:items-center md:justify-between md:gap-8"
     >
-      <span
-        className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/60 blur-2xl"
-        aria-hidden="true"
-      />
-      {post.eyebrow ? (
-        <p className="relative text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8f72a7]">
-          {post.eyebrow}
-        </p>
-      ) : null}
-      <h3 className="relative mt-1.5 font-serif text-lg leading-snug text-[#432855]">
-        {post.title}
-      </h3>
-      {post.excerpt ? (
-        <p className="relative mt-2 flex-1 text-xs leading-6 text-[#6b587f] line-clamp-2">
-          {post.excerpt}
-        </p>
-      ) : (
-        <div className="flex-1" />
-      )}
-      <div className="relative mt-3 flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[#6c3f8d] transition group-hover:text-[#432855]">
-          Прочети →
-        </span>
-        <div className="flex items-center gap-2 text-[10px] text-[#9e8aae]">
-          {post.readTime ? <span>{post.readTime}</span> : null}
+      <div className="min-w-0 flex-1">
+        {post.eyebrow ? (
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8f72a7]">
+            {post.eyebrow}
+          </p>
+        ) : null}
+        <h3 className="mt-2 font-serif text-2xl leading-snug text-[#432855]">
+          {post.title}
+        </h3>
+        {post.excerpt ? (
+          <p className="mt-2 text-sm leading-7 text-[#6b587f] line-clamp-2">
+            {post.excerpt}
+          </p>
+        ) : null}
+      </div>
+      <div className="flex shrink-0 items-center justify-between gap-4 md:flex-col md:items-end md:justify-center">
+        <div className="flex items-center gap-2 text-xs text-[#9e8aae]">
+          {post.readTime ? <span>{post.readTime} четене</span> : null}
           {post.publishedAt ? (
             <>
               {post.readTime ? <span aria-hidden="true">·</span> : null}
@@ -273,52 +268,51 @@ function CompactArticleCard({ post }: { post: BlogPost }) {
             </>
           ) : null}
         </div>
+        <span className="inline-flex items-center whitespace-nowrap rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-5 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white transition group-hover:opacity-95">
+          Прочети →
+        </span>
       </div>
     </Link>
   );
 }
 
-function PairCell({ posts }: { posts: BlogPost[] }) {
-  return (
-    <div className="flex h-full flex-col gap-4">
-      {posts.map((post) => (
-        <CompactArticleCard key={post.id} post={post} />
-      ))}
-    </div>
-  );
-}
-
+// Positional layout for the "Последни публикации" grid. The image-card blocks
+// differ per breakpoint so every column layout fills cleanly (no gaps):
+//   • portrait  (1 col) → every card is an image card
+//   • landscape (2 cols) → 6 image, 2 text, 2 image, rest text
+//   • desktop   (3 cols) → 6 image, 2 text, 3 image, rest text
+// A position that is an image card on some breakpoints and a text card on others
+// renders both cards and toggles them with responsive `display` utilities.
 function renderListItems(posts: BlogPost[]): ReactNode[] {
-  const items: ReactNode[] = [];
-  let buffer: BlogPost[] = [];
+  return posts.map((post, index) => {
+    const imageOnLandscape = index < 6 || (index >= 8 && index < 10); // 6, 2
+    const imageOnDesktop = index < 6 || (index >= 8 && index < 11); // 6, 3
 
-  function flushBuffer() {
-    if (buffer.length === 0) return;
-    let i = 0;
-    while (i + 1 < buffer.length) {
-      const a = buffer[i];
-      const b = buffer[i + 1];
-      items.push(<PairCell key={`pair-${a.id}-${b.id}`} posts={[a, b]} />);
-      i += 2;
+    // Image everywhere → a single plain image card.
+    if (imageOnLandscape && imageOnDesktop) {
+      return <ArticleCard key={post.id} post={post} />;
     }
-    if (i < buffer.length) {
-      const lone = buffer[i];
-      items.push(<ArticleCard key={lone.id} post={lone} />);
-    }
-    buffer = [];
-  }
 
-  for (const post of posts) {
-    if (post.coverImage) {
-      flushBuffer();
-      items.push(<ArticleCard key={post.id} post={post} />);
-    } else {
-      buffer.push(post);
-    }
-  }
-  flushBuffer();
+    // Otherwise portrait always shows the image card; landscape/desktop may swap
+    // it for the full-width text card depending on the block sizes above.
+    const imageCardClass = imageOnDesktop
+      ? "block sm:hidden lg:block" // image on portrait + desktop, text on landscape
+      : "sm:hidden"; // image on portrait only, text from sm up
+    const textCardClass = imageOnDesktop
+      ? "hidden sm:contents lg:hidden" // text on landscape only
+      : "hidden sm:contents"; // text from sm up
 
-  return items;
+    return (
+      <Fragment key={post.id}>
+        <div className={imageCardClass}>
+          <ArticleCard post={post} />
+        </div>
+        <div className={textCardClass}>
+          <WideArticleCard post={post} />
+        </div>
+      </Fragment>
+    );
+  });
 }
 
 export default async function BeautyCarePage() {
