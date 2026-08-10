@@ -34,6 +34,7 @@ const audienceOptions: Array<{
   { value: "women", label: "За жени" },
   { value: "men", label: "За мъже" },
   { value: "unisex", label: "Унисекс" },
+  { value: "kids", label: "За деца" },
 ];
 
 const brandOptions: Array<{
@@ -42,6 +43,7 @@ const brandOptions: Array<{
 }> = [
   { value: "brami", label: "Brami" },
   { value: "Voditsa", label: "Voditsa" },
+  { value: "Shafpol Beauty", label: "Shafpol Beauty" },
 ];
 
 const badgeOptions: Array<{
@@ -52,6 +54,7 @@ const badgeOptions: Array<{
   { value: "sale", label: "Отстъпка" },
   { value: "new", label: getProductBadgeLabel("new") },
   { value: "favorite", label: getProductBadgeLabel("favorite") },
+  { value: "kids", label: getProductBadgeLabel("kids") },
 ];
 
 function FilterIcon() {

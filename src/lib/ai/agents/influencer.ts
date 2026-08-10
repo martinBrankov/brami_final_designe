@@ -1,6 +1,6 @@
 import "server-only";
 
-import { runStructured } from "@/lib/ai/client";
+import { runStructured, type ModelChoice } from "@/lib/ai/client";
 import { BRAND_CONTEXT, getProductContext } from "@/lib/ai/brand";
 import { SITE_URL } from "@/lib/site-url";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -72,6 +72,7 @@ export type SavedSocialPost = { id: string } & GeneratedSocialPost;
 export async function generateSocialPosts(
   instruction: string,
   campaignId: string | null = null,
+  model?: ModelChoice | null,
 ): Promise<SavedSocialPost[]> {
   const catalog = await getProductContext();
 
@@ -89,6 +90,8 @@ ${catalog}
     user,
     schema: SCHEMA,
     effort: "medium",
+    provider: model?.provider,
+    modelId: model?.modelId,
   });
 
   const posts = Array.isArray(result.posts) ? result.posts : [];

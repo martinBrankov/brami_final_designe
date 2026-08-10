@@ -453,6 +453,7 @@ function ProductsStats({ products }: { products: AdminProductRecord[] }) {
   const brands = [
     { label: "Brami", key: "brami", color: "#8a6f45" },
     { label: "Voditsa", key: "Voditsa", color: "#218a54" },
+    { label: "Shafpol Beauty", key: "Shafpol Beauty", color: "#c58a2f" },
     { label: "Друго", key: "other", color: "#6a7480" },
   ];
   const maxBrand = Math.max(...brands.map((b) => brandCounts[b.key] ?? 0), 1);
@@ -464,6 +465,7 @@ function ProductsStats({ products }: { products: AdminProductRecord[] }) {
     { label: "Ново", key: "new", color: "#218a54" },
     { label: "Любимо", key: "favorite", color: "#e06fa0" },
     { label: "Featured", key: "featured", color: "#3d73b8" },
+    { label: "За деца", key: "kids", color: "#e0872c" },
     { label: "Без бадж", key: "none", color: "#8c96a0" },
   ].filter((b) => (badgeCounts[b.key] ?? 0) > 0);
   const maxBadge = Math.max(...badges.map((b) => badgeCounts[b.key] ?? 0), 1);

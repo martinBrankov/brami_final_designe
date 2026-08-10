@@ -1,5 +1,3 @@
-const BGN_TO_EUR = 1.95583;
-
 function escapeHtml(value: string | number) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -11,9 +9,8 @@ function escapeHtml(value: string | number) {
 
 function formatCurrency(value: number) {
   const eur = Number(value);
-  const bgn = eur * BGN_TO_EUR;
 
-  return `\u20AC${eur.toFixed(2)} / ${bgn.toFixed(2)} лв.`;
+  return `\u20AC${eur.toFixed(2)}`;
 }
 
 const STATUS_MESSAGES: Record<string, string> = {

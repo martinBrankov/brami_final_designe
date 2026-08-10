@@ -89,6 +89,7 @@ const BADGE_LABELS: Record<string, string> = {
   new: "Ново",
   favorite: "Любимо",
   featured: "Featured",
+  kids: "За деца",
 };
 
 function StarRow({ rating }: { rating: number }) {
@@ -106,7 +107,6 @@ function StarRow({ rating }: { rating: number }) {
 
 function ProductPreview({ draft }: { draft: ProductDraft }) {
   const priceEur = Number(draft.priceEur) || 0;
-  const priceBgn = Number(draft.priceBgn) || 0;
   const discount = Number(draft.discountPercent) || 0;
   const rating = Number(draft.rating) || 0;
   const highlights = draft.highlights.split(/\r?\n/).map((h) => h.trim()).filter(Boolean);
@@ -197,7 +197,6 @@ function ProductPreview({ draft }: { draft: ProductDraft }) {
                 <span className="text-lg text-[#9e8aae] line-through">€ {originalEur.toFixed(2)}</span>
               )}
             </div>
-            <p className="mt-0.5 text-sm text-[#8f72a7]">{priceBgn.toFixed(2)} лв.</p>
           </div>
 
           <div className="h-11 w-full rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] flex items-center justify-center text-sm font-semibold text-white">
@@ -514,6 +513,7 @@ export function AdminProductsManager({
                   >
                     <option value="brami">brami</option>
                     <option value="Voditsa">Voditsa</option>
+                    <option value="Shafpol Beauty">Shafpol Beauty</option>
                     <option value="other">other</option>
                   </select>
                 </label>
@@ -531,6 +531,7 @@ export function AdminProductsManager({
                     <option value="sale">sale</option>
                     <option value="new">new</option>
                     <option value="favorite">favorite</option>
+                    <option value="kids">kids</option>
                   </select>
                 </label>
 
@@ -549,18 +550,6 @@ export function AdminProductsManager({
                     }}
                     className="h-11 w-full rounded-[16px] border border-[#d9d4ca] bg-white px-4"
                     required
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-[#25313d]">
-                    Цена BGN <span className="ml-1 text-xs font-normal text-[#9aa4ac]">(изчислява се автоматично)</span>
-                  </span>
-                  <input
-                    type="number"
-                    value={modalDraft.priceBgn}
-                    readOnly
-                    className="h-11 w-full rounded-[16px] border border-[#d9d4ca] bg-[#f4f2ef] px-4 text-[#7c8a94] cursor-default select-none"
                   />
                 </label>
 

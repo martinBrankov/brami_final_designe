@@ -23,8 +23,8 @@ export type AdminUserProfile = {
 export type AdminProductRecord = {
   id: number;
   name: string;
-  brand: "brami" | "Voditsa" | "other";
-  badge: "bestseller" | "sale" | "new" | "favorite" | "featured" | "none";
+  brand: "brami" | "Voditsa" | "Shafpol Beauty" | "other";
+  badge: "bestseller" | "sale" | "new" | "favorite" | "featured" | "kids" | "none";
   discountPercent: number | null;
   priceEur: number;
   priceBgn: number;

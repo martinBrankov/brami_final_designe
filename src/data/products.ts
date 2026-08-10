@@ -22,6 +22,9 @@ import ogId17 from "@/assets/images/products/00000017/og.jpg";
 import ogId18 from "@/assets/images/products/00000018/og.jpg";
 import ogId19 from "@/assets/images/products/00000019/og.jpg";
 import ogId20 from "@/assets/images/products/00000020/og.jpg";
+import ogId21 from "@/assets/images/products/00000021/og.jpg";
+import ogId22 from "@/assets/images/products/00000022/og.jpg";
+import ogId23 from "@/assets/images/products/00000023/og.jpg";
 
 export const FREE_SHIPPING_THRESHOLD_EUR = 70;
 export const HEAVY_THRESHOLD_KG = 3;
@@ -69,9 +72,9 @@ export type Product = {
   id: number;
   name: string;
   category: ("hair" | "body" | "face")[];
-  audience: ("women" | "men" | "unisex")[];
-  brand: "brami" | "Voditsa" | "other";
-  badge: "bestseller" | "sale" | "new" | "favorite" | "featured" | "none";
+  audience: ("women" | "men" | "unisex" | "kids")[];
+  brand: "brami" | "Voditsa" | "Shafpol Beauty" | "other";
+  badge: "bestseller" | "sale" | "new" | "favorite" | "featured" | "kids" | "none";
   discountPercent?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   imageSrc: any[];
@@ -96,14 +99,16 @@ const allowedAudiences = new Set<Product["audience"][number]>([
   "women",
   "men",
   "unisex",
+  "kids",
 ]);
-const allowedBrands = new Set<Product["brand"]>(["brami", "Voditsa", "other"]);
+const allowedBrands = new Set<Product["brand"]>(["brami", "Voditsa", "Shafpol Beauty", "other"]);
 const allowedBadges = new Set<Product["badge"]>([
   "bestseller",
   "sale",
   "new",
   "favorite",
   "featured",
+  "kids",
   "none",
 ]);
 
@@ -128,6 +133,9 @@ const productOgImages: Record<number, { src: string; width: number; height: numb
   18: ogId18,
   19: ogId19,
   20: ogId20,
+  21: ogId21,
+  22: ogId22,
+  23: ogId23,
 };
 
 function parseCategory(slugs: string[]): Product["category"] {
@@ -171,8 +179,7 @@ function formatBgDate(isoDate: string): string {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapDbProduct(row: any): Product {
   const eur = Number(row.price_eur);
-  const bgn = Number(row.price_bgn);
-  const price = `€${eur.toFixed(2)}/${bgn.toFixed(2)}лв.`;
+  const price = `€${eur.toFixed(2)}`;
 
   const categorySlugs: string[] = (row.product_categories ?? []).map(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -327,6 +334,8 @@ export function getProductBadgeLabel(
       return "Нов";
     case "favorite":
       return "Препоръчваме Ви";
+    case "kids":
+      return "За деца";
     case "featured":
       return "Избрано";
     default:

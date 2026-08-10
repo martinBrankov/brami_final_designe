@@ -65,7 +65,6 @@ const IN_STOCK_LABEL = "В наличност";
 const REVIEWS_SUFFIX = "отзива";
 const PACKAGING_LABEL = "Разфасовка";
 const ADD_TO_CART_LABEL = "Добави в количката";
-const BGN_SUFFIX = "лв.";
 const EURO_SYMBOL = "€";
 
 function StarRow({ rating }: { rating: number }) {
@@ -123,16 +122,6 @@ function CartLineIcon() {
   );
 }
 
-function parseBgnPrice(price: string) {
-  const bgnMatch = price.match(/\/(\d+[.,]?\d*)лв\.?/i);
-
-  if (bgnMatch) {
-    return Number.parseFloat(bgnMatch[1].replace(",", "."));
-  }
-
-  return 0;
-}
-
 function parseEuroPrice(price: string) {
   const euroMatch = price.match(/€\s?(\d+[.,]?\d*)/i);
 
@@ -141,10 +130,6 @@ function parseEuroPrice(price: string) {
   }
 
   return 0;
-}
-
-function formatBgnPrice(price: number) {
-  return `${price.toFixed(2)} ${BGN_SUFFIX}`;
 }
 
 function formatEuroPrice(price: number) {
@@ -230,13 +215,10 @@ export default async function ProductDetailPage({
     ? `/products?category=${primaryCategory}`
     : "/products";
   const originalPriceEuro = parseEuroPrice(product.price);
-  const originalPriceBgn = parseBgnPrice(product.price);
   const isOnSale = product.badge === "sale";
   const discountFactor = isOnSale && product.discountPercent ? 1 - product.discountPercent / 100 : 0.8;
   const currentPriceEuro = isOnSale && originalPriceEuro ? originalPriceEuro * discountFactor : originalPriceEuro;
-  const currentPriceBgn = isOnSale && originalPriceBgn ? originalPriceBgn * discountFactor : originalPriceBgn;
   const oldPriceEuro = isOnSale ? originalPriceEuro : null;
-  const oldPriceBgn = isOnSale ? originalPriceBgn : null;
   const relatedProducts = getProductsByIds(allProducts, product.relatedProductIds).filter(
     (relatedProduct) => relatedProduct.id !== product.id,
   );
@@ -322,8 +304,8 @@ export default async function ProductDetailPage({
     offers: {
       "@type": "Offer",
       url: productUrl,
-      priceCurrency: "BGN",
-      price: currentPriceBgn.toFixed(2),
+      priceCurrency: "EUR",
+      price: currentPriceEuro.toFixed(2),
       availability: "https://schema.org/InStock",
       seller: { "@type": "Organization", name: "Brami" },
     },
@@ -456,13 +438,11 @@ export default async function ProductDetailPage({
               <div className="mt-6">
                 <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
                   <span className="text-4xl font-semibold leading-none text-[#432855] sm:text-[2.7rem]">
-                    {currentPriceEuro && currentPriceBgn
-                      ? `${formatEuroPrice(currentPriceEuro)} / ${formatBgnPrice(currentPriceBgn)}`
-                      : product.price}
+                    {currentPriceEuro ? formatEuroPrice(currentPriceEuro) : product.price}
                   </span>
-                  {oldPriceEuro && oldPriceBgn ? (
+                  {oldPriceEuro ? (
                     <span className="text-xl font-medium text-[#8f7a9d] line-through">
-                      {`${formatEuroPrice(oldPriceEuro)} / ${formatBgnPrice(oldPriceBgn)}`}
+                      {formatEuroPrice(oldPriceEuro)}
                     </span>
                   ) : null}
                 </div>

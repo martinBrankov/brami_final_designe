@@ -9,12 +9,12 @@ import {
 export const metadata: Metadata = {
   title: "Партньори",
   description:
-    "Партньорите на Brami — World of Saffron и VODITSA. Български марки за натурална козметика и качествени продукти с шафран.",
+    "Партньорите на Brami — World of Saffron, VODITSA и Shafpol Beauty. Марки за натурална козметика и качествени продукти с шафран.",
   alternates: { canonical: "/partners" },
   openGraph: {
     title: "Партньори | Brami",
     description:
-      "Запознай се с партньорите на Brami — World of Saffron и VODITSA.",
+      "Запознай се с партньорите на Brami — World of Saffron, VODITSA и Shafpol Beauty.",
     url: "/partners",
   },
 };
@@ -83,6 +83,15 @@ const partners: Partner[] = [
     description:
       "VODITSA (Арт Ъп ЕООД) е българска марка натурална козметика, специализирана в анти-ейдж грижа за зряла и суха кожа. Сигнатурната съставка е екстракт от тубероза, ценен със своите подмладяващи и озаряващи свойства.",
     tags: ["Натурална козметика", "Анти-ейдж", "Екстракт от тубероза", "Грижа за лице"],
+  },
+  {
+    name: "Shafpol Beauty",
+    url: "https://shafpol.beauty/",
+    displayUrl: "shafpol.beauty",
+    tagline: "Шафранова козметика",
+    description:
+      "С Shafpol Beauty избираш природна грижа, създадена от хора с мисия. Всеки продукт е произведен в България, с внимание към всеки детайл — от състава до усещането върху кожата.",
+    tags: ["Ботаническа козметика", "Шафран", "Грижа за лице", "За деца"],
   },
 ];
 

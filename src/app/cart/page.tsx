@@ -90,8 +90,7 @@ type SpeedyOffice = {
 };
 
 function formatPrice(eur: number) {
-  const bgn = eur * BGN_TO_EUR;
-  return `€${eur.toFixed(2)} / ${bgn.toFixed(2)} лв.`;
+  return `€${eur.toFixed(2)}`;
 }
 
 function parseEurPrice(price: string) {
@@ -1579,9 +1578,6 @@ export default function CartPage() {
 
             {!orderId && cartItems.length ? (
               <ul className="mt-3 list-disc space-y-1 pl-5 text-xs leading-5 text-[#9a87b0]">
-                <li>
-                  Курс на превалутиране: €1 = {BGN_TO_EUR.toFixed(5)} лв. Възможно е незначително разминаване между крайните цени в лева поради закръгляне при превалутирането.
-                </li>
                 <li>
                   Доставката до автомат на Спиди е налична само за пратки до 3 кг.
                 </li>

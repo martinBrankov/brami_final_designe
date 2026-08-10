@@ -14,7 +14,6 @@ type ProductCardProps = {
   compact?: boolean;
 };
 
-const BGN_SUFFIX = "лв.";
 const EURO_SYMBOL = "€";
 
 const BADGE_GRADIENTS: Record<Product["badge"], string> = {
@@ -23,18 +22,9 @@ const BADGE_GRADIENTS: Record<Product["badge"], string> = {
   new:        "linear-gradient(100deg,#2e7d46 0%,#1a5c30 100%)",
   favorite:   "linear-gradient(100deg,#e07db5 0%,#b84d87 100%)",
   featured:   "linear-gradient(100deg,#7e9fda 0%,#4a6db8 100%)",
+  kids:       "linear-gradient(100deg,#f4ac4a 0%,#e0872c 100%)",
   none:       "",
 };
-
-function parseBgnPrice(price: string) {
-  const bgnMatch = price.match(/\/(\d+[.,]?\d*)лв\.?/i);
-
-  if (bgnMatch) {
-    return Number.parseFloat(bgnMatch[1].replace(",", "."));
-  }
-
-  return 0;
-}
 
 function parseEuroPrice(price: string) {
   const euroMatch = price.match(/€\s?(\d+[.,]?\d*)/i);
@@ -44,10 +34,6 @@ function parseEuroPrice(price: string) {
   }
 
   return 0;
-}
-
-function formatBgnPrice(price: number) {
-  return `${price.toFixed(2)} ${BGN_SUFFIX}`;
 }
 
 function formatEuroPrice(price: number) {
@@ -124,13 +110,10 @@ export function ProductCard({
   const detailsHref = `/products/${product.id}`;
   const favorite = isFavorite(product.id);
   const originalPriceEuro = parseEuroPrice(product.price);
-  const originalPriceBgn = parseBgnPrice(product.price);
   const isOnSale = product.badge === "sale";
   const discountFactor = isOnSale && product.discountPercent ? 1 - product.discountPercent / 100 : 0.8;
   const currentPriceEuro = isOnSale && originalPriceEuro ? originalPriceEuro * discountFactor : originalPriceEuro;
-  const currentPriceBgn = isOnSale && originalPriceBgn ? originalPriceBgn * discountFactor : originalPriceBgn;
   const oldPriceEuro = isOnSale ? originalPriceEuro : null;
-  const oldPriceBgn = isOnSale ? originalPriceBgn : null;
 
   return (
     <article
@@ -220,7 +203,7 @@ export function ProductCard({
             }`}
           >
             <h3
-              className={`font-serif text-[#432855] ${
+              className={`line-clamp-2 font-serif text-[#432855] ${
                 compact
                   ? "text-[0.95rem] leading-5 sm:text-[1.1rem] sm:leading-6"
                   : "text-[1.45rem] leading-7"
@@ -241,13 +224,13 @@ export function ProductCard({
               compact ? "min-h-[20px] sm:min-h-[22px]" : "min-h-[28px]"
             }`}
           >
-            {isOnSale && oldPriceEuro && oldPriceBgn ? (
+            {isOnSale && oldPriceEuro ? (
               <p
                 className={`font-medium text-[#8f7a9d] line-through ${
                   compact ? "text-xs sm:text-sm" : "text-lg"
                 }`}
               >
-                {`${formatEuroPrice(oldPriceEuro)} / ${formatBgnPrice(oldPriceBgn)}`}
+                {formatEuroPrice(oldPriceEuro)}
               </p>
             ) : (
               product.checkboxInfo.slice(0, 1).map((item) => (
@@ -281,9 +264,7 @@ export function ProductCard({
                 compact ? "text-[1.05rem] sm:text-[1.25rem]" : "text-[1.6rem]"
               }`}
             >
-              {currentPriceEuro && currentPriceBgn
-                ? `${formatEuroPrice(currentPriceEuro)} / ${formatBgnPrice(currentPriceBgn)}`
-                : product.price}
+              {currentPriceEuro ? formatEuroPrice(currentPriceEuro) : product.price}
             </p>
           </div>
         </div>

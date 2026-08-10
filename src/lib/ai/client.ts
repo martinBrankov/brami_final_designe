@@ -2,16 +2,28 @@ import "server-only";
 
 import Anthropic from "@anthropic-ai/sdk";
 
+import { resolveAgentProvider } from "@/lib/agent-chat/providers/config";
+import { openaiStructured } from "@/lib/agent-chat/providers/openai";
+
 // New AI agents run on Claude (the existing OpenAI blog generator in
 // src/lib/blog-generate.ts is unrelated and stays as-is).
 export const AI_MODEL = "claude-opus-4-8";
 
 let cachedClient: Anthropic | null = null;
 
+/**
+ * Anthropic client. No apiKey is passed, so the SDK resolves credentials in
+ * order (first match wins):
+ *   1. ANTHROPIC_API_KEY (env / .env.local)
+ *   2. ANTHROPIC_AUTH_TOKEN (env)
+ *   3. OAuth profile from `ant auth login` (auto-refreshed via token cache)
+ *
+ * This lets the app run locally on your Anthropic OAuth login (`ant auth login`)
+ * without a separate API key. Note: an OAuth profile lives on this machine only —
+ * production (Vercel) still needs ANTHROPIC_API_KEY, since there is no profile on
+ * disk there.
+ */
 export function createAnthropicClient(): Anthropic {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    throw new Error("ANTHROPIC_API_KEY не е конфигуриран в .env.local");
-  }
   if (!cachedClient) {
     cachedClient = new Anthropic();
   }
@@ -19,6 +31,9 @@ export function createAnthropicClient(): Anthropic {
 }
 
 export type Effort = "low" | "medium" | "high" | "xhigh" | "max";
+
+/** A per-agent provider+model choice (from the conversation member's model_config). */
+export type ModelChoice = { provider: string; modelId: string };
 
 type RunStructuredOptions = {
   system: string;
@@ -30,6 +45,10 @@ type RunStructuredOptions = {
   schema: Record<string, unknown>;
   effort?: Effort;
   maxTokens?: number;
+  /** Force a specific provider (e.g. per-agent model choice). Falls back to the
+   *  configured default (resolveAgentProvider) when omitted. */
+  provider?: string;
+  modelId?: string;
 };
 
 /**
@@ -43,11 +62,24 @@ export async function runStructured<T>({
   schema,
   effort = "high",
   maxTokens = 16000,
+  provider,
+  modelId,
 }: RunStructuredOptions): Promise<T> {
+  // Use the explicit per-agent choice when given; otherwise the configured
+  // default (resolveAgentProvider). The OpenAI path lets agents run on an OpenAI
+  // key when Anthropic has no credit.
+  const resolved =
+    provider && modelId ? { provider, modelId } : resolveAgentProvider();
+
+  if (resolved.provider === "openai") {
+    const { value } = await openaiStructured<T>(resolved.modelId, { system, user, schema, maxTokens });
+    return value;
+  }
+
   const client = createAnthropicClient();
 
   const message = await client.messages.create({
-    model: AI_MODEL,
+    model: resolved.modelId || AI_MODEL,
     max_tokens: maxTokens,
     thinking: { type: "adaptive" },
     output_config: {

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { runStructured } from "@/lib/ai/client";
+import { runStructured, type ModelChoice } from "@/lib/ai/client";
 import { BRAND_CONTEXT, getProductContext } from "@/lib/ai/brand";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
@@ -67,6 +67,7 @@ export type SavedStrategy = { id: string } & MarketingStrategy;
 export async function generateMarketingStrategy(
   instruction: string,
   campaignId: string | null = null,
+  model?: ModelChoice | null,
 ): Promise<SavedStrategy> {
   const catalog = await getProductContext();
 
@@ -82,6 +83,8 @@ ${catalog}
     user,
     schema: SCHEMA,
     effort: "high",
+    provider: model?.provider,
+    modelId: model?.modelId,
   });
 
   const supabase = createSupabaseAdminClient();

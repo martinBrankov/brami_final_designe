@@ -1,6 +1,6 @@
 import "server-only";
 
-import { runStructured } from "@/lib/ai/client";
+import { runStructured, type ModelChoice } from "@/lib/ai/client";
 import { BRAND_CONTEXT } from "@/lib/ai/brand";
 import { type GeneratedBlock } from "@/lib/blog-generate";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -92,6 +92,7 @@ export async function generateEditorSuggestion(
   postId: string | null,
   instruction: string,
   campaignId: string | null = null,
+  model?: ModelChoice | null,
 ): Promise<SavedSuggestion> {
   const supabase = createSupabaseAdminClient();
   const post = await resolvePost(supabase, postId);
@@ -118,6 +119,8 @@ ${existing || "(няма съдържание)"}
     user,
     schema: SCHEMA,
     effort: "high",
+    provider: model?.provider,
+    modelId: model?.modelId,
   });
 
   const blocks = toGeneratedBlocks(Array.isArray(result.blocks) ? result.blocks : []);
