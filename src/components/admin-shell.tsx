@@ -21,6 +21,7 @@ const navItems: NavItem[] = [
   { href: "/admin-panel/promo-codes", label: "Промо кодове", adminOnly: true },
   { href: "/admin-panel/stats", label: "Статистики" },
   { href: "/admin-panel/blog", label: "Блог" },
+  { href: "/admin-panel/faq", label: "Въпроси и отговори" },
   { href: "/admin-panel/ai", label: "AI агенти", adminOnly: true },
   { href: "/admin-panel/agent-chat", label: "AI Agent Chat", adminOnly: true },
 ];

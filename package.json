@@ -17,6 +17,7 @@
     "sync-sequences": "node scripts/sync-supabase-sequences.mjs",
     "migrate:merchant-terms": "node scripts/apply-merchant-terms-migration.mjs",
     "migrate:agent-chat": "node scripts/apply-agent-chat-migration.mjs",
+    "migrate:faq": "node scripts/apply-faq-migration.mjs",
     "seed": "node scripts/seed-supabase.mjs",
     "add-product": "node scripts/add-product.mjs",
     "clear-cache": "node -e \"require('fs').rmSync('.next/cache/fetch-cache', {recursive:true,force:true}); console.log('Cache cleared');\""

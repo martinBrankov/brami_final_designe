@@ -182,7 +182,8 @@ export function Navbar() {
   const products = useProducts();
   const deferredSearchValue = useDeferredValue(searchValue);
 
-  const navItems = [
+  const faqNavItem = { href: "/faq", label: "Често задавани въпроси" };
+  const baseNavItems = [
     { href: "/", label: "Начало" },
     { href: "/products", label: "Продукти" },
     { href: "/about", label: "За нас" },
@@ -190,6 +191,12 @@ export function Navbar() {
     { href: "/partners", label: "Партньори" },
     { href: "/contact", label: "Контакти" },
   ];
+  // Portrait is a single column, so ЧЗВ sits right after „Красота & грижа“.
+  // The landscape grid fills row by row, so there the long label goes last —
+  // on a row of its own.
+  const navItems = isPhoneLandscapeMenuLayout
+    ? [...baseNavItems, faqNavItem]
+    : [...baseNavItems.slice(0, 4), faqNavItem, ...baseNavItems.slice(4)];
   const quickLinks = [
     {
       href: "https://www.facebook.com/Bramitrade",
@@ -371,7 +378,9 @@ export function Navbar() {
   }
 
   const menuDrawerClassName = `relative z-10 flex h-full w-[208px] shrink-0 flex-col border-r border-[#e9deef] bg-[#fdfdfd] px-4 pb-5 pt-3 shadow-[0_24px_80px_rgba(67,40,85,0.18)] sm:w-[218px] sm:px-5 sm:pb-6 sm:pt-4${
-    isPhoneLandscapeMenuLayout ? " w-[416px] px-5 pb-4 pt-2.5 sm:w-[436px] sm:pt-3" : ""
+    isPhoneLandscapeMenuLayout
+      ? " w-[min(94vw,520px)] px-5 pb-4 pt-2.5 sm:w-[min(94vw,548px)] sm:pt-3"
+      : ""
   }`;
   const menuHeaderClassName = `mb-6 flex items-center justify-between${
     isPhoneLandscapeMenuLayout ? " hidden" : ""
@@ -380,7 +389,7 @@ export function Navbar() {
     isPhoneLandscapeMenuLayout ? " flex" : " hidden"
   }`;
   const menuContentClassName = isPhoneLandscapeMenuLayout
-    ? "grid flex-1 grid-cols-[156px_1fr] items-start justify-items-start gap-6"
+    ? "grid min-h-0 flex-1 grid-cols-[132px_1fr] items-start justify-items-start gap-5 overflow-y-auto"
     : "flex flex-1 flex-col";
   const quickLinksColumnClassName = `order-2 w-full pt-6 text-left${
     isPhoneLandscapeMenuLayout
@@ -403,8 +412,15 @@ export function Navbar() {
   const emailBlockClassName = `mt-5 w-full border-b border-t border-[#ece3f2] pb-[1.35rem] pt-4 text-sm leading-6 text-[#5f4b74]${
     isPhoneLandscapeMenuLayout ? " hidden" : ""
   }`;
-  const menuNavClassName = `relative order-1 flex flex-col${
-    isPhoneLandscapeMenuLayout ? " order-2 pl-2 pt-[30px]" : ""
+  // Phone landscape is short, so the links run in two columns instead of one —
+  // a single column overflows the drawer and clips the last items.
+  const menuNavClassName = isPhoneLandscapeMenuLayout
+    ? "relative order-2 grid w-full grid-cols-2 content-start gap-x-5 pl-2 pt-[30px]"
+    : "relative order-1 flex flex-col";
+  const menuNavLinkClassName = `border-b border-[#ece3f2] font-medium text-[#4B2E6F] transition hover:text-[#6c3f8d]${
+    isPhoneLandscapeMenuLayout
+      ? " py-2.5 text-base leading-snug"
+      : " py-4 text-lg"
   }`;
   const hasSearchQuery = deferredSearchValue.trim().length > 0;
   const searchDialogClassName =
@@ -805,7 +821,7 @@ export function Navbar() {
                       key={item.href}
                       href={item.href}
                       onClick={() => setIsMenuOpen(false)}
-                      className="border-b border-[#ece3f2] py-4 text-lg font-medium text-[#4B2E6F] transition hover:text-[#6c3f8d]"
+                      className={menuNavLinkClassName}
                     >
                       {item.label}
                     </Link>

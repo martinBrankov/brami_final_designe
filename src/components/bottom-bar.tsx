@@ -77,6 +77,7 @@ const shopLinks = [
 ];
 
 const helpLinks = [
+  { href: "/faq", label: "Често задавани въпроси" },
   { href: "/delivery-returns", label: "Доставка и връщане" },
   { href: "/cancellation-form", label: "Формуляр за отказ" },
   { href: "/terms", label: "Общи условия" },
