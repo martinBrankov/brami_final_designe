@@ -23,6 +23,7 @@ import id20 from "@/assets/images/products/00000020/01.jpg";
 import id21 from "@/assets/images/products/00000021/01.jpg";
 import id22 from "@/assets/images/products/00000022/01.jpg";
 import id23 from "@/assets/images/products/00000023/01.jpg";
+import id24 from "@/assets/images/products/00000024/01.jpg";
 
 export const productImages = {
   id01,
@@ -48,6 +49,7 @@ export const productImages = {
   id21,
   id22,
   id23,
+  id24,
 } as const;
 
 export type ProductImageKey = keyof typeof productImages;

@@ -25,6 +25,7 @@ import ogId20 from "@/assets/images/products/00000020/og.jpg";
 import ogId21 from "@/assets/images/products/00000021/og.jpg";
 import ogId22 from "@/assets/images/products/00000022/og.jpg";
 import ogId23 from "@/assets/images/products/00000023/og.jpg";
+import ogId24 from "@/assets/images/products/00000024/og.jpg";
 
 export const FREE_SHIPPING_THRESHOLD_EUR = 70;
 export const HEAVY_THRESHOLD_KG = 3;
@@ -140,6 +141,7 @@ const productOgImages: Record<number, { src: string; width: number; height: numb
   21: ogId21,
   22: ogId22,
   23: ogId23,
+  24: ogId24,
 };
 
 function parseCategory(slugs: string[]): Product["category"] {
