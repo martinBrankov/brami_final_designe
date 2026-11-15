@@ -3,6 +3,7 @@ import type React from "react";
 import Image from "next/image";
 
 import { Link } from "@/i18n/navigation";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 
 import logo from "@/assets/images/brami-logo.png";
 import type { AdminSession } from "@/lib/admin-auth";
@@ -54,14 +55,21 @@ export function AdminShell({
                   <p className="text-xs text-white/60">{ROLES.has(session.role) ? t(`roles.${session.role}`) : session.role}</p>
                 </div>
               </div>
-              <form action="/api/admin/logout" method="post">
-                <button
-                  type="submit"
-                  className="inline-flex h-9 items-center justify-center rounded-full border border-white/20 px-4 text-sm font-medium text-white transition hover:bg-white/10"
-                >
-                  {t("izhod")}
-                </button>
-              </form>
+              <div className="flex items-center gap-2">
+                <LocaleSwitcher
+                  className="inline-flex h-9 items-center justify-center rounded-full border border-white/20 px-3 text-white transition hover:bg-white/10"
+                  codeClassName="text-xs font-semibold uppercase tracking-[0.08em]"
+                  labelClassName="sr-only"
+                />
+                <form action="/api/admin/logout" method="post">
+                  <button
+                    type="submit"
+                    className="inline-flex h-9 items-center justify-center rounded-full border border-white/20 px-4 text-sm font-medium text-white transition hover:bg-white/10"
+                  >
+                    {t("izhod")}
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
 

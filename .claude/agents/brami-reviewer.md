@@ -33,6 +33,15 @@ tools: Bash, Glob, Grep, Read, PowerShell
 - [ ] `null` проверки при Supabase резултати (`data ?? []`)
 - [ ] DB → TS маппинг: `snake_case` колони → `camelCase` типове
 - [ ] AI JSON Schema: всяко object има `additionalProperties: false` + `required` с всички ключове
+- [ ] Проверка за ключ в обект от потребителски вход: `Object.hasOwn(obj, key)`, **не** `key in obj` (`"constructor" in {}` е true → грешка 500)
+
+### 🌐 Езици и SEO
+- [ ] Няма UI текст в кода; новите ключове са и в `messages/bg`, и в `messages/en` (`node scripts/check-messages.mjs`)
+- [ ] `Link` / `redirect` / `useRouter` от `@/i18n/navigation`, не от `next/link` / `next/navigation`
+- [ ] Нова страница има локализиран адрес в `src/i18n/routing.ts`, `setRequestLocale`, `buildAlternates()` и `openGraph.images`
+- [ ] Server страница подава продукт на client компонент през `toClientProduct()` (иначе целият продукт отива в HTML-а)
+- [ ] Нов namespace само за server компоненти е добавен в `SERVER_ONLY_NAMESPACES` (`src/i18n/client-messages.ts`)
+- [ ] Страници с noindex не са блокирани в `robots.txt`
 
 ### 🔒 Сигурност
 - [ ] `import "server-only"` в началото на всеки lib файл със service-role ключ или сесии

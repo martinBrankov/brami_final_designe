@@ -468,6 +468,12 @@ export function Navbar() {
           </Link>
 
           <div className="ml-auto flex items-center gap-0.5 sm:-mr-1 sm:gap-2">
+            <LocaleSwitcher
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#e9ddf3] sm:h-12 sm:w-12"
+              codeClassName="text-[13px] font-semibold uppercase tracking-[0.08em]"
+              labelClassName="sr-only"
+            />
+
             <button
               type="button"
               aria-label={t("searchProducts")}

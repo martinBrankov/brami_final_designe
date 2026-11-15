@@ -5,11 +5,11 @@ import { useTranslations } from "next-intl";
 
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import { useFavorites } from "@/components/favorites-provider";
-import { getProductHref, type Product } from "@/data/products";
+import { getProductHref, type ClientProduct } from "@/data/products";
 import { Link } from "@/i18n/navigation";
 
 type ProductCardProps = {
-  product: Product;
+  product: ClientProduct;
   badge: string;
   className?: string;
   compact?: boolean;
@@ -17,7 +17,7 @@ type ProductCardProps = {
 
 const EURO_SYMBOL = "€";
 
-const BADGE_GRADIENTS: Record<Product["badge"], string> = {
+const BADGE_GRADIENTS: Record<ClientProduct["badge"], string> = {
   bestseller: "linear-gradient(100deg,#d4b082 0%,#bf9464 100%)",
   sale:       "linear-gradient(100deg,#e86969 0%,#c43c3c 100%)",
   new:        "linear-gradient(100deg,#2e7d46 0%,#1a5c30 100%)",

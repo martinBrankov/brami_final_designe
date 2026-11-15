@@ -24,11 +24,11 @@ State: `items: CartItem[]`, `promoCode: PromoCodeResult | null`, `shippingMethod
 - `shippingCost` — 0 ако `subtotal >= FREE_SHIPPING_THRESHOLD_EUR (70 EUR)`, иначе по тарифа
 - `total` — финална сума
 
-> Цените се показват като `"€X/Yлв."`. Курс `BGN_TO_EUR = 1.95583` в `src/data/products.ts`.
+> Цените се показват **само в EUR**. Курс `BGN_TO_EUR = 1.95583` в `src/data/products.ts` остава само за сметки.
 
 ## Checkout страница
 
-`src/app/cart/page.tsx` (server) + `src/components/checkout-form.tsx` (client).
+`src/app/[locale]/cart/page.tsx` (`"use client"`; адрес `/kolichka` или `/en/cart`). Продуктите идват от `useProducts()` като `ClientProduct` (има `weight`, `stock`, `relatedProductIds`, но не и описание). Поръчката изпраща `locale` в payload-а.
 
 Стъпки:
 1. Преглед на количката
@@ -72,6 +72,8 @@ POST с тялото на поръчката → записва в `orders` + `o
 ## Имейли за Поръчки
 
 `src/lib/order-mail/` — nodemailer.
+
+- **Език:** имейлите към клиента са на езика на поръчката — `getOrderLocale(raw_payload)` + `getEmailTranslator(locale)` от `order-mail/i18n.ts` (текстове в `messages/*/email.json`, namespace `Email`). Имейлът към магазина (sales) винаги е на български. Връзките към продукти са на езика на поръчката.
 
 - `sendOrderConfirmationEmail(order)` — до клиента с HTML template
 - `sendOrderStatusUpdateEmail(order)` — при промяна на статус

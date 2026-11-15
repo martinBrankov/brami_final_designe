@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { isAppLocale } from "@/i18n/routing";
-import { OG_LOCALES, buildAlternates, jsonLdScript } from "@/lib/seo";
+import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates, jsonLdScript } from "@/lib/seo";
 import { SITE_URL } from "@/lib/site-url";
 
 type ContactPageProps = { params: Promise<{ locale: string }> };
@@ -23,6 +23,7 @@ export async function generateMetadata({ params }: ContactPageProps): Promise<Me
       description: t("ogDescription"),
       url: alternates.canonical as string,
       locale: OG_LOCALES[locale],
+      images: DEFAULT_OG_IMAGES,
     },
   };
 }

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getPathname } from "@/i18n/navigation";
 import { defaultLocale, locales, type AppLocale } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/site-url";
+import defaultOgImage from "@/assets/images/brami-naturalna-kozmetika-s-shafran-og.jpg";
 
 export type LocalizedHref = Parameters<typeof getPathname>[0]["href"];
 
@@ -11,6 +12,19 @@ export const OG_LOCALES: Record<AppLocale, string> = { bg: "bg_BG", en: "en_US" 
 export function absoluteUrl(path: string): string {
   return new URL(path, `${SITE_URL}/`).toString();
 }
+
+/**
+ * Share image for pages without their own (products and articles have one).
+ * A page's openGraph replaces the layout's, so each page has to list it.
+ */
+export const DEFAULT_OG_IMAGES = [
+  {
+    url: absoluteUrl(defaultOgImage.src),
+    width: defaultOgImage.width,
+    height: defaultOgImage.height,
+    alt: "Brami – Saffron Adela Sunny",
+  },
+];
 
 /** Public path of an internal route in `locale` (with the /en prefix where needed). */
 export function localizedPath(locale: AppLocale, href: LocalizedHref): string {

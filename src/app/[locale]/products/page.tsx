@@ -4,7 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { permanentRedirect } from "@/i18n/navigation";
 import { isAppLocale } from "@/i18n/routing";
 import { CATEGORY_COLLECTIONS } from "@/lib/collections";
-import { OG_LOCALES, buildAlternates } from "@/lib/seo";
+import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates } from "@/lib/seo";
 
 import { ProductsPageContent } from "./products-page-content";
 
@@ -28,6 +28,7 @@ export async function generateMetadata({ params }: ProductsPageProps): Promise<M
       description: t("ogDescription"),
       url: alternates.canonical as string,
       locale: OG_LOCALES[locale],
+      images: DEFAULT_OG_IMAGES,
     },
   };
 }
@@ -43,7 +44,8 @@ export default async function ProductsPage({ params, searchParams }: ProductsPag
 
   // Old ?category= links now live on their own category pages.
   const category = firstParam(query.category);
-  if (category in CATEGORY_COLLECTIONS && isAppLocale(locale)) {
+  // hasOwn, not `in`: "constructor"/"toString" would match Object.prototype.
+  if (Object.hasOwn(CATEGORY_COLLECTIONS, category) && isAppLocale(locale)) {
     permanentRedirect({
       href: CATEGORY_COLLECTIONS[category as keyof typeof CATEGORY_COLLECTIONS],
       locale,

@@ -6,7 +6,7 @@ import { Fragment, type ReactNode } from "react";
 
 import { Link } from "@/i18n/navigation";
 import { isAppLocale, type AppLocale } from "@/i18n/routing";
-import { OG_LOCALES, buildAlternates } from "@/lib/seo";
+import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates } from "@/lib/seo";
 
 import { ArticleSubscriptionForm } from "@/components/article-subscription-form";
 import { getBlogPosts } from "@/lib/blog";
@@ -31,6 +31,7 @@ export async function generateMetadata({ params }: BeautyCarePageProps): Promise
       description: t("ogDescription"),
       url: alternates.canonical as string,
       locale: OG_LOCALES[locale],
+      images: DEFAULT_OG_IMAGES,
     },
   };
 }

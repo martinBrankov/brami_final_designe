@@ -1,17 +1,13 @@
 # brami.shop – natural Bulgarian saffron cosmetics
 # Search engines and AI assistants are welcome to crawl and cite the public pages.
+# Cart and account pages stay crawlable so crawlers can read their noindex.
+# Unsubscribe pages are blocked: their links carry personal tokens.
 
 User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /admin-panel
 Disallow: /en/admin-panel
-Disallow: /kolichka
-Disallow: /en/cart
-Disallow: /profil
-Disallow: /en/account
-Disallow: /moite-porachki
-Disallow: /en/my-orders
 Disallow: /otpisvane
 Disallow: /en/unsubscribe
 
@@ -37,12 +33,6 @@ Allow: /
 Disallow: /api/
 Disallow: /admin-panel
 Disallow: /en/admin-panel
-Disallow: /kolichka
-Disallow: /en/cart
-Disallow: /profil
-Disallow: /en/account
-Disallow: /moite-porachki
-Disallow: /en/my-orders
 Disallow: /otpisvane
 Disallow: /en/unsubscribe
 

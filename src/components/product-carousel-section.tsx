@@ -7,7 +7,7 @@ import { ProductCard } from "@/components/product-card";
 import {
   SectionIntro,
 } from "@/components/section-intro";
-import { getProductBadgeLabel, type Product } from "@/data/products";
+import { getProductBadgeLabel, type ClientProduct } from "@/data/products";
 import { Link } from "@/i18n/navigation";
 
 function ArrowIcon({ direction }: { direction: "left" | "right" }) {
@@ -33,7 +33,7 @@ function ArrowIcon({ direction }: { direction: "left" | "right" }) {
 
 type ProductCarouselSectionProps = {
   title: string;
-  products: Product[];
+  products: ClientProduct[];
   titleClassName?: string;
   emptyState?: ReactNode;
 };

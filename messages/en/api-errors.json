@@ -155,5 +155,6 @@
   "Одобрено.": "Approved.",
   "Отхвърлено.": "Rejected.",
   "Поискани промени.": "Changes requested.",
-  "Поискани промени: {comment}": "Changes requested: {comment}"
+  "Поискани промени: {comment}": "Changes requested: {comment}",
+  "Баркодът „{code}“ не е валиден EAN/GTIN (грешна дължина или контролна цифра).": "The barcode \"{code}\" is not a valid EAN/GTIN (wrong length or check digit)."
 }

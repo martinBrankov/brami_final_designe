@@ -7,7 +7,7 @@ import { Link, permanentRedirect } from "@/i18n/navigation";
 import { isAppLocale, locales, type AppLocale } from "@/i18n/routing";
 import { findBlogPostBySlug } from "@/lib/blog";
 import type { BlogBlock, BlogPost } from "@/lib/blog";
-import { OG_LOCALES, absoluteUrl, buildAlternates, jsonLdScript, localizedUrl } from "@/lib/seo";
+import { DEFAULT_OG_IMAGES, OG_LOCALES, absoluteUrl, buildAlternates, jsonLdScript, localizedUrl } from "@/lib/seo";
 import { SITE_URL } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
       url: alternates.canonical as string,
       locale: OG_LOCALES[locale],
       publishedTime: post.publishedAt ?? undefined,
-      images: post.coverImage ? [{ url: post.coverImage, alt: post.title }] : [],
+      images: post.coverImage ? [{ url: post.coverImage, alt: post.title }] : DEFAULT_OG_IMAGES,
     },
   };
 }

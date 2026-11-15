@@ -2,16 +2,16 @@
 
 import { createContext, useContext } from "react";
 
-import type { Product } from "@/data/products";
+import type { ClientProduct } from "@/data/products";
 
-const ProductsContext = createContext<Product[]>([]);
+const ProductsContext = createContext<ClientProduct[]>([]);
 
 export function ProductsProvider({
   children,
   products,
 }: {
   children: React.ReactNode;
-  products: Product[];
+  products: ClientProduct[];
 }) {
   return (
     <ProductsContext.Provider value={products}>
@@ -20,6 +20,6 @@ export function ProductsProvider({
   );
 }
 
-export function useProducts(): Product[] {
+export function useProducts(): ClientProduct[] {
   return useContext(ProductsContext);
 }

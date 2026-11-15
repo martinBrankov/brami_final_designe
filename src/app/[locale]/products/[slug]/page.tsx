@@ -21,6 +21,7 @@ import {
   getProductsByIds,
   getProducts,
   stripHtml,
+  toClientProduct,
   trimToLength,
   type Product,
 } from "@/data/products";
@@ -28,6 +29,7 @@ import { Link, permanentRedirect } from "@/i18n/navigation";
 import { isAppLocale, locales, type AppLocale } from "@/i18n/routing";
 import { CATEGORY_COLLECTIONS } from "@/lib/collections";
 import { getDisplayName } from "@/lib/display-name";
+import { isValidGtin, normalizeGtin } from "@/lib/gtin";
 import { getProductReviews } from "@/lib/product-reviews";
 import { OG_LOCALES, absoluteUrl, buildAlternates, jsonLdScript, localizedUrl } from "@/lib/seo";
 import { SITE_URL } from "@/lib/site-url";
@@ -322,18 +324,25 @@ export default async function ProductDetailPage({
     ],
   };
 
-  const priceValidUntil = `${new Date().getFullYear() + 1}-12-31`;
+  // Digits only: Google expects a bare GTIN (an ISBN-13 is a GTIN-13 with prefix 978/979).
+  // An invalid code is left out: a wrong GTIN is worse than none.
+  const gtinDigits = normalizeGtin(product.gtin);
+  const gtin = isValidGtin(gtinDigits) ? gtinDigits : null;
+  const isbn = gtin && /^97[89]\d{10}$/.test(gtin) ? gtin : null;
+  const isBook = Boolean(isbn) || /ISBN/i.test(product.description);
   const productJsonLd = {
     "@context": "https://schema.org",
-    "@type": /ISBN/i.test(product.description) ? ["Product", "Book"] : "Product",
+    "@type": isBook ? ["Product", "Book"] : "Product",
     "@id": `${productUrl}#product`,
     name: product.name,
     url: productUrl,
     sku: String(product.id),
-    ...(product.gtin ? { gtin: product.gtin } : {}),
+    ...(gtin ? { gtin } : {}),
+    ...(isbn ? { isbn } : {}),
     image: product.imageSrc.map((image) => imageUrl(image)),
     description: trimToLength(stripHtml(product.summary || product.description), 1000),
-    inLanguage: locale,
+    // For a book this is the book's language (Bulgarian), not the page's.
+    inLanguage: isBook ? "bg" : locale,
     ...(brandName ? { brand: { "@type": "Brand", name: brandName } } : {}),
     ...(manufacturer
       ? {
@@ -355,7 +364,6 @@ export default async function ProductDetailPage({
       url: productUrl,
       priceCurrency: "EUR",
       price: currentPriceEuro.toFixed(2),
-      priceValidUntil,
       itemCondition: "https://schema.org/NewCondition",
       availability: isInStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       seller: { "@type": "Organization", name: "Brami", "@id": `${SITE_URL}/#organization` },
@@ -645,7 +653,7 @@ export default async function ProductDetailPage({
 
       <ProductCarouselSection
         title={t("relatedProducts")}
-        products={relatedProducts}
+        products={relatedProducts.map(toClientProduct)}
       />
 
       <InfoStrip className="border-b-0 bg-transparent" />

@@ -6,7 +6,7 @@ import { Link, permanentRedirect } from "@/i18n/navigation";
 import { isAppLocale, locales, type AppLocale } from "@/i18n/routing";
 import { findFaqEntryBySlug, type LocalizedFaqEntry } from "@/lib/faq";
 import { looksLikeHtml, toParagraphs, toPlainText } from "@/lib/faq-text";
-import { OG_LOCALES, buildAlternates, jsonLdScript, localizedUrl } from "@/lib/seo";
+import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates, jsonLdScript, localizedUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +49,7 @@ export async function generateMetadata({ params }: FaqAnswerPageProps): Promise<
       description,
       url: alternates.canonical as string,
       locale: OG_LOCALES[locale],
+      images: DEFAULT_OG_IMAGES,
     },
   };
 }

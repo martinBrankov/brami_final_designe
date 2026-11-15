@@ -77,3 +77,12 @@ Integration notes for Anthropic:
 - Migration 033 now also installs blog timestamp triggers for direct edits/imports. **User confirmed successful execution in Supabase Studio on 2026-11-15.** Unique indexes guard concurrent English-slug writes; the API already checks for duplicates before saving.
 - `npm run build` and `node tests/seo-regressions.cjs` pass. Existing unrelated build warnings remain.
 - Final HTTP audit: all 136 sitemap URLs return 200, have matching canonical URLs and no noindex; English titles contain no Cyrillic. All 48 legacy BG/EN product URLs return 308. Read-only duplicate checks found zero English slug collisions across products, articles and FAQ.
+
+## Anthropic: review fixes and lighter pages (2026-11-15, evening)
+
+- **Client messages are filtered.** The root `NextIntlClientProvider` now receives `getPublicClientMessages(await getMessages())` (`src/i18n/client-messages.ts`): it drops namespaces used only by Server Components (`SERVER_ONLY_NAMESPACES`) and every `Admin*` / `AgentChat*` namespace. `src/app/[locale]/admin-panel/layout.tsx` adds its own provider with all messages. If a new namespace is read only on the server, add it to `SERVER_ONLY_NAMESPACES`; anything read by a client component must stay out of that list.
+- **`ClientProduct`.** `useProducts()` returns products without `description`, `comments`, `faq`, `summary`, SEO fields, `oldSlugs`, `gtin`, `ogImage` (`toClientProduct()` in `src/data/products.ts`). Translated long texts are rendered on the server only.
+- Public HTML is 48–65% smaller on a production build (home 386 → 146 KB, product 428 → 190 KB).
+- Codex review fixes: GTIN validation (`src/lib/gtin.ts`) on admin save and in the Product schema, ISBN emitted as `isbn` with `inLanguage: "bg"`; `Object.hasOwn` for `?category=`; no generated `priceValidUntil`; cart/account pages no longer disallowed in robots.txt; Twitter tags derived from each page's Open Graph; `DEFAULT_OG_IMAGES` on pages without their own image; language switcher in the header and admin, linking to the hreflang alternate on click.
+- Canonical host switched to `https://www.brami.shop` (`SITE_URL` fallback and robots.txt `Sitemap:`).
+- New admin error (Bulgarian, with an English template added to `messages/en/api-errors.json` — please review): `Баркодът „{code}“ не е валиден EAN/GTIN (грешна дължина или контролна цифра).` `check-translations` passes (158 API translations).

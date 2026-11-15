@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { NextIntlClientProvider } from "next-intl";
 
 // The admin panel must never be indexed (also disallowed in robots.txt).
 export const metadata: Metadata = {
@@ -6,5 +7,6 @@ export const metadata: Metadata = {
 };
 
 export default function AdminPanelLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  // The root provider leaves out the admin texts; this one passes all messages.
+  return <NextIntlClientProvider>{children}</NextIntlClientProvider>;
 }

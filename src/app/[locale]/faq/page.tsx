@@ -6,7 +6,7 @@ import { FaqList, type FaqListItem } from "@/components/faq-list";
 import { isAppLocale } from "@/i18n/routing";
 import { getPublishedFaqEntries } from "@/lib/faq";
 import { toPlainText } from "@/lib/faq-text";
-import { OG_LOCALES, buildAlternates, jsonLdScript, localizedUrl } from "@/lib/seo";
+import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates, jsonLdScript, localizedUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +27,7 @@ export async function generateMetadata({ params }: FaqPageProps): Promise<Metada
       description: t("ogDescription"),
       url: alternates.canonical as string,
       locale: OG_LOCALES[locale],
+      images: DEFAULT_OG_IMAGES,
     },
   };
 }

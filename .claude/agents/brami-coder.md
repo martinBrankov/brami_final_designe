@@ -26,20 +26,25 @@ tools: Bash, Glob, Grep, Read, Edit, Write, PowerShell
 
 ### Server Component (Page)
 ```tsx
-// src/app/some-feature/page.tsx
+// src/app/[locale]/some-feature/page.tsx  (+ адрес в pathnames в src/i18n/routing.ts)
+import { getTranslations, setRequestLocale } from "next-intl/server";
+
 import { requireAdminSession } from "@/lib/admin-auth"; // само ако е admin
 import { getSomeData } from "@/lib/some-data";
 import SomeClientComponent from "@/components/some-client-component";
 
 export const dynamic = "force-dynamic"; // ако данните са dynamic
 
-export default async function SomeFeaturePage() {
+export default async function SomeFeaturePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   await requireAdminSession(); // само за admin pages
+  const t = await getTranslations("SomeFeature"); // ключове в messages/bg + messages/en
   const data = await getSomeData();
 
   return (
     <div>
-      <h1>Заглавие на български</h1>
+      <h1>{t("title")}</h1>
       <SomeClientComponent initialData={data} />
     </div>
   );
@@ -51,7 +56,7 @@ export default async function SomeFeaturePage() {
 "use client";
 
 import { useState } from "react";
-import { useProducts } from "@/components/products-provider"; // ако трябват продукти
+import { useProducts } from "@/components/products-context"; // ако трябват продукти
 
 type Props = {
   initialData: SomeType;
@@ -185,8 +190,12 @@ export async function runNewAgent(
 - [ ] Guard функция като ПЪРВИ ред в API route
 - [ ] `export const runtime = "nodejs"; export const dynamic = "force-dynamic";` в route файлове
 - [ ] DB колони: `snake_case`; TS типове: `camelCase`; explicit маппинг
-- [ ] Error response: `{ error: "Съобщение на български" }` + подходящ status
-- [ ] UI текст на **български**, код/имена на **английски**
+- [ ] Error response: `{ error: await localizeApiError("Съобщение на български") }` + подходящ status
+- [ ] UI текст в `messages/bg/*.json` + `messages/en/*.json` (никога в кода); код/имена на **английски**
+- [ ] Връзки/пренасочвания през `@/i18n/navigation` (`Link`, `redirect`, `permanentRedirect`); нова страница → адрес в `src/i18n/routing.ts`
+- [ ] Продукт към client компонент → `toClientProduct(product)`
+- [ ] Нова публична страница: `generateMetadata` с `buildAlternates()` + `openGraph.images`
+- [ ] Admin route, който променя публично съдържание → `notifyIndexNow(...)`
 - [ ] Нова таблица = нова миграция `supabase/migrations/NNN_name.sql` (не редактирай съществуващи!)
 - [ ] Импорти: external → `@/...` → relative, разделени с празен ред
 - [ ] AI Schema: всяко обект → `additionalProperties: false` + `required: [всички ключове]`

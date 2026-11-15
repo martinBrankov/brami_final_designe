@@ -6,10 +6,11 @@ import addelaSunny from "@/assets/images/about/saffron-adela-sunny-kozmetika-s-s
 import garden from "@/assets/images/about/shafranova-gradina-v-balgariya.jpg";
 import saffron from "@/assets/images/about/balgarski-shafran-crocus-sativus.jpg";
 import { isAppLocale } from "@/i18n/routing";
-import { OG_LOCALES, buildAlternates, jsonLdScript } from "@/lib/seo";
+import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates, jsonLdScript } from "@/lib/seo";
 import { SITE_URL } from "@/lib/site-url";
 
 type AboutPageProps = { params: Promise<{ locale: string }> };
+type AboutValue = string | { text: string; items: string[] };
 
 export async function generateMetadata({ params }: AboutPageProps): Promise<Metadata> {
   const { locale } = await params;
@@ -26,6 +27,7 @@ export async function generateMetadata({ params }: AboutPageProps): Promise<Meta
       description: t("ogDescription"),
       url: alternates.canonical as string,
       locale: OG_LOCALES[locale],
+      images: DEFAULT_OG_IMAGES,
     },
   };
 }
@@ -34,7 +36,7 @@ export default async function AboutPage({ params }: AboutPageProps) {
   const { locale } = await params;
   if (isAppLocale(locale)) setRequestLocale(locale);
   const t = await getTranslations("About");
-  const values = t.raw("values") as string[];
+  const values = t.raw("values") as AboutValue[];
   const storyParagraphs = t.raw("storyParagraphs") as string[];
   const approachParagraphs = t.raw("approachParagraphs") as string[];
   const brandParagraphs = t.raw("brandParagraphs") as string[];
@@ -83,15 +85,34 @@ export default async function AboutPage({ params }: AboutPageProps) {
               </p>
 
               <ul className="mt-8 space-y-2">
-                {values.map((value) => (
-                  <li key={value} className="flex items-baseline gap-2.5 text-sm font-medium text-[#432855]">
-                    <svg viewBox="0 0 10 8" className="h-3 w-3 shrink-0 translate-y-[1px] text-[#6c3f8d]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M1 4l3 3 5-6" />
-                    </svg>
-                    {value}
-                  </li>
-                ))}
+                {values.map((value) => {
+                  const text = typeof value === "string" ? value : value.text;
+                  return (
+                    <li key={text} className="flex items-baseline gap-2.5 text-sm font-medium text-[#432855]">
+                      <svg viewBox="0 0 10 8" className="h-3 w-3 shrink-0 translate-y-[1px] text-[#6c3f8d]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 4l3 3 5-6" />
+                      </svg>
+                      <div>
+                        {text}
+                        {typeof value !== "string" && (
+                          <ul className="mt-1.5 space-y-1">
+                            {value.items.map((item) => (
+                              <li key={item} className="flex items-baseline gap-2 font-normal text-[#5f4b73]">
+                                <span className="h-1 w-1 shrink-0 -translate-y-[3px] rounded-full bg-[#8f72a7]" />
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
+
+              <p className="mt-6 max-w-xl text-xs italic leading-6 text-[#8f72a7]">
+                {t("valuesNote")}
+              </p>
             </div>
           </div>
 

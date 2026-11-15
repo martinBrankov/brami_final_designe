@@ -16,13 +16,23 @@
     "title": "Bulgarian care, inspired by nature",
     "lead": "Brami combines carefully selected ingredients, a soft feel on the skin and a clean visual language. We create products that bring a sense of care, calm and everyday comfort.",
     "values": [
-      "Natural ingredients",
-      "Gentle care",
-      "Clean formulas",
-      "Excellent compatibility with the skin",
-      "Gentle preservatives found in nature – the green standard in natural cosmetics",
-      "Natural fragrance components"
+      "Ingredients of natural origin (over 95% across the entire range)",
+      "Gentle care for skin and hair",
+      "Mild sulfate-free cleansers",
+      "Saffron certified to ISO 3632",
+      "Plant extracts and oils",
+      "Formulas with proven results, based on customer feedback",
+      "Excellent skin tolerance",
+      "Gentle preservatives found in nature, approved for use in cosmetics and organic cosmetics",
+      {
+        "text": "Fragrances",
+        "items": [
+          "essential oils in low concentrations",
+          "100% natural fragrance compositions in low concentrations"
+        ]
+      }
     ],
+    "valuesNote": "The characteristics listed apply to BRAMI's own product line. Our shop also offers selected partner brands with their own standards and formulations.",
     "gardenAlt": "Saffron garden in Bulgaria where Brami grows saffron",
     "saffronAlt": "Bulgarian saffron Crocus sativus – the key ingredient of Saffron Adela Sunny cosmetics",
     "productsAlt": "Saffron Adela Sunny natural saffron cosmetics – face, body and hair care",

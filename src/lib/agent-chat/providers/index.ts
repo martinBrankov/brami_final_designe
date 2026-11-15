@@ -11,7 +11,7 @@ const ADAPTERS: Record<string, ModelProviderAdapter> = {
 };
 
 export function getAdapter(provider: string): ModelProviderAdapter {
-  const adapter = ADAPTERS[provider];
+  const adapter = Object.hasOwn(ADAPTERS, provider) ? ADAPTERS[provider] : undefined;
   if (!adapter) {
     throw new Error(`Няма adapter за provider "${provider}".`);
   }
@@ -19,5 +19,5 @@ export function getAdapter(provider: string): ModelProviderAdapter {
 }
 
 export function hasAdapter(provider: string): boolean {
-  return provider in ADAPTERS;
+  return Object.hasOwn(ADAPTERS, provider);
 }

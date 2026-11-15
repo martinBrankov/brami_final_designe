@@ -120,6 +120,32 @@ export type Product = {
   ogImage?: { src: string; width: number; height: number };
 };
 
+/** Long-form fields only the product page needs (rendered on the server). */
+const SERVER_ONLY_PRODUCT_FIELDS = [
+  "description",
+  "comments",
+  "faq",
+  "summary",
+  "seoTitle",
+  "metaDescription",
+  "focusKeyword",
+  "oldSlugs",
+  "gtin",
+  "ogImage",
+] as const;
+
+/**
+ * The catalogue sent to the browser on every page (cart, search, cards).
+ * Leaves out long texts to keep the HTML of each page small.
+ */
+export type ClientProduct = Omit<Product, (typeof SERVER_ONLY_PRODUCT_FIELDS)[number]>;
+
+export function toClientProduct(product: Product): ClientProduct {
+  const client: Partial<Product> = { ...product };
+  for (const field of SERVER_ONLY_PRODUCT_FIELDS) delete client[field];
+  return client as ClientProduct;
+}
+
 const allowedCategories = new Set<Product["category"][number]>([
   "hair",
   "body",

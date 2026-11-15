@@ -11,7 +11,7 @@ import {
 } from "@/components/section-intro";
 import { Link } from "@/i18n/navigation";
 import { isAppLocale } from "@/i18n/routing";
-import { OG_LOCALES, buildAlternates } from "@/lib/seo";
+import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates } from "@/lib/seo";
 
 // Text pages (delivery & returns, terms, privacy). Their content lives in
 // messages/<locale>/legal.json under "Legal.<pageKey>".
@@ -48,6 +48,7 @@ export async function getLegalMetadata(
       description: t("ogDescription"),
       url: alternates.canonical as string,
       locale: OG_LOCALES[locale],
+      images: DEFAULT_OG_IMAGES,
     },
   };
 }

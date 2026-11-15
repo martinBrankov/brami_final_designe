@@ -24,7 +24,10 @@ tools: Glob, Grep, Read, WebSearch
 
 ### Директории
 ```
-src/app/              # Pages (page.tsx) + API routes (route.ts)
+src/app/[locale]/     # Pages (page.tsx), вкл. admin-panel; езици bg (без префикс) и en (/en)
+src/app/api/          # API routes (route.ts), без locale
+src/i18n/             # next-intl: routing (локализирани адреси), navigation, request
+messages/{bg,en}/     # Текстовете на интерфейса (JSON по namespace)
 src/components/       # React компоненти; client = "use client"
 src/lib/              # Server-only бизнес логика (import "server-only")
 src/data/             # Data access слой (products.ts → Supabase)
@@ -37,7 +40,7 @@ scripts/*.mjs         # Node utility скриптове
 
 **Server компонент (default в App Router):**
 ```ts
-// src/app/some-page/page.tsx
+// src/app/[locale]/some-page/page.tsx
 import { requireAdminSession } from "@/lib/admin-auth"; // ако е admin
 
 export default async function Page() {
@@ -50,7 +53,7 @@ export default async function Page() {
 ```tsx
 "use client";
 // Чете данни САМО от Context hooks, не прави fetch директно
-import { useProducts } from "@/components/products-provider";
+import { useProducts } from "@/components/products-context";
 ```
 
 **API Route:**
@@ -120,7 +123,10 @@ import "server-only"; // ЗАДЪЛЖИТЕЛНО в началото
 - [ ] Guard функция в API route
 - [ ] `runtime = "nodejs"` + `dynamic = "force-dynamic"` в route
 - [ ] Нова миграция (не редактирай съществуващи)
-- [ ] UI текст на български, код на английски
+- [ ] UI текст в `messages/bg` + `messages/en`, код на английски
+- [ ] Нова страница: папка под `src/app/[locale]/` + локализиран адрес в `src/i18n/routing.ts` (bg на латиница, en на английски)
+- [ ] Съдържание от базата, което се показва на сайта: български в колоните, английски в `translations.en`
+- [ ] SEO: canonical/hreflang (`buildAlternates`), `openGraph.images`, JSON-LD при нужда; sitemap, ако е публична страница
 ```
 
 ## Домейн Знания

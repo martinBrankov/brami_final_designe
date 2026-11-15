@@ -4,7 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { ProductCard } from "@/components/product-card";
 import { SectionIntro, pageSectionClassName } from "@/components/section-intro";
-import { getProductBadgeLabel, getProductHref, getProducts } from "@/data/products";
+import { getProductBadgeLabel, getProductHref, getProducts, toClientProduct } from "@/data/products";
 import { Link } from "@/i18n/navigation";
 import { isAppLocale } from "@/i18n/routing";
 import {
@@ -13,7 +13,7 @@ import {
   filterCollectionProducts,
   isCollectionKey,
 } from "@/lib/collections";
-import { OG_LOCALES, buildAlternates, jsonLdScript, localizedUrl } from "@/lib/seo";
+import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates, jsonLdScript, localizedUrl } from "@/lib/seo";
 
 type CollectionPageProps = {
   params: Promise<{ locale: string; collection: string }>;
@@ -36,6 +36,7 @@ export async function generateMetadata({ params }: CollectionPageProps): Promise
       description: t("metaDescription"),
       url: alternates.canonical as string,
       locale: OG_LOCALES[locale],
+      images: DEFAULT_OG_IMAGES,
     },
   };
 }
@@ -116,7 +117,7 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
             {products.map((product) => (
               <ProductCard
                 key={product.id}
-                product={product}
+                product={toClientProduct(product)}
                 badge={getProductBadgeLabel(product.badge, tProduct, product.discountPercent)}
                 compact
                 className="w-full max-w-[168px] justify-self-center min-[640px]:w-[198px] min-[640px]:max-w-[198px]"

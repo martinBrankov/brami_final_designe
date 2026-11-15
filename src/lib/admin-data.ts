@@ -1,6 +1,7 @@
 import "server-only";
 
 import { slugifyQuestion } from "@/lib/faq-slug";
+import { isValidGtin, normalizeGtin } from "@/lib/gtin";
 import { syncMarketingSubscriberForProfile, unsubscribeMarketingEmail } from "@/lib/marketing-subscribers";
 import { normalizeOrderImageUrl } from "@/lib/order-image";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -714,6 +715,9 @@ export async function saveAdminProduct(input: AdminProductInput) {
 
   const seo = input.seo;
   const en = input.en;
+  if (seo?.gtin.trim() && !isValidGtin(normalizeGtin(seo.gtin))) {
+    throw new Error(`Баркодът „${seo.gtin.trim()}“ не е валиден EAN/GTIN (грешна дължина или контролна цифра).`);
+  }
   const slug = seo ? slugifyQuestion(seo.slug || normalizedInput.name) || null : (existing?.slug ?? null);
   const enSlug = en ? slugifyQuestion(en.slug || en.name) : "";
   const previousEnSlug = asString(existing?.translations?.en?.slug);

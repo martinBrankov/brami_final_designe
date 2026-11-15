@@ -8,7 +8,7 @@ import {
 } from "@/components/section-intro";
 
 import { isAppLocale } from "@/i18n/routing";
-import { OG_LOCALES, buildAlternates } from "@/lib/seo";
+import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates } from "@/lib/seo";
 
 type Partner = {
   name: string;
@@ -73,6 +73,7 @@ export async function generateMetadata({ params }: PartnersPageProps): Promise<M
       description: t("ogDescription"),
       url: alternates.canonical as string,
       locale: OG_LOCALES[locale],
+      images: DEFAULT_OG_IMAGES,
     },
   };
 }

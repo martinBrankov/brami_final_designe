@@ -5,28 +5,41 @@ description: Brami база данни — точна референция на 
 
 # Brami — Схема на Базата Данни (Supabase Postgres)
 
-> Точна референция от `supabase/migrations/001..025`. Колони са **snake_case**, TS типове **camelCase** — маппингът е в `mapX()` функции. За patterns на достъп (клиенти, миграции, скриптове) виж skill `brami-data-supabase`.
+> Точна референция от `supabase/migrations/001..033`. Колони са **snake_case**, TS типове **camelCase** — маппингът е в `mapX()` функции. За patterns на достъп (клиенти, миграции, скриптове) виж skill `brami-data-supabase`.
 
-## Продукти (миграция 001)
+## Преводи (миграция 032) — общо правило
 
-Нормализирана схема с релации. `getProducts()` прави един nested select и мапва към `Product`.
+Българският текст е в обикновените колони. Английският е в колона **`translations JSONB NOT NULL DEFAULT '{}'`** във формат `{ "en": { "<поле>": "..." } }` (имената на полетата са като на колоните, напр. `name`, `slug`, `description`, `seo_title`). Липсващо поле → показва се българското. `pickTranslation()` (`src/lib/i18n-content.ts`) избира превода; `withEnglish()` (`src/lib/admin-translations.ts`) го записва, като пази непратените полета и маха празните.
+
+## Продукти (миграции 001, 032, 033)
+
+Нормализирана схема с релации. `getProducts(locale)` прави един nested select и мапва към `Product` на дадения език.
 
 ```
 products (id INTEGER PK, name, brand, badge, discount_percent, price_eur,
-          price_bgn, packaging, weight, rating, description)
+          price_bgn, packaging, weight, rating, description, updated_at,
+          -- SEO (032):
+          slug UNIQUE,                 -- адрес на bg, латиница; NULL → авто „<име>-<id>“
+          old_slugs TEXT[],            -- стари адреси → 308 към текущия
+          seo_title, meta_description, focus_keyword,
+          summary,                     -- 2–3 изречения „отговор първо“ под H1
+          faq JSONB,                   -- [{ question, answer }]
+          gtin,                        -- EAN/GTIN/ISBN; валидира се при запис
+          translations JSONB)          -- en: name, slug, description, packaging, seo_*, summary, faq…
 categories (id SERIAL PK, slug UNIQUE)          -- 'hair' | 'body' | 'face'
-audiences  (id SERIAL PK, slug UNIQUE)          -- 'women' | 'men' | 'unisex'
+audiences  (id SERIAL PK, slug UNIQUE)          -- 'women' | 'men' | 'unisex' | 'kids'
 
 product_categories (product_id, category_id)    -- M:N
 product_audiences  (product_id, audience_id)    -- M:N
-product_images     (id, product_id, image_src, sort_order)
-product_highlights (id, product_id, text, sort_order)          -- checkboxInfo
+product_images     (id, product_id, image_src, sort_order, alt, translations)   -- alt + en.alt (032)
+product_highlights (id, product_id, text, sort_order, translations)            -- checkboxInfo; en.text (032)
 product_comments   (id, product_id, author_name, comment, rating, comment_date, sort_order)
 related_products   (product_id, related_product_id, sort_order)
 ```
 
-- **`products.id` е INTEGER** (не uuid) — фиксирани id-та; след ръчен insert пусни `npm run sync-sequences`.
-- Цени се пазят **и в EUR, и в BGN** (`price_eur`, `price_bgn`).
+- **`products.id` е INTEGER** (не uuid) — фиксирани id-та; след ръчен insert пусни `npm run sync-sequences`. Числовите адреси `/products/<id>` (QR кодове) пренасочват към slug-а.
+- Уникални индекси: `products_slug_key` (bg slug), `products_en_slug_key` върху `translations->'en'->>'slug'` (033).
+- Цени се пазят **и в EUR, и в BGN** (`price_eur`, `price_bgn`); показва се само EUR.
 - RLS: всички имат `public_read` политика (`FOR SELECT USING (true)`).
 
 ## Потребители (миграции 003, 010-014, 017, 020, 021)
@@ -101,22 +114,41 @@ promo_codes (
 
 Използване на код при поръчка → записва се в `customer_orders.promo_*` колоните.
 
-## Блог (миграции 006, 007)
+## Блог (миграции 006, 007, 032, 033)
 
 ```
 blog_posts (
   id UUID PK, title, slug UNIQUE, eyebrow, excerpt, cover_image,
   read_time, published_at DATE, is_featured BOOLEAN, published BOOLEAN,
-  created_at
+  created_at,
+  translations JSONB,          -- en: title, slug, eyebrow, excerpt, read_time (032)
+  updated_at TIMESTAMPTZ       -- 032; поддържа се от тригери (033)
 )
 blog_blocks (
   id UUID PK, post_id → blog_posts(id) CASCADE,
   type TEXT CHECK (type IN ('text', 'image')),   -- само text|image в DB
-  content TEXT, position INTEGER
+  content TEXT, position INTEGER,
+  translations JSONB           -- en.content (HTML) (032)
 )
 ```
 
 - RLS: публично четене само на `published = true` статии (и техните блокове).
+- **Тригери (033):** `blog_posts_updated_at` (BEFORE UPDATE) и `blog_blocks_updated_at` (AFTER INSERT/UPDATE/DELETE на блок) обновяват `blog_posts.updated_at` при всяка реална промяна — и от админа, и от импорт или Supabase Studio. Не задавай `updated_at` ръчно.
+- Уникален индекс `blog_posts_en_slug_key` върху английския slug (033).
+- Английската версия на статия е „готова“ само ако има заглавие, slug и превод на **всеки** текстов блок.
+
+## FAQ (миграции 031, 032, 033)
+
+```
+faq_entries (
+  id UUID PK, question, answer, slug UNIQUE, category,
+  status ('pending' | 'draft' | 'published'), source ('admin' | 'user'),
+  asker_name, asker_email, position, published_at, created_at, updated_at,
+  translations JSONB           -- en: question, answer, category, slug (032)
+)
+```
+
+- Уникален индекс `faq_entries_en_slug_key` върху английския slug (033).
 - **Storage bucket `blog-images`** (public, 5MB лимит, jpeg/png/webp/gif/avif) — за cover + block изображения.
 - `blog_blocks.type` в DB е `text`/`image`; AI editor работи с `heading`/`paragraph` на приложно ниво (виж `brami-ai-agents`).
 
@@ -160,8 +192,9 @@ ai_editor_suggestions (id UUID PK, post_id → blog_posts, suggested_blocks JSON
 
 ## Общи Правила
 
-- **Нова таблица/колона = нов файл** `supabase/migrations/NNN_описание.sql` (текущо до 025). Не редактирай приложени миграции.
-- Прилагане към production: `scripts/run-migration-on-production.mjs`.
+- **Нова таблица/колона = нов файл** `supabase/migrations/NNN_описание.sql` (текущо до 033). Не редактирай приложени миграции.
+- Прилагане: собственикът ги пуска **ръчно в Supabase Studio** (SQL Editor) — първо prod, после dev. Пиши ги идемпотентни (`IF NOT EXISTS`, `CREATE OR REPLACE`) и в `BEGIN; … COMMIT;`.
+- Текстово съдържание, което се показва на сайта → добави `translations JSONB NOT NULL DEFAULT '{}'` вместо отделни `_en` колони.
 - Всички таблици имат `ENABLE ROW LEVEL SECURITY`. Публично четими: продукти + публикувани блог статии. Всичко останало минава през `createSupabaseAdminClient()` (service-role, заобикаля RLS) от `server-only` lib файл.
 - `pgcrypto` extension за `gen_random_uuid()`.
 - При добавяне на колона, която код чете → пази forward-compatible select pattern (виж `getUserProfile`).

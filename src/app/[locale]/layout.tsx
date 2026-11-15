@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 
 import { CartProvider } from "@/components/cart-provider";
 import { FavoritesProvider } from "@/components/favorites-provider";
@@ -9,7 +9,8 @@ import { InteractionGuard } from "@/components/interaction-guard";
 import { ProductsProvider } from "@/components/products-context";
 import { SiteChrome } from "@/components/site-chrome";
 import { UserProvider } from "@/components/user-provider";
-import { getProducts } from "@/data/products";
+import { getProducts, toClientProduct } from "@/data/products";
+import { getPublicClientMessages } from "@/i18n/client-messages";
 import { isAppLocale, type AppLocale } from "@/i18n/routing";
 import { getMerchantTierStatus } from "@/lib/merchant-tier";
 import { OG_LOCALES, absoluteUrl, jsonLdScript } from "@/lib/seo";
@@ -56,10 +57,10 @@ export async function generateMetadata({ params }: Pick<LayoutProps, "params">):
       title: t("defaultTitle"),
       description: t("ogDescription"),
     },
+    // Card type only: Next.js fills twitter:title/description/image from each
+    // page's openGraph. A title here would be inherited by every page instead.
     twitter: {
       card: "summary_large_image",
-      title: t("defaultTitle"),
-      description: t("ogDescription"),
     },
   };
 }
@@ -183,8 +184,8 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
           dangerouslySetInnerHTML={jsonLdScript(await getSiteJsonLd(locale))}
         />
         <InteractionGuard />
-        <NextIntlClientProvider>
-          <ProductsProvider products={products}>
+        <NextIntlClientProvider messages={getPublicClientMessages(await getMessages())}>
+          <ProductsProvider products={products.map(toClientProduct)}>
             <UserProvider
               initialUser={initialUser}
               initialProfile={initialProfile}

@@ -8,7 +8,7 @@ import {
 } from "@/components/section-intro";
 import { isAppLocale } from "@/i18n/routing";
 import { MERCHANT_TIERS } from "@/lib/merchant-tier";
-import { buildAlternates } from "@/lib/seo";
+import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates } from "@/lib/seo";
 
 type MerchantTermsPageProps = { params: Promise<{ locale: string }> };
 
@@ -16,10 +16,18 @@ export async function generateMetadata({ params }: MerchantTermsPageProps): Prom
   const { locale } = await params;
   if (!isAppLocale(locale)) return {};
   const t = await getTranslations({ locale, namespace: "MerchantTerms" });
+  const alternates = buildAlternates(locale, "/merchant-terms");
   return {
     title: t("metaTitle"),
     description: t("metaDescription"),
-    alternates: buildAlternates(locale, "/merchant-terms"),
+    alternates,
+    openGraph: {
+      title: `${t("metaTitle")} | Brami`,
+      description: t("metaDescription"),
+      url: alternates.canonical as string,
+      locale: OG_LOCALES[locale],
+      images: DEFAULT_OG_IMAGES,
+    },
   };
 }
 
