@@ -69,5 +69,5 @@ E-commerce магазин за козметика (`https://www.brami.shop`). Е
 - **FAQ** — `src/app/[locale]/faq`, `src/lib/faq.ts`.
 - **Маркетинг** — абонати/имейли (`marketing-subscribers.ts`, `api/marketing/`).
 - **Аналитика** — посещения/посетители (`visit-tracker.tsx`, `visit-geo.ts`, `api/track/`); посещения от AI асистенти (`src/lib/ai-referrals.ts`).
-- **SEO/AI търсене** — sitemap, `robots.txt`, `/llms.txt`, JSON-LD, IndexNow (`src/lib/indexnow.ts`) → виж `docs/seo-geo-plan.md`.
+- **SEO/AI търсене** — sitemap, `robots.txt`, `/llms.txt`, JSON-LD, IndexNow (`src/lib/indexnow.ts`) → skill `brami-seo` (техника) и `brami-seo-content` (текстове на продукти/статии); план в `docs/seo-geo-plan.md`.
 - **Админ панел** — `src/app/[locale]/admin-panel/*` + `api/admin/*` (продукти, поръчки, потребители, мърчанти, промокодове, блог, FAQ, AI, статистики).
