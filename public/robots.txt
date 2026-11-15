@@ -46,4 +46,4 @@ Disallow: /en/my-orders
 Disallow: /otpisvane
 Disallow: /en/unsubscribe
 
-Sitemap: https://brami.shop/sitemap.xml
+Sitemap: https://www.brami.shop/sitemap.xml
