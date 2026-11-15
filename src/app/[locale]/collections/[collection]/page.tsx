@@ -61,7 +61,11 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
   // Category pages get the articles about that category; the saffron and
   // Bulgarian pages cover every category, so they get the newest ones.
   const relatedPosts = pickRelatedPosts(
-    collection === "face" || collection === "hair" || collection === "body" ? [collection] : [],
+    collection === "saffron-face"
+      ? ["face"]
+      : collection === "face" || collection === "hair" || collection === "body"
+        ? [collection]
+        : [],
     posts,
     locale,
     { fill: true },

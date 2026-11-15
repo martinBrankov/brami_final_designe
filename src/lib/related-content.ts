@@ -82,9 +82,15 @@ export function pickRelatedProducts(text: string, products: Product[], limit = 4
   return ranked.length ? ranked.map(({ product }) => product) : products.slice(0, limit);
 }
 
-/** Collections to link next to the related products: saffron cosmetics first, then the detected categories. */
+/**
+ * Collections to link next to the related products: saffron cosmetics first,
+ * then the saffron collection of each detected category.
+ */
 export function pickRelatedCollections(text: string): CollectionKey[] {
-  return ["saffron", ...detectCategories(text)];
+  return [
+    "saffron",
+    ...detectCategories(text).map((category) => (category === "face" ? "saffron-face" : category)),
+  ];
 }
 
 /**

@@ -90,10 +90,11 @@ const helpLinks = [
 
 const collectionLinks = [
   { href: "/collections/saffron", key: "saffronCosmetics" },
-  { href: "/collections/bulgarian", key: "bulgarianCosmetics" },
-  { href: "/collections/face", key: "faceCare" },
+  { href: "/collections/saffron-face", key: "saffronFaceCare" },
   { href: "/collections/hair", key: "hairCare" },
   { href: "/collections/body", key: "bodyCare" },
+  { href: "/collections/bulgarian", key: "bulgarianCosmetics" },
+  { href: "/collections/face", key: "faceCare" },
 ] as const;
 
 const socialLinks = [

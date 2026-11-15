@@ -271,6 +271,9 @@ export default async function ProductDetailPage({
   const inSaffronCollection = filterCollectionProducts("saffron", [product]).length > 0;
   const collectionPages: SeeAlsoPage[] = [
     ...(inSaffronCollection ? (["saffronCosmetics"] as const) : []),
+    ...(filterCollectionProducts("saffron-face", [product]).length
+      ? (["saffronFaceCare"] as const)
+      : []),
     ...product.category.map((c) => CATEGORY_PAGES[c]),
     ...(filterCollectionProducts("bulgarian", [product]).length
       ? (["bulgarianCosmetics"] as const)

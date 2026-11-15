@@ -27,8 +27,9 @@ export const routing = defineRouting({
     "/products": { bg: "/produkti", en: "/products" },
     "/products/[slug]": { bg: "/produkti/[slug]", en: "/products/[slug]" },
     "/collections/face": { bg: "/kozmetika-za-litse", en: "/face-care" },
-    "/collections/hair": { bg: "/kozmetika-za-kosa", en: "/hair-care" },
-    "/collections/body": { bg: "/kozmetika-za-tyalo", en: "/body-care" },
+    "/collections/saffron-face": { bg: "/kozmetika-s-shafran-za-litse", en: "/saffron-face-care" },
+    "/collections/hair": { bg: "/kozmetika-s-shafran-za-kosa", en: "/saffron-hair-care" },
+    "/collections/body": { bg: "/kozmetika-s-shafran-za-tyalo", en: "/saffron-body-care" },
     "/collections/saffron": { bg: "/kozmetika-s-shafran", en: "/saffron-cosmetics" },
     "/collections/bulgarian": {
       bg: "/balgarska-naturalna-kozmetika",

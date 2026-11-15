@@ -72,7 +72,7 @@ description: SEO и AI оптимизация на съдържанието на
 - Не сменяй slug на публикуван въпрос (няма пренасочване).
 
 ## Тематични страници (колекции)
-- `/kozmetika-za-litse`, `/kozmetika-za-kosa`, `/kozmetika-za-tyalo`, `/kozmetika-s-shafran`, `/balgarska-naturalna-kozmetika` (+ английските). Отговарят точно на примерните въпроси към AI.
+- `/kozmetika-s-shafran`, `/kozmetika-s-shafran-za-litse`, `/kozmetika-s-shafran-za-kosa`, `/kozmetika-s-shafran-za-tyalo`, `/balgarska-naturalna-kozmetika`, `/kozmetika-za-litse` (+ английските). Отговарят точно на примерните въпроси към AI.
 - Текстовете са в `messages/{bg,en}/products.json` → `Collections.<face|hair|body|saffron|bulgarian>`: `title`, `metaTitle`, `metaDescription`, `lead`, `body`, `faq`. Продуктите се избират автоматично (`filterCollectionProducts` в `src/lib/collections.ts`).
 - В `body` пиши кои продукти за какво са (сравнение), откъде са марките и какво ги прави натурални; във `faq` — 3–5 въпроса „кой продукт да избера за…“.
 

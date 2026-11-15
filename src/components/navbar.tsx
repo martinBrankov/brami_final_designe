@@ -6,6 +6,7 @@ import {
   type CSSProperties,
   useDeferredValue,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -177,6 +178,7 @@ export function Navbar() {
   const searchDialogRef = useRef<HTMLDivElement | null>(null);
   const searchResultsRef = useRef<HTMLDivElement | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
+  const menuContentRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const t = useTranslations("Nav");
   const { itemCount } = useCart();
@@ -189,6 +191,7 @@ export function Navbar() {
   const baseNavItems = [
     { href: "/", label: t("home") },
     { href: "/products", label: t("products") },
+    { href: "/collections/saffron", label: t("saffronCosmetics") },
     { href: "/about", label: t("about") },
     { href: "/beauty-care", label: t("beautyCare") },
     { href: "/partners", label: t("partners") },
@@ -199,7 +202,7 @@ export function Navbar() {
   // on a row of its own.
   const navItems = isPhoneLandscapeMenuLayout
     ? [...baseNavItems, faqNavItem]
-    : [...baseNavItems.slice(0, 4), faqNavItem, ...baseNavItems.slice(4)];
+    : [...baseNavItems.slice(0, 5), faqNavItem, ...baseNavItems.slice(5)];
   const quickLinks = [
     {
       href: "https://www.facebook.com/Bramitrade",
@@ -380,6 +383,44 @@ export function Navbar() {
     setIsSearchOpen(false);
   }
 
+  // The page links always stay in the menu. When the drawer is too short for
+  // everything, the quick links give way one by one (lowest
+  // data-menu-optional first): e-mail, language, call, Instagram, Facebook
+  // and finally the whole block.
+  useLayoutEffect(() => {
+    const content = menuContentRef.current;
+    if (!isMenuOpen || !content) {
+      return;
+    }
+
+    const fitQuickLinks = () => {
+      const optional = Array.from(
+        content.querySelectorAll<HTMLElement>("[data-menu-optional]"),
+      ).sort((a, b) => Number(a.dataset.menuOptional) - Number(b.dataset.menuOptional));
+
+      optional.forEach((element) => {
+        element.style.display = "";
+      });
+      // Landscape puts the quick links in their own column; they take no height from the links.
+      if (isPhoneLandscapeMenuLayout) {
+        return;
+      }
+      for (const element of optional) {
+        if (content.scrollHeight <= content.clientHeight + 1) {
+          break;
+        }
+        element.style.display = "none";
+      }
+    };
+
+    fitQuickLinks();
+    window.addEventListener("resize", fitQuickLinks);
+
+    return () => {
+      window.removeEventListener("resize", fitQuickLinks);
+    };
+  }, [isMenuOpen, isPhoneLandscapeMenuLayout]);
+
   const menuDrawerClassName = `relative z-10 flex h-full w-[208px] shrink-0 flex-col border-r border-[#e9deef] bg-[#fdfdfd] px-4 pb-5 pt-3 shadow-[0_24px_80px_rgba(67,40,85,0.18)] sm:w-[218px] sm:px-5 sm:pb-6 sm:pt-4${
     isPhoneLandscapeMenuLayout
       ? " w-[min(94vw,520px)] px-5 pb-4 pt-2.5 sm:w-[min(94vw,548px)] sm:pt-3"
@@ -393,7 +434,7 @@ export function Navbar() {
   }`;
   const menuContentClassName = isPhoneLandscapeMenuLayout
     ? "grid min-h-0 flex-1 grid-cols-[132px_1fr] items-start justify-items-start gap-5 overflow-y-auto"
-    : "flex flex-1 flex-col";
+    : "flex min-h-0 flex-1 flex-col";
   const quickLinksColumnClassName = `order-2 w-full pt-6 text-left${
     isPhoneLandscapeMenuLayout
       ? " order-1 mt-0 flex flex-col items-start justify-start self-start border-r border-[#ece3f2] pr-4 pt-0 text-left"
@@ -750,18 +791,20 @@ export function Navbar() {
               <svg viewBox="0 0 14 14" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg>
             </button>
 
-            <div className={menuContentClassName}>
+            <div ref={menuContentRef} className={menuContentClassName}>
               <div className={quickLinksColumnClassName}>
                 <div className={quickLinksLogoClassName}>
                   <Image src={logo} alt="Brami" className="h-auto w-[86px]" />
                 </div>
 
-                <div className={quickLinksBodyClassName}>
+                <div className={quickLinksBodyClassName} data-menu-optional={6}>
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8f72a7]">
                     {t("quickLinks")}
                   </p>
                   <div className={quickLinksListClassName}>
-                    {quickLinks.map((item) => {
+                    {quickLinks.map((item, index) => {
+                      // Facebook is the last quick link to give way.
+                      const optionalOrder = 5 - index;
                       const content = (
                         <>
                           <span className={quickLinkIconClassName}>{item.icon}</span>
@@ -775,6 +818,7 @@ export function Navbar() {
                             key={item.label}
                             href={item.href}
                             aria-label={item.label}
+                            data-menu-optional={optionalOrder}
                             className={quickLinkItemClassName}
                           >
                             {content}
@@ -790,6 +834,7 @@ export function Navbar() {
                             target="_blank"
                             rel="noreferrer"
                             aria-label={item.label}
+                            data-menu-optional={optionalOrder}
                             className={quickLinkItemClassName}
                           >
                             {content}
@@ -803,20 +848,23 @@ export function Navbar() {
                           href={item.href}
                           aria-label={item.label}
                           onClick={() => setIsMenuOpen(false)}
+                          data-menu-optional={optionalOrder}
                           className={quickLinkItemClassName}
                         >
                           {content}
                         </a>
                       );
                     })}
-                    <LocaleSwitcher
-                      className={quickLinkItemClassName}
-                      iconClassName={quickLinkIconClassName}
-                      labelClassName={quickLinkLabelClassName}
-                      onNavigate={() => setIsMenuOpen(false)}
-                    />
+                    <div className="w-full" data-menu-optional={2}>
+                      <LocaleSwitcher
+                        className={quickLinkItemClassName}
+                        iconClassName={quickLinkIconClassName}
+                        labelClassName={quickLinkLabelClassName}
+                        onNavigate={() => setIsMenuOpen(false)}
+                      />
+                    </div>
                   </div>
-                  <div className={emailBlockClassName}>
+                  <div className={emailBlockClassName} data-menu-optional={1}>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8f72a7]">
                       {t("email")}
                     </p>

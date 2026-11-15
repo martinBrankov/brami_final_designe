@@ -111,7 +111,7 @@
     "moreCollections": "Explore more",
     "face": {
       "title": "Natural face care",
-      "metaTitle": "Saffron face care – natural creams and serums",
+      "metaTitle": "Natural face care – creams, serums and masks",
       "metaDescription": "Natural saffron face creams, vitamin C serums, masks, micellar water and sunscreen from Bulgarian brands. Order online with delivery across Bulgaria.",
       "lead": "Creams, serums, masks and cleansers for the face from Bulgarian brands.",
       "body": [
@@ -134,8 +134,8 @@
       ]
     },
     "hair": {
-      "title": "Natural hair care",
-      "metaTitle": "Natural saffron shampoo and hair conditioner",
+      "title": "Saffron hair care",
+      "metaTitle": "Saffron hair care – shampoo and conditioner",
       "metaDescription": "Natural saffron shampoo, hair conditioner and 2-in-1 wash by Saffron Adela Sunny – made in Bulgaria with Bulgarian saffron. Order online.",
       "lead": "Shampoos, conditioner and 2-in-1 products with saffron, created and made in Bulgaria.",
       "body": [
@@ -158,8 +158,8 @@
       ]
     },
     "body": {
-      "title": "Natural body care",
-      "metaTitle": "Natural saffron shower gel, body lotion and soap",
+      "title": "Saffron body care",
+      "metaTitle": "Saffron body care – shower gel, lotion and soap",
       "metaDescription": "Natural shower gels, body cream-lotion and handmade glycerin soap with saffron from Bulgaria. Gift sets and travel sizes.",
       "lead": "Shower gels, lotion and soap with saffron, gift sets and travel sizes.",
       "body": [
@@ -203,6 +203,31 @@
         {
           "question": "What is ISO 3632?",
           "answer": "ISO 3632 is the international standard that defines saffron quality – colour, aroma and flavour. The saffron in Saffron Adela Sunny products is 100% natural and meets this standard."
+        }
+      ]
+    },
+    "saffron-face": {
+      "title": "Saffron face care",
+      "metaTitle": "Saffron face care – cream, serum and saffron water",
+      "metaDescription": "Saffron face care: a cream with hyaluronic acid and Bulgarian saffron, a serum with saffron, pearl and vitamin C, and saffron water. Delivery across Bulgaria.",
+      "lead": "Face cream, serum and saffron water – face care with saffron from Bulgarian brands.",
+      "body": [
+        "These are the saffron products for the face in the shop: the Saffron Adela Sunny saffron face cream, saffron water (hydrosol) and the Shafpol Beauty face serum with saffron, pearl and vitamin C.",
+        "The saffron face cream (50 ml) combines hyaluronic acid, 100% natural saffron to ISO 3632, peach oil, Brazil nut oil, aloe vera and vitamin E. The saffron for the Saffron Adela Sunny line is grown in Bulgaria.",
+        "If you are also looking for products without saffron – micellar water, masks, day and night cream or sunscreen – see the whole “Natural face care” category."
+      ],
+      "faq": [
+        {
+          "question": "Which saffron products for the face does the shop offer?",
+          "answer": "Three: the Saffron Adela Sunny saffron face cream (50 ml), saffron water (hydrosol) and the Shafpol Beauty face serum with saffron, pearl and vitamin C."
+        },
+        {
+          "question": "What does the saffron face cream contain?",
+          "answer": "Hyaluronic acid, 100% natural saffron to ISO 3632, peach oil, Brazil nut oil, aloe vera and vitamin E. It is suitable for the face, neck and décolleté."
+        },
+        {
+          "question": "Is the saffron in the face cream Bulgarian?",
+          "answer": "Yes. Brami grows saffron in Bulgaria and uses it in the Saffron Adela Sunny line. The saffron is 100% natural and meets the ISO 3632 standard."
         }
       ]
     },

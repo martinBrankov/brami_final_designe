@@ -9,6 +9,7 @@ import { COLLECTION_PATHS } from "@/lib/collections";
 export const SEE_ALSO_PAGES = {
   products: "/products",
   saffronCosmetics: COLLECTION_PATHS.saffron,
+  saffronFaceCare: COLLECTION_PATHS["saffron-face"],
   faceCare: COLLECTION_PATHS.face,
   hairCare: COLLECTION_PATHS.hair,
   bodyCare: COLLECTION_PATHS.body,
@@ -28,10 +29,11 @@ export type SeeAlsoPage = keyof typeof SEE_ALSO_PAGES;
 
 export const COLLECTION_PAGES = [
   "saffronCosmetics",
-  "bulgarianCosmetics",
-  "faceCare",
+  "saffronFaceCare",
   "hairCare",
   "bodyCare",
+  "bulgarianCosmetics",
+  "faceCare",
 ] as const satisfies readonly SeeAlsoPage[];
 
 type SeeAlsoProps = { locale: AppLocale; pages: readonly SeeAlsoPage[] };

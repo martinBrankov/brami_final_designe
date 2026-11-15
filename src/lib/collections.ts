@@ -5,7 +5,10 @@
 import type { Product } from "@/data/products";
 
 // Order = SEO priority: saffron cosmetics first, natural cosmetics second.
-export const COLLECTION_KEYS = ["saffron", "bulgarian", "face", "hair", "body"] as const;
+// "hair" and "body" are saffron collections too: every hair and body product
+// is from the saffron line. If a product without saffron joins them, split the
+// category the way face is split ("saffron-face" + "face").
+export const COLLECTION_KEYS = ["saffron", "saffron-face", "hair", "body", "bulgarian", "face"] as const;
 export type CollectionKey = (typeof COLLECTION_KEYS)[number];
 
 export const COLLECTION_PATHS = {
@@ -13,6 +16,7 @@ export const COLLECTION_PATHS = {
   hair: "/collections/hair",
   body: "/collections/body",
   saffron: "/collections/saffron",
+  "saffron-face": "/collections/saffron-face",
   bulgarian: "/collections/bulgarian",
 } as const satisfies Record<CollectionKey, string>;
 
@@ -31,6 +35,13 @@ export function isCollectionKey(value: string): value is CollectionKey {
   return (COLLECTION_KEYS as readonly string[]).includes(value);
 }
 
+function isSaffronProduct(product: Product): boolean {
+  return (
+    product.brand === "brami" ||
+    SAFFRON_PATTERN.test(`${product.name} ${product.slugs.bg} ${product.description}`)
+  );
+}
+
 export function filterCollectionProducts(key: CollectionKey, products: Product[]): Product[] {
   switch (key) {
     case "face":
@@ -38,10 +49,10 @@ export function filterCollectionProducts(key: CollectionKey, products: Product[]
     case "body":
       return products.filter((product) => product.category.includes(key));
     case "saffron":
+      return products.filter(isSaffronProduct);
+    case "saffron-face":
       return products.filter(
-        (product) =>
-          product.brand === "brami" ||
-          SAFFRON_PATTERN.test(`${product.name} ${product.slugs.bg} ${product.description}`),
+        (product) => product.category.includes("face") && isSaffronProduct(product),
       );
     case "bulgarian":
       return products.filter((product) => BULGARIAN_BRANDS.includes(product.brand));

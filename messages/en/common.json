@@ -14,6 +14,7 @@
   "Nav": {
     "home": "Home",
     "products": "Products",
+    "saffronCosmetics": "Saffron cosmetics",
     "about": "About us",
     "beautyCare": "Beauty & care",
     "partners": "Partners",
@@ -70,10 +71,11 @@
       "terms": "Terms and conditions",
       "partners": "Partners",
       "privacyPolicy": "Privacy policy",
-      "faceCare": "Face care",
-      "hairCare": "Hair care",
-      "bodyCare": "Body care",
-      "bulgarianCosmetics": "Bulgarian natural cosmetics"
+      "faceCare": "Natural face care",
+      "hairCare": "Saffron hair care",
+      "bodyCare": "Saffron body care",
+      "bulgarianCosmetics": "Bulgarian natural cosmetics",
+      "saffronFaceCare": "Saffron face care"
     },
     "categories": "Categories",
     "seeAlso": "See also"
