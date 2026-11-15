@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { after, NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -25,10 +26,10 @@ export async function POST(request: Request, { params }: RouteContext) {
   const isArticle = body?.taskType === "article";
 
   if (!instruction) {
-    return NextResponse.json({ error: "Инструкцията е празна." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Инструкцията е празна.") }, { status: 400 });
   }
   if (instruction.length > 4000) {
-    return NextResponse.json({ error: "Инструкцията е твърде дълга (макс 4000)." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Инструкцията е твърде дълга (макс 4000).") }, { status: 400 });
   }
 
   try {
@@ -58,6 +59,6 @@ export async function POST(request: Request, { params }: RouteContext) {
     return NextResponse.json({ taskId }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Неуспешно стартиране на задача.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: await localizeApiError(message) }, { status: 500 });
   }
 }

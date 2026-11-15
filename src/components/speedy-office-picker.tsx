@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 export type SpeedyOffice = {
@@ -21,18 +22,18 @@ export function formatOfficeLabel(office: SpeedyOffice) {
   return [heading, detail].filter(Boolean).join(", ");
 }
 
-function getSpeedyLocationTypeLabel(type?: SpeedyOffice["type"]) {
-  return type === "APT" ? "Автомат" : "Офис";
+type Translate = (key: string) => string;
+
+function getSpeedyLocationTypeLabel(t: Translate, type?: SpeedyOffice["type"]) {
+  return type === "APT" ? t("speedy.locker") : t("speedy.office");
 }
 
-function getOfficeSearchPlaceholder(kind: SpeedyOfficeKind) {
-  return kind === "locker"
-    ? "Търси по автомат, град или адрес"
-    : "Търси по офис, град или адрес";
+function getOfficeSearchPlaceholder(t: Translate, kind: SpeedyOfficeKind) {
+  return kind === "locker" ? t("speedy.searchLocker") : t("speedy.searchOffice");
 }
 
-function getOfficeEmptyLabel(kind: SpeedyOfficeKind) {
-  return kind === "locker" ? "Няма намерени автомати." : "Няма намерени офиси.";
+function getOfficeEmptyLabel(t: Translate, kind: SpeedyOfficeKind) {
+  return kind === "locker" ? t("speedy.noLockers") : t("speedy.noOffices");
 }
 
 export function SpeedyOfficePicker({
@@ -48,6 +49,7 @@ export function SpeedyOfficePicker({
   onSelect: (office: SpeedyOffice | null) => void;
   inline?: boolean;
 }) {
+  const t = useTranslations("Cart");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isOpen, setIsOpen] = useState(inline);
   const [query, setQuery] = useState("");
@@ -110,8 +112,8 @@ export function SpeedyOfficePicker({
   const triggerLabel = selected
     ? formatOfficeLabel(selected)
     : kind === "locker"
-      ? "Избери автомат на Спиди"
-      : "Избери офис на Спиди";
+      ? t("speedy.chooseLocker")
+      : t("speedy.chooseOffice");
 
   const selectedChip = selected ? (
     <div className="rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] p-2">
@@ -119,7 +121,7 @@ export function SpeedyOfficePicker({
         <div className="min-w-0 flex-1">
           <span className="block text-sm font-semibold text-[#432855]">
             {(selected.address.siteName ?? selected.name)} -{" "}
-            {getSpeedyLocationTypeLabel(selected.type)}
+            {getSpeedyLocationTypeLabel(t, selected.type)}
           </span>
           <span className="mt-1 block text-sm leading-5 text-[#6b587f]">
             {selected.address.fullAddressString ?? selected.name}
@@ -127,7 +129,7 @@ export function SpeedyOfficePicker({
         </div>
         <button
           type="button"
-          aria-label="Премахни избрания офис"
+          aria-label={t("speedy.removeSelected")}
           onClick={() => {
             onSelect(null);
             setQuery("");
@@ -162,7 +164,7 @@ export function SpeedyOfficePicker({
                 : "text-[#6b587f] hover:text-[#432855]"
             }`}
           >
-            Офис
+            {t("speedy.office")}
           </button>
           <button
             type="button"
@@ -173,7 +175,7 @@ export function SpeedyOfficePicker({
                 : "text-[#6b587f] hover:text-[#432855]"
             }`}
           >
-            Автомат
+            {t("speedy.locker")}
           </button>
         </div>
       ) : null}
@@ -185,7 +187,7 @@ export function SpeedyOfficePicker({
         autoCorrect="off"
         autoCapitalize="none"
         spellCheck={false}
-        placeholder={getOfficeSearchPlaceholder(kind)}
+        placeholder={getOfficeSearchPlaceholder(t, kind)}
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         className="mb-2 h-11 w-full rounded-[14px] border border-[#ddd3e4] bg-white px-4 text-[#432855] outline-none transition focus:border-[#9f79ac]"
@@ -194,10 +196,10 @@ export function SpeedyOfficePicker({
 
       <div className="max-h-64 overflow-y-auto">
         {isLoading ? (
-          <p className="px-2 py-3 text-sm text-[#8f72a7]">Търсене...</p>
+          <p className="px-2 py-3 text-sm text-[#8f72a7]">{t("speedy.searching")}</p>
         ) : query.trim().length < 2 ? (
           <p className="px-2 py-3 text-sm text-[#8f72a7]">
-            Въведи поне 2 символа за търсене.
+            {t("speedy.minChars")}
           </p>
         ) : results.length ? (
           <div className="space-y-2">
@@ -217,7 +219,7 @@ export function SpeedyOfficePicker({
                 >
                   <span className="text-sm font-semibold text-[#432855]">
                     {(office.address.siteName ?? office.name)} -{" "}
-                    {getSpeedyLocationTypeLabel(office.type)}
+                    {getSpeedyLocationTypeLabel(t, office.type)}
                   </span>
                   <span className="mt-1 text-sm leading-5 text-[#6b587f]">
                     {office.address.fullAddressString ?? office.name}
@@ -227,7 +229,7 @@ export function SpeedyOfficePicker({
             })}
           </div>
         ) : (
-          <p className="px-2 py-3 text-sm text-[#6b587f]">{getOfficeEmptyLabel(kind)}</p>
+          <p className="px-2 py-3 text-sm text-[#6b587f]">{getOfficeEmptyLabel(t, kind)}</p>
         )}
       </div>
     </div>

@@ -1,4 +1,5 @@
-﻿import type { ComponentType, SVGProps } from "react";
+﻿import { useTranslations } from "next-intl";
+import type { ComponentType, SVGProps } from "react";
 import { FREE_SHIPPING_THRESHOLD_EUR } from "@/data/products";
 
 type StripIconProps = SVGProps<SVGSVGElement>;
@@ -51,18 +52,6 @@ export type InfoStripItem = {
   text: string;
 };
 
-const defaultItems: InfoStripItem[] = [
-  {
-    icon: DeliveryIcon,
-    title: "Безплатна доставка",
-    text: `над €${FREE_SHIPPING_THRESHOLD_EUR}`,
-  },
-  {
-    icon: LeafIcon,
-    title: "Натурални",
-    text: "съставки",
-  },
-];
 
 type InfoStripProps = {
   items?: InfoStripItem[];
@@ -70,13 +59,26 @@ type InfoStripProps = {
 };
 
 export function InfoStrip({
-  items = defaultItems,
+  items,
   className = "",
 }: InfoStripProps) {
+  const t = useTranslations("InfoStrip");
+  const stripItems = items ?? [
+    {
+      icon: DeliveryIcon,
+      title: t("freeDelivery"),
+      text: t("over", { amount: FREE_SHIPPING_THRESHOLD_EUR }),
+    },
+    {
+      icon: LeafIcon,
+      title: t("natural"),
+      text: t("ingredients"),
+    },
+  ];
   return (
     <section className={`w-full border-b border-[#d8d0de] bg-white/55 ${className}`}>
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-4 px-6 py-4 lg:px-14">
-        {items.map(({ icon: Icon, title, text }) => (
+        {stripItems.map(({ icon: Icon, title, text }) => (
           <div
             key={`${title}-${text}`}
             className="flex flex-col items-center gap-2 text-center text-[#4B2E6F]"

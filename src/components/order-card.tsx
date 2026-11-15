@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
 import type { UserOrder } from "@/lib/user-orders";
@@ -9,12 +9,12 @@ function formatPrice(value: number) {
   return `€${value.toFixed(2)}`;
 }
 
-function formatOrderDate(value: string) {
+function formatOrderDate(value: string, locale: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return value;
   }
-  return date.toLocaleDateString("bg-BG", {
+  return date.toLocaleDateString(locale === "en" ? "en-GB" : "bg-BG", {
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -39,6 +39,9 @@ function ChevronIcon({ isOpen }: { isOpen: boolean }) {
 }
 
 export function OrderCard({ order }: { order: UserOrder }) {
+  const t = useTranslations("OrderCard");
+  const tStatus = useTranslations("OrderStatus");
+  const locale = useLocale();
   const [isOpen, setIsOpen] = useState(false);
   const itemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   // The stored subtotal is already discounted, while each item keeps its full
@@ -57,17 +60,17 @@ export function OrderCard({ order }: { order: UserOrder }) {
       >
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8f72a7]">
-            Поръчка #{order.orderNumber}
+            {t("order", { number: order.orderNumber })}
           </p>
           <p className="mt-1 text-sm text-[#6b587f]">
-            {formatOrderDate(order.orderCreatedAt || order.createdAt)} · {itemsCount}{" "}
-            {itemsCount === 1 ? "продукт" : "продукта"}
+            {formatOrderDate(order.orderCreatedAt || order.createdAt, locale)} ·{" "}
+            {t("items", { count: itemsCount })}
           </p>
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4">
           <span className="inline-flex items-center rounded-full border border-[#d9c8e1] bg-[#faf7fc] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#432855]">
-            {order.status}
+            {tStatus.has(order.status) ? tStatus(order.status) : order.status}
           </span>
           <span className="text-base font-semibold text-[#432855]">
             {formatPrice(order.total)}
@@ -113,12 +116,12 @@ export function OrderCard({ order }: { order: UserOrder }) {
 
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   {item.productUrl ? (
-                    <Link
+                    <a
                       href={item.productUrl}
                       className="truncate text-sm font-medium text-[#432855] transition hover:underline"
                     >
                       {item.productName}
-                    </Link>
+                    </a>
                   ) : (
                     <span className="truncate text-sm font-medium text-[#432855]">
                       {item.productName}
@@ -126,7 +129,7 @@ export function OrderCard({ order }: { order: UserOrder }) {
                   )}
                   <span className="text-xs text-[#6b587f]">{item.packaging}</span>
                   <span className="text-xs text-[#6b587f]">
-                    {item.quantity} бр. × {formatPrice(item.unitPrice)}
+                    {t("quantity", { quantity: item.quantity, price: formatPrice(item.unitPrice) })}
                   </span>
                 </div>
 
@@ -139,25 +142,25 @@ export function OrderCard({ order }: { order: UserOrder }) {
 
           <dl className="mt-6 grid gap-x-10 gap-y-2 text-sm sm:grid-cols-2">
             <div className="flex justify-between gap-4 border-t border-[#ece3f2] pt-2">
-              <dt className="text-[#6b587f]">Доставка</dt>
+              <dt className="text-[#6b587f]">{t("delivery")}</dt>
               <dd className="text-right text-[#432855]">{order.deliveryMethodLabel}</dd>
             </div>
             <div className="flex justify-between gap-4 border-t border-[#ece3f2] pt-2">
-              <dt className="text-[#6b587f]">Адрес</dt>
+              <dt className="text-[#6b587f]">{t("address")}</dt>
               <dd className="text-right text-[#432855]">{order.deliveryDestination}</dd>
             </div>
             <div className="flex justify-between gap-4 border-t border-[#ece3f2] pt-2">
-              <dt className="text-[#6b587f]">Продукти</dt>
+              <dt className="text-[#6b587f]">{t("products")}</dt>
               <dd className="text-right text-[#432855]">{formatPrice(itemsTotal)}</dd>
             </div>
             <div className="flex justify-between gap-4 border-t border-[#ece3f2] pt-2">
-              <dt className="text-[#6b587f]">Транспорт</dt>
+              <dt className="text-[#6b587f]">{t("shipping")}</dt>
               <dd className="text-right text-[#432855]">{formatPrice(order.shipping)}</dd>
             </div>
             {hasDiscount ? (
               <div className="flex justify-between gap-4 border-t border-[#ece3f2] pt-2 sm:col-span-2">
                 <dt className="text-[#6b587f]">
-                  {order.promoCode ? `Отстъпка · промо код ${order.promoCode}` : "Отстъпка"}
+                  {order.promoCode ? t("discountWithCode", { code: order.promoCode }) : t("discount")}
                 </dt>
                 <dd className="text-right font-medium text-[#2e7d46]">
                   −{formatPrice(discountAmount)}
@@ -165,7 +168,7 @@ export function OrderCard({ order }: { order: UserOrder }) {
               </div>
             ) : null}
             <div className="flex justify-between gap-4 border-t border-[#ece3f2] pt-2 sm:col-span-2">
-              <dt className="font-semibold text-[#432855]">Общо</dt>
+              <dt className="font-semibold text-[#432855]">{t("total")}</dt>
               <dd className="text-right text-base font-semibold text-[#432855]">
                 {formatPrice(order.total)}
               </dd>

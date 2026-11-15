@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getMerchantTierStatus } from "@/lib/merchant-tier";
 import { deleteMerchantPromoCode, updateMerchantPromoCode } from "@/lib/promo-codes";
 import { requireMerchantSession } from "@/lib/user-auth";
+import { localizeApiError } from "@/lib/api-i18n";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,11 +13,11 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function PATCH(request: Request, { params }: RouteContext) {
   const merchant = await requireMerchantSession();
   if (!merchant) {
-    return NextResponse.json({ error: "Само за търговци." }, { status: 401 });
+    return NextResponse.json({ error: await localizeApiError("Само за търговци.") }, { status: 401 });
   }
   if (!merchant.profile.merchantTermsAcceptedAt) {
     return NextResponse.json(
-      { error: "Приеми условията за търговец, за да управляваш кодове." },
+      { error: await localizeApiError("Приеми условията за търговец, за да управляваш кодове.") },
       { status: 403 },
     );
   }
@@ -54,7 +55,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return NextResponse.json({ code: updated });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to update code." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Failed to update code.") },
       { status: 400 },
     );
   }
@@ -63,11 +64,11 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 export async function DELETE(_: Request, { params }: RouteContext) {
   const merchant = await requireMerchantSession();
   if (!merchant) {
-    return NextResponse.json({ error: "Само за търговци." }, { status: 401 });
+    return NextResponse.json({ error: await localizeApiError("Само за търговци.") }, { status: 401 });
   }
   if (!merchant.profile.merchantTermsAcceptedAt) {
     return NextResponse.json(
-      { error: "Приеми условията за търговец, за да управляваш кодове." },
+      { error: await localizeApiError("Приеми условията за търговец, за да управляваш кодове.") },
       { status: 403 },
     );
   }
@@ -77,7 +78,7 @@ export async function DELETE(_: Request, { params }: RouteContext) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to delete code." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Failed to delete code.") },
       { status: 400 },
     );
   }

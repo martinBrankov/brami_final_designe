@@ -1,8 +1,11 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 
 export function ArticleSubscriptionForm() {
+  const t = useTranslations("Subscription");
+  const locale = useLocale();
   const [email, setEmail] = useState("");
   const [website, setWebsite] = useState("");
   const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(
@@ -19,7 +22,7 @@ export function ArticleSubscriptionForm() {
       const response = await fetch("/api/marketing/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, website, issuedAt }),
+        body: JSON.stringify({ email, website, issuedAt, locale }),
       });
 
       const result = (await response.json().catch(() => null)) as
@@ -29,14 +32,14 @@ export function ArticleSubscriptionForm() {
       if (!response.ok || !result?.ok) {
         setFeedback({
           kind: "error",
-          message: result?.error || "Абонаментът не беше записан. Опитай отново.",
+          message: result?.error || t("error"),
         });
         return;
       }
 
       setFeedback({
         kind: "success",
-        message: "Благодарим. Имейлът е добавен към списъка за маркетинг съобщения.",
+        message: t("success"),
       });
       setEmail("");
       setWebsite("");
@@ -49,14 +52,13 @@ export function ArticleSubscriptionForm() {
         <div className="grid gap-8 py-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-12 lg:py-16">
           <div className="max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#8f72a7]">
-              Нови статии
+              {t("eyebrow")}
             </p>
             <h2 className="mt-3 font-serif text-3xl leading-tight text-[#432855] sm:text-4xl">
-              Абонирай се за следващите теми за красота и грижа
+              {t("title")}
             </h2>
             <p className="mt-4 text-base leading-7 text-[#6b587f]">
-              Получавай нови статии, промоции и подбрани предложения от Brami.
-              Можеш да се отпишеш по всяко време от линка в имейлите.
+              {t("text")}
             </p>
           </div>
 
@@ -74,7 +76,7 @@ export function ArticleSubscriptionForm() {
               </label>
 
               <label htmlFor="article-email" className="text-sm font-medium text-[#5f4b73]">
-                Имейл адрес
+                {t("emailLabel")}
               </label>
               <input
                 id="article-email"
@@ -94,15 +96,14 @@ export function ArticleSubscriptionForm() {
                 disabled={isPending}
                 className="inline-flex h-[52px] items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isPending ? "Запис..." : "Абонирай ме"}
+                {isPending ? t("saving") : t("submit")}
               </button>
               <p
                 className={`min-h-6 text-sm leading-6 ${
                   feedback?.kind === "error" ? "text-[#9a3f3f]" : "text-[#6b587f]"
                 }`}
               >
-                {feedback?.message ??
-                  "Ще използваме имейла само за маркетинг съобщения от Brami."}
+                {feedback?.message ?? t("note")}
               </p>
             </form>
           </div>

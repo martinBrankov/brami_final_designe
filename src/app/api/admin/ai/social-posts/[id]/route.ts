@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -24,7 +25,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   await requireAdminSession();
   const { id } = await params;
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
-  if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  if (!body) return NextResponse.json({ error: await localizeApiError("Invalid body") }, { status: 400 });
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (typeof body.caption === "string") updates.caption = body.caption;
@@ -36,7 +37,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   const supabase = createSupabaseAdminClient();
   const { error } = await supabase.from("social_posts").update(updates).eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: await localizeApiError(error.message) }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
 
@@ -52,10 +53,10 @@ export async function POST(_request: Request, { params }: RouteContext) {
     .eq("id", id)
     .maybeSingle<SocialPostRow>();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  if (!post) return NextResponse.json({ error: "Постът не е намерен." }, { status: 404 });
+  if (error) return NextResponse.json({ error: await localizeApiError(error.message) }, { status: 500 });
+  if (!post) return NextResponse.json({ error: await localizeApiError("Постът не е намерен.") }, { status: 404 });
   if (post.status === "published") {
-    return NextResponse.json({ error: "Постът вече е публикуван." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Постът вече е публикуван.") }, { status: 400 });
   }
 
   const caption = buildCaption(post.caption, post.hashtags ?? []);
@@ -84,7 +85,7 @@ export async function POST(_request: Request, { params }: RouteContext) {
       .from("social_posts")
       .update({ status: "failed", publish_error: message, updated_at: new Date().toISOString() })
       .eq("id", id);
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json({ error: await localizeApiError(message) }, { status: 502 });
   }
 }
 
@@ -93,6 +94,6 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
   const { id } = await params;
   const supabase = createSupabaseAdminClient();
   const { error } = await supabase.from("social_posts").delete().eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: await localizeApiError(error.message) }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

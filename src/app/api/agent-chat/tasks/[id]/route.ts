@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -15,7 +16,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const { id } = await params;
   const task = await getTaskDetail(id);
   if (!task) {
-    return NextResponse.json({ error: "Задачата не е намерена." }, { status: 404 });
+    return NextResponse.json({ error: await localizeApiError("Задачата не е намерена.") }, { status: 404 });
   }
   return NextResponse.json({ task });
 }

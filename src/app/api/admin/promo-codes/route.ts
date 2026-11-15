@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireFullAdminSession } from "@/lib/admin-auth";
@@ -13,7 +14,7 @@ export async function GET() {
     return NextResponse.json({ codes });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to list codes." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Failed to list codes.") },
       { status: 500 },
     );
   }
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ code });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to create code." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Failed to create code.") },
       { status: 400 },
     );
   }

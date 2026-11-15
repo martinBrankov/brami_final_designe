@@ -8,6 +8,7 @@ import {
   toPublicUser,
   USER_SESSION_COOKIE,
 } from "@/lib/user-auth";
+import { localizeApiError } from "@/lib/api-i18n";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
 
   if (!username || !email || !password) {
     return NextResponse.json(
-      { error: "Моля попълни всички полета." },
+      { error: await localizeApiError("Моля попълни всички полета.") },
       { status: 400 },
     );
   }
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
     const result = await registerUser({ username, email, password });
 
     if (!result.ok) {
-      return NextResponse.json({ error: result.message }, { status: 400 });
+      return NextResponse.json({ error: await localizeApiError(result.message) }, { status: 400 });
     }
 
     const cookieStore = await cookies();
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, user: toPublicUser(result.session) });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Неуспешна регистрация." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Неуспешна регистрация.") },
       { status: 500 },
     );
   }

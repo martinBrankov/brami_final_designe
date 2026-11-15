@@ -1,11 +1,13 @@
 ﻿"use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { ProductCarouselSection } from "@/components/product-carousel-section";
 import { useProducts } from "@/components/products-context";
 
 export function BestsellersSection() {
+  const t = useTranslations("Home");
   const products = useProducts();
   const [featuredProducts, setFeaturedProducts] = useState(() =>
     products.slice(0, 5),
@@ -22,11 +24,11 @@ export function BestsellersSection() {
     return () => {
       window.removeEventListener("resize", updateFeaturedProducts);
     };
-  }, []);
+  }, [products]);
 
   return (
     <ProductCarouselSection
-      title="Най-продавани продукти"
+      title={t("bestsellers")}
       products={featuredProducts}
     />
   );

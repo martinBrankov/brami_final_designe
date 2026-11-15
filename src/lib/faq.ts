@@ -1,5 +1,8 @@
 import "server-only";
+import { translatedLocales } from "@/lib/content-locales";
 
+import { defaultLocale, locales, type AppLocale } from "@/i18n/routing";
+import { pickTranslation } from "@/lib/i18n-content";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { getClientIp, hashRequestIdentity } from "@/lib/marketing-subscribers";
 import { slugifyQuestion } from "@/lib/faq-slug";
@@ -23,6 +26,8 @@ export type FaqEntry = {
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  /** English version (translations.en) for the admin editor; "" = not translated. */
+  english: { question: string; answer: string; category: string; slug: string };
 };
 
 type FaqEntryRow = {
@@ -39,10 +44,42 @@ type FaqEntryRow = {
   published_at: string | null;
   created_at: string;
   updated_at: string;
+  translations?: unknown;
 };
 
+type FaqTranslation = { question?: string; answer?: string; slug?: string; category?: string };
+
+/** A published entry with its text in one locale and its slug in every locale. */
+export type LocalizedFaqEntry = FaqEntry & {
+  slug: string;
+  slugs: Record<AppLocale, string>;
+  availableLocales: AppLocale[];
+};
+
+function localizeFaqRow(row: FaqEntryRow, locale: AppLocale): LocalizedFaqEntry | null {
+  if (!row.slug) return null;
+  const entry = mapFaqEntry(row);
+  const tr = pickTranslation<FaqTranslation>(row.translations, locale);
+  const slugs = Object.fromEntries(
+    locales.map((l) => [
+      l,
+      l === defaultLocale ? row.slug : pickTranslation<FaqTranslation>(row.translations, l).slug || row.slug,
+    ]),
+  ) as Record<AppLocale, string>;
+
+  return {
+    ...entry,
+    question: tr.question || entry.question,
+    answer: tr.answer || entry.answer,
+    category: tr.category || entry.category,
+    slug: slugs[locale],
+    slugs,
+    availableLocales: translatedLocales(row.translations, ["question", "slug", "answer"]),
+  };
+}
+
 export const FAQ_COLUMNS =
-  "id, question, answer, slug, category, status, source, asker_name, asker_email, position, published_at, created_at, updated_at";
+  "id, question, answer, slug, category, status, source, asker_name, asker_email, position, published_at, created_at, updated_at, translations";
 
 export const MIN_QUESTION_LENGTH = 10;
 export const MAX_QUESTION_LENGTH = 1000;
@@ -67,17 +104,31 @@ export function mapFaqEntry(row: FaqEntryRow): FaqEntry {
     publishedAt: row.published_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    english: {
+      question: englishField(row.translations, "question"),
+      answer: englishField(row.translations, "answer"),
+      category: englishField(row.translations, "category"),
+      slug: englishField(row.translations, "slug"),
+    },
   };
+}
+
+function englishField(translations: unknown, key: string): string {
+  const value = (translations as { en?: Record<string, unknown> } | null)?.en?.[key];
+  return typeof value === "string" ? value : "";
 }
 
 // ── Public queries ────────────────────────────────────────────────────────────
 
-export async function getPublishedFaqEntries(): Promise<FaqEntry[]> {
+export async function getPublishedFaqEntries(
+  locale: AppLocale = defaultLocale,
+): Promise<LocalizedFaqEntry[]> {
   const supabase = createSupabaseAdminClient();
 
+  // "*" so the optional `translations` column is included when it exists.
   const { data, error } = await supabase
     .from("faq_entries")
-    .select(FAQ_COLUMNS)
+    .select("*")
     .eq("status", "published")
     .order("position", { ascending: true })
     .order("published_at", { ascending: false });
@@ -86,39 +137,24 @@ export async function getPublishedFaqEntries(): Promise<FaqEntry[]> {
     throw new Error(`Failed to fetch FAQ entries: ${error.message}`);
   }
 
-  return ((data ?? []) as FaqEntryRow[]).map(mapFaqEntry);
+  return ((data ?? []) as FaqEntryRow[])
+    .map((row) => localizeFaqRow(row, locale))
+    .filter((entry): entry is LocalizedFaqEntry => entry !== null);
 }
 
-export async function getFaqEntryBySlug(slug: string): Promise<FaqEntry | null> {
-  const supabase = createSupabaseAdminClient();
-
-  const { data, error } = await supabase
-    .from("faq_entries")
-    .select(FAQ_COLUMNS)
-    .eq("slug", slug)
-    .eq("status", "published")
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`Failed to fetch FAQ entry "${slug}": ${error.message}`);
-  }
-
-  return data ? mapFaqEntry(data as FaqEntryRow) : null;
-}
-
-export async function getFaqSlugs(): Promise<string[]> {
-  const supabase = createSupabaseAdminClient();
-
-  const { data, error } = await supabase
-    .from("faq_entries")
-    .select("slug")
-    .eq("status", "published")
-    .not("slug", "is", null);
-
-  if (error) return [];
-  return ((data ?? []) as { slug: string | null }[])
-    .map((row) => row.slug)
-    .filter((slug): slug is string => Boolean(slug));
+/**
+ * Finds a published entry by its slug in `locale`. When the slug belongs to
+ * another language, `redirectSlug` holds the slug to redirect to.
+ */
+export async function findFaqEntryBySlug(
+  slug: string,
+  locale: AppLocale = defaultLocale,
+): Promise<{ entry: LocalizedFaqEntry | null; redirectSlug: string | null }> {
+  const entries = await getPublishedFaqEntries(locale);
+  const exact = entries.find((entry) => entry.slug === slug);
+  if (exact) return { entry: exact, redirectSlug: null };
+  const other = entries.find((entry) => Object.values(entry.slugs).includes(slug));
+  return { entry: null, redirectSlug: other?.slug ?? null };
 }
 
 // ── Slugs ─────────────────────────────────────────────────────────────────────

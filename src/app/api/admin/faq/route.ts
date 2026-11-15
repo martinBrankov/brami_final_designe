@@ -1,4 +1,6 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
+import { getFaqEntryUrls, notifyIndexNow } from "@/lib/indexnow";
 
 import { requireAdminSession } from "@/lib/admin-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -17,7 +19,7 @@ export async function GET() {
     .order("position", { ascending: true })
     .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: await localizeApiError(error.message) }, { status: 500 });
 
   return NextResponse.json({ entries: (data ?? []).map(mapFaqEntry) });
 }
@@ -26,7 +28,7 @@ export async function POST(request: Request) {
   await requireAdminSession();
 
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
-  if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  if (!body) return NextResponse.json({ error: await localizeApiError("Invalid body") }, { status: 400 });
 
   const { question, answer, slug, category, status, position } = body as {
     question?: string;
@@ -39,7 +41,7 @@ export async function POST(request: Request) {
 
   const trimmedQuestion = question?.trim() ?? "";
   if (!trimmedQuestion) {
-    return NextResponse.json({ error: "Въпросът е задължителен." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Въпросът е задължителен.") }, { status: 400 });
   }
 
   const nextStatus = status === "published" || status === "pending" ? status : "draft";
@@ -47,7 +49,7 @@ export async function POST(request: Request) {
 
   if (nextStatus === "published" && !trimmedAnswer) {
     return NextResponse.json(
-      { error: "Не можеш да публикуваш въпрос без отговор." },
+      { error: await localizeApiError("Не можеш да публикуваш въпрос без отговор.") },
       { status: 400 },
     );
   }
@@ -70,7 +72,8 @@ export async function POST(request: Request) {
     .select("id")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: await localizeApiError(error.message) }, { status: 500 });
 
+  notifyIndexNow(() => getFaqEntryUrls(data.id));
   return NextResponse.json({ id: data.id });
 }

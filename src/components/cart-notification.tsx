@@ -1,6 +1,7 @@
 "use client";
 
 import Image, { type StaticImageData } from "next/image";
+import { useTranslations } from "next-intl";
 
 type CartNotificationProps = {
   variant?: "success" | "error";
@@ -17,10 +18,11 @@ export function CartNotification({
   productImage,
   onClose,
 }: CartNotificationProps) {
+  const t = useTranslations("CartNotification");
   const isError = variant === "error";
   const heading = isError
-    ? message ?? "Не може да добавите повече от наличното."
-    : "Продуктът е добавен в количката.";
+    ? message ?? t("stockLimit")
+    : t("added");
 
   return (
     <div className="pointer-events-none fixed inset-x-4 bottom-4 z-[120] sm:bottom-6">
@@ -105,7 +107,7 @@ export function CartNotification({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Затвори известието"
+            aria-label={t("close")}
             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#e6deec] text-lg leading-none text-[#6b587f] transition hover:bg-[#f5eff8]"
           >
             ×

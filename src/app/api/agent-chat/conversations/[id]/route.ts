@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -13,7 +14,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const { id } = await params;
   const conversation = await getConversation(id);
   if (!conversation) {
-    return NextResponse.json({ error: "Чатът не е намерен." }, { status: 404 });
+    return NextResponse.json({ error: await localizeApiError("Чатът не е намерен.") }, { status: 404 });
   }
   return NextResponse.json({ conversation });
 }

@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 
 import { ProductCarouselSection } from "@/components/product-carousel-section";
@@ -9,6 +10,7 @@ import type { Product } from "@/data/products";
 const RECENTLY_VIEWED_STORAGE_KEY = "brami-recently-viewed";
 
 export function RecentlyViewedSection() {
+  const t = useTranslations("Product");
   const products = useProducts();
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<number[]>([]);
 
@@ -43,7 +45,7 @@ export function RecentlyViewedSection() {
 
   return (
     <ProductCarouselSection
-      title="Разгледани продукти"
+      title={t("recentlyViewed")}
       titleClassName="max-w-[10ch] sm:max-w-none"
       products={viewedProducts}
     />

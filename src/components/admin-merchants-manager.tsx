@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
@@ -10,17 +12,17 @@ function formatEur(value: number) {
   return `€${value.toFixed(2)}`;
 }
 
-function formatDate(value: string) {
+function formatDate(value: string, locale: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("bg-BG", {
+  return date.toLocaleDateString(locale, {
     day: "2-digit",
     month: "short",
     year: "numeric",
   });
 }
 
-async function postCommissionMark(orderIds: string[], paid: boolean) {
+async function postCommissionMark(orderIds: string[], paid: boolean, fallbackError: string) {
   const response = await fetch("/api/admin/commissions/mark", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -30,7 +32,7 @@ async function postCommissionMark(orderIds: string[], paid: boolean) {
     | { ok?: boolean; error?: string }
     | null;
   if (!response.ok || !result?.ok) {
-    throw new Error(result?.error || "Грешка при запис.");
+    throw new Error(result?.error || fallbackError);
   }
 }
 
@@ -58,6 +60,9 @@ function MerchantRow({
   merchant: MerchantAdminRow;
   defaultOpen?: boolean;
 }) {
+  const t = useTranslations("AdminMerchants");
+  const tErrors = useTranslations("RequestErrors");
+  const dateLocale = useLocale() === "en" ? "en-GB" : "bg-BG";
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -97,10 +102,10 @@ function MerchantRow({
     setError(null);
     setPendingId(orderId);
     try {
-      await postCommissionMark([orderId], !currentlyPaid);
+      await postCommissionMark([orderId], !currentlyPaid, tErrors("saveFailed"));
       startTransition(() => router.refresh());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Грешка.");
+      setError(err instanceof Error ? err.message : t("greshka"));
     } finally {
       setPendingId(null);
     }
@@ -110,18 +115,16 @@ function MerchantRow({
     if (!payableOrderIds.length) return;
     if (
       !confirm(
-        `Маркирай ${payableOrderIds.length} доставен${
-          payableOrderIds.length === 1 ? "а поръчка" : "и поръчки"
-        } като изплатени?`,
+        t("confirmMarkPaid", { count: payableOrderIds.length }),
       )
     )
       return;
     setError(null);
     try {
-      await postCommissionMark(payableOrderIds, true);
+      await postCommissionMark(payableOrderIds, true, tErrors("saveFailed"));
       startTransition(() => router.refresh());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Грешка.");
+      setError(err instanceof Error ? err.message : t("greshka"));
     }
   }
 
@@ -142,7 +145,7 @@ function MerchantRow({
 
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-            Лична отстъпка
+            {t("lichnaOtstapka")}
           </p>
           <p className="mt-0.5 text-sm font-semibold text-[#1d2733]">
             {merchant.merchantDiscountPercent}%
@@ -151,7 +154,7 @@ function MerchantRow({
 
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-            Кодове / Поръчки
+            {t("kodovePorachki")}
           </p>
           <p className="mt-0.5 text-sm font-semibold text-[#1d2733]">
             {merchant.codeCount} / {merchant.orderCount}
@@ -160,7 +163,7 @@ function MerchantRow({
 
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-            Комисиона (изплатена / готова)
+            {t("komisionaIzplatenaGotova")}
           </p>
           <p className="mt-0.5 text-sm">
             <span className="font-semibold text-emerald-700">
@@ -183,7 +186,7 @@ function MerchantRow({
           <div className="mb-6 rounded-[14px] border border-[#e7dfd1] bg-white p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-                Банкова сметка за изплащане
+                {t("bankovaSmetkaZaIzplashtane")}
               </p>
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${
@@ -193,15 +196,15 @@ function MerchantRow({
                 }`}
               >
                 {merchant.merchantTermsAccepted
-                  ? "Приети условия"
-                  : "Без съгласие"}
+                  ? t("prietiUsloviya")
+                  : t("bezSaglasie")}
               </span>
             </div>
             {merchant.bankIban ? (
               <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
                 <div>
                   <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-                    Титуляр
+                    {t("titulyar")}
                   </dt>
                   <dd className="mt-0.5 text-[#1d2733]">
                     {merchant.bankAccountHolder || "—"}
@@ -226,7 +229,7 @@ function MerchantRow({
               </dl>
             ) : (
               <p className="mt-2 text-sm text-[#5f6b76]">
-                Търговецът още не е въвел банкова сметка.
+                {t("targovetsatOshteNeE")}
               </p>
             )}
           </div>
@@ -234,10 +237,10 @@ function MerchantRow({
           <div className="grid gap-6 lg:grid-cols-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-                Промо кодове ({merchant.codes.length})
+                {t("promoKodove", { count: merchant.codes.length })}
               </p>
               {merchant.codes.length === 0 ? (
-                <p className="mt-2 text-sm text-[#5f6b76]">Няма създадени кодове.</p>
+                <p className="mt-2 text-sm text-[#5f6b76]">{t("nyamaSazdadeniKodove")}</p>
               ) : (
                 <ul className="mt-3 space-y-2">
                   {merchant.codes.map((code) => (
@@ -250,7 +253,7 @@ function MerchantRow({
                           {code.code}
                         </p>
                         <p className="mt-0.5 text-xs text-[#6a7480]">
-                          Отстъпка {code.discountPercent}% · Комисиона{" "}
+                          {t("otstapkaKomisiona", { discountPercent: code.discountPercent })}
                           {code.commissionPercent}%
                         </p>
                       </div>
@@ -261,7 +264,7 @@ function MerchantRow({
                             : "bg-red-50 text-red-700"
                         }`}
                       >
-                        {code.isActive ? "Активен" : "Неактивен"}
+                        {code.isActive ? t("aktiven") : t("neaktiven")}
                       </span>
                     </li>
                   ))}
@@ -272,7 +275,7 @@ function MerchantRow({
             <div>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-                  Поръчки ({merchant.orders.length})
+                  {t("porachki", { count: merchant.orders.length })}
                 </p>
                 {payableOrderIds.length > 0 ? (
                   <button
@@ -280,7 +283,7 @@ function MerchantRow({
                     onClick={markAllPayable}
                     className="inline-flex h-8 items-center justify-center rounded-full border border-emerald-300 px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-emerald-700 transition hover:bg-emerald-50"
                   >
-                    Маркирай доставените ({payableOrderIds.length}) като изплатени
+                    {t("markirayDostaveniteKatoIzplateni", { count: payableOrderIds.length })}
                   </button>
                 ) : null}
               </div>
@@ -289,7 +292,7 @@ function MerchantRow({
               ) : null}
               {merchant.orders.length === 0 ? (
                 <p className="mt-2 text-sm text-[#5f6b76]">
-                  Все още няма поръчки през кодовете на този търговец.
+                  {t("vseOshteNyamaPorachki")}
                 </p>
               ) : (
                 <>
@@ -310,7 +313,7 @@ function MerchantRow({
                                 #{order.orderNumber}
                               </p>
                               <p className="text-[10px] text-[#6a7480]">
-                                {formatDate(order.orderCreatedAt || order.createdAt)}
+                                {formatDate(order.orderCreatedAt || order.createdAt, dateLocale)}
                               </p>
                             </div>
                             <span className="inline-flex shrink-0 items-center rounded-full bg-[#f3f4f6] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#4f5b66]">
@@ -329,10 +332,10 @@ function MerchantRow({
 
                           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#1d2733]">
                             <span className="font-mono text-[10px] text-[#6a7480]">
-                              Код: {order.promoCodeText}
+                              {t("kod2", { promoCodeText: order.promoCodeText })}
                             </span>
                             <span>·</span>
-                            <span>Стойност: {formatEur(order.total)}</span>
+                            <span>{t("orderValue", { amount: formatEur(order.total) })}</span>
                           </div>
 
                           <div className="mt-3 flex items-center justify-between gap-3 border-t border-[#e7dfd1] pt-2">
@@ -359,17 +362,17 @@ function MerchantRow({
                                   }`}
                                 >
                                   {isPaid
-                                    ? `Изплатена ${formatDate(order.promoCommissionPaidAt!)}`
-                                    : "Маркирай като изплатена"}
+                                    ? t("izplatena", { promoCommissionPaidAt: formatDate(order.promoCommissionPaidAt!, dateLocale) })
+                                    : t("markirayKatoIzplatena")}
                                 </span>
                               </label>
                             ) : isOrderCancelled(order.status) ? (
                               <span className="text-xs font-semibold text-[#b64242]">
-                                Отказана
+                                {t("otkazana")}
                               </span>
                             ) : (
                               <span className="text-xs font-medium text-[#8a6f45]">
-                                Очаква доставка
+                                {t("ochakvaDostavka")}
                               </span>
                             )}
                           </div>
@@ -382,13 +385,13 @@ function MerchantRow({
                     <table className="w-full text-sm">
                       <thead className="border-b border-[#e7dfd1] text-left text-[10px] uppercase tracking-[0.08em] text-[#8a6f45]">
                         <tr>
-                          <th className="py-2 pr-3 font-semibold">Поръчка</th>
-                          <th className="py-2 pr-3 font-semibold">Клиент</th>
-                          <th className="py-2 pr-3 font-semibold">Код</th>
-                          <th className="py-2 pr-3 font-semibold">Статус</th>
-                          <th className="py-2 pr-3 text-right font-semibold">Стойност</th>
-                          <th className="py-2 pr-3 text-right font-semibold">Комисиона</th>
-                          <th className="py-2 pl-3 font-semibold">Изплащане</th>
+                          <th className="py-2 pr-3 font-semibold">{t("porachka")}</th>
+                          <th className="py-2 pr-3 font-semibold">{t("klient")}</th>
+                          <th className="py-2 pr-3 font-semibold">{t("kod")}</th>
+                          <th className="py-2 pr-3 font-semibold">{t("status")}</th>
+                          <th className="py-2 pr-3 text-right font-semibold">{t("stoynost")}</th>
+                          <th className="py-2 pr-3 text-right font-semibold">{t("komisiona")}</th>
+                          <th className="py-2 pl-3 font-semibold">{t("izplashtane")}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#e7dfd1]">
@@ -404,7 +407,7 @@ function MerchantRow({
                                   #{order.orderNumber}
                                 </span>
                                 <span className="block text-[10px] text-[#6a7480]">
-                                  {formatDate(order.orderCreatedAt || order.createdAt)}
+                                  {formatDate(order.orderCreatedAt || order.createdAt, dateLocale)}
                                 </span>
                               </td>
                               <td className="py-2 pr-3">
@@ -450,17 +453,17 @@ function MerchantRow({
                                       }`}
                                     >
                                       {isPaid
-                                        ? formatDate(order.promoCommissionPaidAt!)
-                                        : "Готова"}
+                                        ? formatDate(order.promoCommissionPaidAt!, dateLocale)
+                                        : t("gotova")}
                                     </span>
                                   </label>
                                 ) : isOrderCancelled(order.status) ? (
                                   <span className="text-xs font-semibold text-[#b64242]">
-                                    Отказана
+                                    {t("otkazana")}
                                   </span>
                                 ) : (
                                   <span className="text-xs font-medium text-[#8a6f45]">
-                                    Очаква доставка
+                                    {t("ochakvaDostavka")}
                                   </span>
                                 )}
                               </td>
@@ -485,6 +488,7 @@ export function AdminMerchantsManager({
 }: {
   merchants: MerchantAdminRow[];
 }) {
+  const t = useTranslations("AdminMerchants");
   const [selectedId, setSelectedId] = useState<string>("all");
 
   const visibleMerchants = useMemo(
@@ -498,7 +502,7 @@ export function AdminMerchantsManager({
   if (merchants.length === 0) {
     return (
       <p className="rounded-[18px] border border-[#e7dfd1] bg-white px-5 py-12 text-center text-sm text-[#5f6b76]">
-        Все още няма потребители с роля Търговец.
+        {t("vseOshteNyamaPotrebiteli")}
       </p>
     );
   }
@@ -529,14 +533,14 @@ export function AdminMerchantsManager({
       <div className="rounded-[18px] border border-[#e7dfd1] bg-white p-4">
         <label className="block">
           <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-            Покажи комисионите на
+            {t("pokazhiKomisioniteNa")}
           </span>
           <select
             value={selectedId}
             onChange={(event) => setSelectedId(event.target.value)}
             className="mt-2 h-11 w-full rounded-[14px] border border-[#d9d4ca] bg-[#fcfbf8] px-4 text-sm text-[#1d2733]"
           >
-            <option value="all">Всички търговци ({merchants.length})</option>
+            <option value="all">{t("allMerchants", { count: merchants.length })}</option>
             {merchants.map((merchant) => (
               <option key={merchant.id} value={merchant.id}>
                 {merchant.username || merchant.email}
@@ -550,7 +554,7 @@ export function AdminMerchantsManager({
             onClick={() => setSelectedId("all")}
             className="mt-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#8a6f45] underline-offset-2 transition hover:text-[#1d2733] hover:underline"
           >
-            Покажи всички
+            {t("pokazhiVsichki")}
           </button>
         ) : null}
       </div>
@@ -558,7 +562,7 @@ export function AdminMerchantsManager({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-[18px] border border-[#e7dfd1] bg-white p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-            {isFiltered ? "Избран търговец" : "Търговци"}
+            {isFiltered ? t("izbranTargovets") : t("targovtsi")}
           </p>
           <p className="mt-1 text-2xl font-semibold text-[#1d2733]">
             {visibleMerchants.length}
@@ -566,13 +570,13 @@ export function AdminMerchantsManager({
         </div>
         <div className="rounded-[18px] border border-[#e7dfd1] bg-white p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-            Поръчки през кодове
+            {t("porachkiPrezKodove")}
           </p>
           <p className="mt-1 text-2xl font-semibold text-[#1d2733]">{totalOrders}</p>
         </div>
         <div className="rounded-[18px] border border-[#e7dfd1] bg-white p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-            Изплатени комисиони
+            {t("izplateniKomisioni")}
           </p>
           <p className="mt-1 text-2xl font-semibold text-emerald-700">
             {formatEur(totalPaid)}
@@ -580,7 +584,7 @@ export function AdminMerchantsManager({
         </div>
         <div className="rounded-[18px] border border-[#e7dfd1] bg-white p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-            Готови за изплащане
+            {t("gotoviZaIzplashtane")}
           </p>
           <p className="mt-1 text-2xl font-semibold text-[#3d5a92]">
             {formatEur(totalPayable)}

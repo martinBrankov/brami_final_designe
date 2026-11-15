@@ -1,4 +1,9 @@
-const steps = ["Количка", "Доставка", "Потвърждение"];
+import { useTranslations } from "next-intl";
+
+function useSteps() {
+  const t = useTranslations("Cart");
+  return [t("stepCart"), t("stepDelivery"), t("stepConfirm")];
+}
 
 function CheckIcon() {
   return (
@@ -32,6 +37,7 @@ function StepMarker({
   isClickable: boolean;
   onSelect?: (step: number) => void;
 }) {
+  const steps = useSteps();
   const isActive = index === currentStep;
   const canClick = isClickable && index < 2;
 
@@ -92,6 +98,8 @@ export function CartStepper({
   stepErrors?: Partial<Record<number, boolean>>;
   onStepSelect?: (step: number) => void;
 }) {
+  const steps = useSteps();
+
   return (
     <div className="pb-2">
       <div className="flex flex-col gap-1.5 sm:hidden">

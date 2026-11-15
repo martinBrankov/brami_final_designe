@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { sectionPrimaryButtonClassName } from "@/components/section-intro";
@@ -16,6 +17,7 @@ const fieldClassName =
   "h-12 rounded-[18px] border border-[#ddd3e4] bg-white px-4 text-[#432855] outline-none transition focus:border-[#9f79ac]";
 
 export function FaqAskForm() {
+  const t = useTranslations("FaqAskForm");
   const [values, setValues] = useState(initialValues);
   const [status, setStatus] = useState<AskFormStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -39,7 +41,7 @@ export function FaqAskForm() {
 
       if (!response.ok) {
         setStatus("failed");
-        setErrorMessage(body.error ?? "Не успяхме да запишем въпроса. Опитай отново.");
+        setErrorMessage(body.error ?? t("saveError"));
         return;
       }
 
@@ -47,14 +49,14 @@ export function FaqAskForm() {
       setValues(initialValues);
     } catch {
       setStatus("failed");
-      setErrorMessage("Не успяхме да запишем въпроса. Опитай отново след малко.");
+      setErrorMessage(t("networkError"));
     }
   }
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
       <label className="flex flex-col gap-2 text-sm font-medium text-[#432855] sm:col-span-2">
-        Твоят въпрос
+        {t("question")}
         <textarea
           rows={5}
           required
@@ -65,13 +67,13 @@ export function FaqAskForm() {
           onChange={(event) =>
             setValues((current) => ({ ...current, question: event.target.value }))
           }
-          placeholder="Например: Как да избера крем според типа си кожа?"
+          placeholder={t("questionPlaceholder")}
           className="rounded-[18px] border border-[#ddd3e4] bg-white px-4 py-3 text-[#432855] outline-none transition focus:border-[#9f79ac]"
         />
       </label>
 
       <label className="flex flex-col gap-2 text-sm font-medium text-[#432855]">
-        Име (по желание)
+        {t("name")}
         <input
           type="text"
           name="name"
@@ -81,13 +83,13 @@ export function FaqAskForm() {
           onChange={(event) =>
             setValues((current) => ({ ...current, name: event.target.value }))
           }
-          placeholder="Как да се обръщаме към теб"
+          placeholder={t("namePlaceholder")}
           className={fieldClassName}
         />
       </label>
 
       <label className="flex flex-col gap-2 text-sm font-medium text-[#432855]">
-        Имейл (по желание)
+        {t("email")}
         <input
           type="email"
           name="email"
@@ -97,7 +99,7 @@ export function FaqAskForm() {
           onChange={(event) =>
             setValues((current) => ({ ...current, email: event.target.value }))
           }
-          placeholder="За да те уведомим за отговора"
+          placeholder={t("emailPlaceholder")}
           className={fieldClassName}
         />
       </label>
@@ -108,14 +110,13 @@ export function FaqAskForm() {
           disabled={status === "sending"}
           className={`${sectionPrimaryButtonClassName} disabled:cursor-not-allowed disabled:opacity-60`}
         >
-          {status === "sending" ? "Изпращане..." : "Изпрати въпроса"}
+          {status === "sending" ? t("sending") : t("submit")}
         </button>
       </div>
 
       {status === "sent" ? (
         <p className="text-sm leading-7 text-[#305439] sm:col-span-2">
-          Благодарим! Въпросът е записан и чака отговор. След като екипът ни
-          отговори, ще го публикуваме на тази страница.
+          {t("sent")}
         </p>
       ) : null}
 

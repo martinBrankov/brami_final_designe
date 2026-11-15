@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+
 import { useState } from "react";
 
 import { AdminOrderItemThumb } from "@/components/admin-order-item-thumb";
@@ -8,6 +10,7 @@ import { AdminPrintButton } from "@/components/admin-print-button";
 import type { AdminOrderRecord } from "@/lib/admin-data";
 
 function StatusBadge({ status }: { status: string }) {
+  const tStatus = useTranslations("OrderStatus");
   const styles: Record<string, string> = {
     "Потвърдена":  "bg-cyan-50    text-cyan-700    border-cyan-200",
     "В обработка": "bg-amber-50   text-amber-700   border-amber-200",
@@ -19,20 +22,22 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${cls}`}>
       {getOrderStatusIcon(status)}
-      {status}
+      {tStatus.has(status) ? tStatus(status) : status}
     </span>
   );
 }
 
 function OrderDetail({ order, onClose }: { order: AdminOrderRecord; onClose: () => void }) {
+  const t = useTranslations("AdminOrders");
+  const dateLocale = useLocale() === "en" ? "en-GB" : "bg-BG";
   // The stored subtotal is already discounted, while each item keeps its full
   // price — so the difference is the discount that applied to this order.
   const itemsTotal = order.items.reduce((sum, item) => sum + item.totalPrice, 0);
   const discountAmount = itemsTotal - order.subtotal;
   const hasDiscount = discountAmount > 0.005;
   const discountLabel = order.promoCode
-    ? `Отстъпка · промо код ${order.promoCode}`
-    : "Отстъпка";
+    ? t("otstapkaPromoKod", { promoCode: order.promoCode })
+    : t("otstapka");
 
   return (
     <div>
@@ -43,12 +48,12 @@ function OrderDetail({ order, onClose }: { order: AdminOrderRecord; onClose: () 
             type="button"
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-full border border-[#d2c8b8] bg-white text-[#5f6b76] transition hover:bg-[#f8f4ec]"
-            aria-label="Затвори"
+            aria-label={t("zatvori")}
           >
             ✕
           </button>
         </div>
-        <h2 className="text-lg font-semibold text-[#1d2733]">Поръчка {order.orderNumber}</h2>
+        <h2 className="text-lg font-semibold text-[#1d2733]">{t("orderTitle", { number: order.orderNumber })}</h2>
       </div>
 
       <div className="admin-print-area">
@@ -57,25 +62,25 @@ function OrderDetail({ order, onClose }: { order: AdminOrderRecord; onClose: () 
         <div className="admin-print-invoice" style={{ fontFamily: "Arial, sans-serif", fontSize: "9pt", color: "#111827", lineHeight: 1.5 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", paddingBottom: "10px", borderBottom: "2px solid #111827", marginBottom: "16px" }}>
             <div>
-              <p style={{ fontSize: "20pt", fontWeight: 800, letterSpacing: "0.05em", color: "#1d2733", lineHeight: 1 }}>ПОРЪЧКА</p>
+              <p style={{ fontSize: "20pt", fontWeight: 800, letterSpacing: "0.05em", color: "#1d2733", lineHeight: 1 }}>{t("porachka")}</p>
               <p style={{ fontSize: "10pt", color: "#6a7480", marginTop: "4px" }}>{order.orderNumber}</p>
             </div>
             <div style={{ textAlign: "right", fontSize: "9pt", color: "#4f5b66", lineHeight: 1.7 }}>
-              <p>{new Date(order.createdAt).toLocaleDateString("bg-BG")}</p>
-              <p>{new Date(order.createdAt).toLocaleTimeString("bg-BG", { hour: "2-digit", minute: "2-digit" })}</p>
+              <p>{new Date(order.createdAt).toLocaleDateString(dateLocale)}</p>
+              <p>{new Date(order.createdAt).toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" })}</p>
               <p style={{ marginTop: "4px", fontWeight: 700, color: "#1d2733" }}>{order.status}</p>
             </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "16px" }}>
             <div>
-              <p style={{ fontSize: "7pt", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#8a6f45", marginBottom: "5px" }}>Клиент</p>
+              <p style={{ fontSize: "7pt", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#8a6f45", marginBottom: "5px" }}>{t("klient")}</p>
               <p style={{ fontWeight: 600, color: "#1d2733", fontSize: "10pt" }}>{order.customerFullName}</p>
               <p style={{ color: "#4f5b66", marginTop: "2px" }}>{order.customerEmail}</p>
               <p style={{ color: "#4f5b66", marginTop: "2px" }}>{order.customerPhone}</p>
             </div>
             <div>
-              <p style={{ fontSize: "7pt", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#8a6f45", marginBottom: "5px" }}>Доставка</p>
+              <p style={{ fontSize: "7pt", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#8a6f45", marginBottom: "5px" }}>{t("dostavka")}</p>
               <p style={{ fontWeight: 600, color: "#1d2733" }}>{order.deliveryMethodLabel}</p>
               <p style={{ color: "#4f5b66", marginTop: "2px" }}>{order.deliveryDestination}</p>
               {order.deliveryNotes ? <p style={{ color: "#6a7480", marginTop: "2px", fontStyle: "italic" }}>{order.deliveryNotes}</p> : null}
@@ -85,11 +90,11 @@ function OrderDetail({ order, onClose }: { order: AdminOrderRecord; onClose: () 
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "9pt" }}>
             <thead>
               <tr style={{ borderTop: "1.5px solid #1d2733", borderBottom: "1px solid #1d2733" }}>
-                <th style={{ textAlign: "left", padding: "5px 0", fontWeight: 700, fontSize: "7pt", letterSpacing: "0.1em", textTransform: "uppercase", color: "#6a7480" }}>Продукт</th>
-                <th style={{ textAlign: "center", padding: "5px 8px", fontWeight: 700, fontSize: "7pt", letterSpacing: "0.1em", textTransform: "uppercase", color: "#6a7480" }}>Опаковка</th>
-                <th style={{ textAlign: "right", padding: "5px 8px", fontWeight: 700, fontSize: "7pt", letterSpacing: "0.1em", textTransform: "uppercase", color: "#6a7480" }}>Ед. цена</th>
-                <th style={{ textAlign: "right", padding: "5px 8px", fontWeight: 700, fontSize: "7pt", letterSpacing: "0.1em", textTransform: "uppercase", color: "#6a7480" }}>Брой</th>
-                <th style={{ textAlign: "right", padding: "5px 0", fontWeight: 700, fontSize: "7pt", letterSpacing: "0.1em", textTransform: "uppercase", color: "#6a7480" }}>Сума</th>
+                <th style={{ textAlign: "left", padding: "5px 0", fontWeight: 700, fontSize: "7pt", letterSpacing: "0.1em", textTransform: "uppercase", color: "#6a7480" }}>{t("produkt")}</th>
+                <th style={{ textAlign: "center", padding: "5px 8px", fontWeight: 700, fontSize: "7pt", letterSpacing: "0.1em", textTransform: "uppercase", color: "#6a7480" }}>{t("opakovka")}</th>
+                <th style={{ textAlign: "right", padding: "5px 8px", fontWeight: 700, fontSize: "7pt", letterSpacing: "0.1em", textTransform: "uppercase", color: "#6a7480" }}>{t("edTsena")}</th>
+                <th style={{ textAlign: "right", padding: "5px 8px", fontWeight: 700, fontSize: "7pt", letterSpacing: "0.1em", textTransform: "uppercase", color: "#6a7480" }}>{t("broy")}</th>
+                <th style={{ textAlign: "right", padding: "5px 0", fontWeight: 700, fontSize: "7pt", letterSpacing: "0.1em", textTransform: "uppercase", color: "#6a7480" }}>{t("suma")}</th>
               </tr>
             </thead>
             <tbody>
@@ -109,7 +114,7 @@ function OrderDetail({ order, onClose }: { order: AdminOrderRecord; onClose: () 
             <table style={{ fontSize: "9pt", borderCollapse: "collapse", minWidth: "230px" }}>
               <tbody>
                 <tr>
-                  <td style={{ padding: "2px 20px 2px 0", color: "#4f5b66" }}>Подсума</td>
+                  <td style={{ padding: "2px 20px 2px 0", color: "#4f5b66" }}>{t("podsuma")}</td>
                   <td style={{ textAlign: "right", color: "#1d2733" }}>{itemsTotal.toFixed(2)} €</td>
                 </tr>
                 {hasDiscount ? (
@@ -119,11 +124,11 @@ function OrderDetail({ order, onClose }: { order: AdminOrderRecord; onClose: () 
                   </tr>
                 ) : null}
                 <tr>
-                  <td style={{ padding: "2px 20px 2px 0", color: "#4f5b66" }}>Доставка</td>
+                  <td style={{ padding: "2px 20px 2px 0", color: "#4f5b66" }}>{t("dostavka")}</td>
                   <td style={{ textAlign: "right", color: "#1d2733" }}>{order.shipping.toFixed(2)} €</td>
                 </tr>
                 <tr style={{ borderTop: "1.5px solid #1d2733" }}>
-                  <td style={{ padding: "5px 20px 0 0", fontWeight: 700, fontSize: "10.5pt", color: "#1d2733" }}>Общо</td>
+                  <td style={{ padding: "5px 20px 0 0", fontWeight: 700, fontSize: "10.5pt", color: "#1d2733" }}>{t("obshto")}</td>
                   <td style={{ textAlign: "right", fontWeight: 700, fontSize: "10.5pt", color: "#1d2733", paddingTop: "5px" }}>{order.total.toFixed(2)} €</td>
                 </tr>
               </tbody>
@@ -144,22 +149,22 @@ function OrderDetail({ order, onClose }: { order: AdminOrderRecord; onClose: () 
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold text-[#1d2733]">{order.customerFullName}</h2>
                 <p className="mt-2 text-sm text-[#5f6b76]">
-                  Създадена: {new Date(order.createdAt).toLocaleString("bg-BG")}
+                  {t("sazdadena", { BG: new Date(order.createdAt).toLocaleString(dateLocale) })}
                 </p>
               </div>
               <div className="text-left xl:text-right">
-                <p className="text-sm text-[#5f6b76]">Общо</p>
+                <p className="text-sm text-[#5f6b76]">{t("obshto")}</p>
                 <p className="mt-1 text-2xl font-semibold text-[#1d2733]">{order.total.toFixed(2)} €</p>
               </div>
             </div>
 
             <div className="mt-5">
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#7c6f61]">Артикули</h3>
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#7c6f61]">{t("artikuli")}</h3>
               <div className="hidden grid-cols-[1fr_110px_90px_120px] gap-4 border-b border-[#e7dfd1] pb-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#7c6f61] md:grid">
-                <span>Продукт</span>
-                <span>Ед. цена</span>
-                <span>Брой</span>
-                <span className="text-right">Общо</span>
+                <span>{t("produkt")}</span>
+                <span>{t("edTsena")}</span>
+                <span>{t("broy")}</span>
+                <span className="text-right">{t("obshto")}</span>
               </div>
               <div className="divide-y divide-[#e7dfd1]">
                 {order.items.map((item) => (
@@ -180,7 +185,7 @@ function OrderDetail({ order, onClose }: { order: AdminOrderRecord; onClose: () 
                         <p className="mt-1 text-sm text-[#5f6b76]">{item.packaging}</p>
                         {item.productUrl ? (
                           <a href={item.productUrl} className="mt-2 inline-flex text-sm font-medium text-[#6f5a33] underline-offset-4 hover:underline">
-                            Отвори продукта
+                            {t("otvoriProdukta")}
                           </a>
                         ) : null}
                       </div>
@@ -196,30 +201,30 @@ function OrderDetail({ order, onClose }: { order: AdminOrderRecord; onClose: () 
 
           <aside className="divide-y divide-[#e7dfd1]">
             <section className="py-5">
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#7c6f61]">Клиент</h3>
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#7c6f61]">{t("klient")}</h3>
               <div className="space-y-2 text-sm text-[#4f5b66]">
-                <p><span className="font-semibold text-[#1d2733]">Име:</span> {order.customerFullName}</p>
-                <p><span className="font-semibold text-[#1d2733]">Имейл:</span> {order.customerEmail}</p>
-                <p><span className="font-semibold text-[#1d2733]">Телефон:</span> {order.customerPhone}</p>
+                <p><span className="font-semibold text-[#1d2733]">{t("ime")}</span> {order.customerFullName}</p>
+                <p><span className="font-semibold text-[#1d2733]">{t("imeyl")}</span> {order.customerEmail}</p>
+                <p><span className="font-semibold text-[#1d2733]">{t("telefon")}</span> {order.customerPhone}</p>
               </div>
             </section>
 
             <section className="py-5">
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#7c6f61]">Доставка</h3>
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#7c6f61]">{t("dostavka")}</h3>
               <div className="space-y-2 text-sm text-[#4f5b66]">
-                <p><span className="font-semibold text-[#1d2733]">Метод:</span> {order.deliveryMethodLabel}</p>
-                <p><span className="font-semibold text-[#1d2733]">Адрес:</span> {order.deliveryDestination}</p>
+                <p><span className="font-semibold text-[#1d2733]">{t("metod")}</span> {order.deliveryMethodLabel}</p>
+                <p><span className="font-semibold text-[#1d2733]">{t("adres")}</span> {order.deliveryDestination}</p>
                 {order.deliveryNotes ? (
-                  <p><span className="font-semibold text-[#1d2733]">Бележки:</span> {order.deliveryNotes}</p>
+                  <p><span className="font-semibold text-[#1d2733]">{t("belezhki")}</span> {order.deliveryNotes}</p>
                 ) : null}
               </div>
             </section>
 
             <section className="py-5">
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#7c6f61]">Суми</h3>
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#7c6f61]">{t("sumi")}</h3>
               <div className="space-y-2 text-sm text-[#4f5b66]">
                 <div className="flex items-center justify-between">
-                  <span>Междинна сума</span>
+                  <span>{t("mezhdinnaSuma")}</span>
                   <span>{itemsTotal.toFixed(2)} €</span>
                 </div>
                 {hasDiscount ? (
@@ -229,11 +234,11 @@ function OrderDetail({ order, onClose }: { order: AdminOrderRecord; onClose: () 
                   </div>
                 ) : null}
                 <div className="flex items-center justify-between">
-                  <span>Доставка</span>
+                  <span>{t("dostavka")}</span>
                   <span>{order.shipping.toFixed(2)} €</span>
                 </div>
                 <div className="flex items-center justify-between border-t border-[#e7dfd1] pt-3 font-semibold text-[#1d2733]">
-                  <span>Общо</span>
+                  <span>{t("obshto")}</span>
                   <span>{order.total.toFixed(2)} €</span>
                 </div>
               </div>
@@ -247,11 +252,13 @@ function OrderDetail({ order, onClose }: { order: AdminOrderRecord; onClose: () 
 }
 
 export function AdminOrdersManager({ orders }: { orders: AdminOrderRecord[] }) {
+  const t = useTranslations("AdminOrders");
+  const dateLocale = useLocale() === "en" ? "en-GB" : "bg-BG";
   const [modalOrder, setModalOrder] = useState<AdminOrderRecord | null>(null);
 
   if (!orders.length) {
     return (
-      <p className="py-12 text-center text-sm text-[#5f6b76]">Няма записани поръчки.</p>
+      <p className="py-12 text-center text-sm text-[#5f6b76]">{t("nyamaZapisaniPorachki")}</p>
     );
   }
 
@@ -259,12 +266,12 @@ export function AdminOrdersManager({ orders }: { orders: AdminOrderRecord[] }) {
     <>
       <div>
         <div className="hidden grid-cols-[minmax(130px,1fr)_minmax(170px,1.2fr)_minmax(90px,0.65fr)_110px_190px_88px] gap-3 border-b border-[#e7dfd1] pb-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#7c6f61] lg:grid">
-          <span>Поръчка</span>
-          <span>Клиент</span>
-          <span>Сума</span>
-          <span>Дата</span>
-          <span>Статус</span>
-          <span className="text-right">Детайли</span>
+          <span>{t("porachka2")}</span>
+          <span>{t("klient")}</span>
+          <span>{t("suma")}</span>
+          <span>{t("data")}</span>
+          <span>{t("status")}</span>
+          <span className="text-right">{t("detayli")}</span>
         </div>
 
         <div className="divide-y divide-[#e7dfd1]">
@@ -274,33 +281,33 @@ export function AdminOrdersManager({ orders }: { orders: AdminOrderRecord[] }) {
                 className="grid gap-4 py-4 lg:grid-cols-[minmax(130px,1fr)_minmax(170px,1.2fr)_minmax(90px,0.65fr)_110px_190px_88px] lg:items-center lg:gap-3"
               >
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45] lg:hidden">Поръчка</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45] lg:hidden">{t("porachka2")}</p>
                   <p className="text-sm font-semibold text-[#1d2733]">{order.orderNumber}</p>
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45] lg:hidden">Клиент</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45] lg:hidden">{t("klient")}</p>
                   <p className="text-sm font-semibold text-[#1d2733]">{order.customerFullName}</p>
                   <p className="mt-1 text-xs text-[#6a7480]">{order.customerEmail}</p>
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45] lg:hidden">Сума</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45] lg:hidden">{t("suma")}</p>
                   <p className="text-sm font-semibold text-[#1d2733]">{order.total.toFixed(2)} €</p>
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45] lg:hidden">Дата</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45] lg:hidden">{t("data")}</p>
                   <div className="text-sm text-[#4f5b66]">
-                    <p>{new Date(order.createdAt).toLocaleDateString("bg-BG")}</p>
+                    <p>{new Date(order.createdAt).toLocaleDateString(dateLocale)}</p>
                     <p className="mt-0.5 text-xs text-[#6a7480]">
-                      {new Date(order.createdAt).toLocaleTimeString("bg-BG", { hour: "2-digit", minute: "2-digit" })}
+                      {new Date(order.createdAt).toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45] lg:hidden">Статус</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8a6f45] lg:hidden">{t("status")}</p>
                   <div className="mt-1.5"><StatusBadge status={order.status} /></div>
                 </div>
 
@@ -308,7 +315,7 @@ export function AdminOrdersManager({ orders }: { orders: AdminOrderRecord[] }) {
                   <button
                     type="button"
                     onClick={() => setModalOrder(order)}
-                    title="Отвори"
+                    title={t("otvori")}
                     className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#d2c8b8] text-[#1d2733] transition hover:bg-[#f8f4ec]"
                   >
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>

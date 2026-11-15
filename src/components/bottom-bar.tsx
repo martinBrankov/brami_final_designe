@@ -1,5 +1,8 @@
 import { Fragment } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+
+import { LocaleSwitcher } from "@/components/locale-switcher";
+import { Link } from "@/i18n/navigation";
 
 function FacebookIcon() {
   return (
@@ -69,21 +72,22 @@ function PhoneIcon() {
 }
 
 const shopLinks = [
-  { href: "/products", label: "Продукти" },
-  { href: "/about", label: "За нас" },
-  { href: "/beauty-care", label: "Красота & грижа" },
-  { href: "/contact", label: "Контакти" },
-  { href: "/cart", label: "Количка" },
-];
+  { href: "/products", key: "products" },
+  { href: "/collections/saffron", key: "saffronCosmetics" },
+  { href: "/about", key: "about" },
+  { href: "/beauty-care", key: "beautyCare" },
+  { href: "/contact", key: "contact" },
+  { href: "/cart", key: "cart" },
+] as const;
 
 const helpLinks = [
-  { href: "/faq", label: "Често задавани въпроси" },
-  { href: "/delivery-returns", label: "Доставка и връщане" },
-  { href: "/cancellation-form", label: "Формуляр за отказ" },
-  { href: "/terms", label: "Общи условия" },
-  { href: "/partners", label: "Партньори" },
-  { href: "/privacy-policy", label: "Политика за лични данни" },
-];
+  { href: "/faq", key: "faq" },
+  { href: "/delivery-returns", key: "deliveryReturns" },
+  { href: "/cancellation-form", key: "cancellationForm" },
+  { href: "/terms", key: "terms" },
+  { href: "/partners", key: "partners" },
+  { href: "/privacy-policy", key: "privacyPolicy" },
+] as const;
 
 const socialLinks = [
   {
@@ -99,6 +103,8 @@ const socialLinks = [
 ];
 
 export function BottomBar() {
+  const t = useTranslations("Footer");
+
   return (
     <footer className="mt-auto w-full border-t border-[#5c3d74] bg-[linear-gradient(180deg,#5c3d74_0%,#432855_100%)]">
       <div className="px-6 py-10 sm:px-10 lg:px-14">
@@ -108,21 +114,20 @@ export function BottomBar() {
               Brami
             </p>
             <h2 className="mt-3 font-serif text-3xl leading-tight text-white">
-              Натурална грижа за лице, тяло и коса.
+              {t("title")}
             </h2>
             <p className="mt-3 text-sm leading-6 text-[#ede4f3]">
-              Подбрани формули, деликатни текстури и грижа, която остава
-              близо до ежедневието ти.
+              {t("text")}
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-8 [@media(orientation:landscape)]:grid-cols-3">
             <div className="col-span-2 grid grid-cols-2 gap-x-8 [@media(orientation:landscape)]:col-span-2">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#d3bddf]">
-                Полезно
+                {t("useful")}
               </p>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#d3bddf]">
-                Навигация
+                {t("navigation")}
               </p>
               {Array.from({ length: Math.max(helpLinks.length, shopLinks.length) }).map((_, i) => (
                 <Fragment key={i}>
@@ -131,7 +136,7 @@ export function BottomBar() {
                       href={helpLinks[i].href}
                       className="flex items-start pt-3 text-sm text-white transition hover:text-[#eadcf3]"
                     >
-                      {helpLinks[i].label}
+                      {t(`links.${helpLinks[i].key}`)}
                     </Link>
                   ) : <div />}
                   {shopLinks[i] ? (
@@ -139,7 +144,7 @@ export function BottomBar() {
                       href={shopLinks[i].href}
                       className="flex items-start pt-3 text-sm text-white transition hover:text-[#eadcf3]"
                     >
-                      {shopLinks[i].label}
+                      {t(`links.${shopLinks[i].key}`)}
                     </Link>
                   ) : <div />}
                 </Fragment>
@@ -148,7 +153,7 @@ export function BottomBar() {
 
             <div className="col-span-2 [@media(orientation:landscape)]:col-span-1">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#d3bddf]">
-                Контакти
+                {t("contacts")}
               </p>
               <div className="mt-4 flex flex-col gap-3 text-sm text-white">
                 <a
@@ -188,11 +193,18 @@ export function BottomBar() {
 
         <div className="mt-8 border-t border-[#6f4f88] pt-5 text-xs text-[#d8c7e4]">
           <p className="mb-3 leading-5 text-[#c9b6d9]">
-            Ние работим със Спиди. Плащанията се извършват чрез Пощенски паричен превод / Наложен платеж.
+            {t("payments")}
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p>© 2026 Brami. Всички права запазени.</p>
-            <p>Създадено за по-лесно пазаруване и ясна продуктова информация.</p>
+            <p>{t("copyright", { year: 2026 })}</p>
+            <div className="flex items-center gap-4">
+              <p>{t("tagline")}</p>
+              <LocaleSwitcher
+                className="inline-flex items-center gap-1.5 text-[#d8c7e4] transition hover:text-white"
+                iconClassName="hidden"
+                labelClassName=""
+              />
+            </div>
           </div>
         </div>
       </div>

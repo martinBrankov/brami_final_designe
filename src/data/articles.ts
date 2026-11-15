@@ -1,8 +1,8 @@
 import type { StaticImageData } from "next/image";
 
-import addelaSunny from "@/assets/images/about/addelaSunny.jpg";
-import garden from "@/assets/images/about/garden.jpg";
-import saffron from "@/assets/images/about/saffron.jpg";
+import addelaSunny from "@/assets/images/about/saffron-adela-sunny-kozmetika-s-shafran.jpg";
+import garden from "@/assets/images/about/shafranova-gradina-v-balgariya.jpg";
+import saffron from "@/assets/images/about/balgarski-shafran-crocus-sativus.jpg";
 
 export type ArticleSection = {
   heading: string;

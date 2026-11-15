@@ -1,9 +1,21 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
+import {
+  AdminProductSeoFields,
+  emptyEnglishDraft,
+  emptySeoDraft,
+  faqToText,
+  linesToList,
+  textToFaq,
+  type EnglishDraft,
+  type SeoDraft,
+} from "@/components/admin-product-seo-fields";
 import { getProductImage } from "@/data/product-images";
 import type { AdminProductRecord } from "@/lib/admin-data";
 
@@ -25,6 +37,8 @@ type ProductDraft = {
   imageKeys: string;
   highlights: string;
   relatedProductIds: string;
+  seo: SeoDraft;
+  en: EnglishDraft;
 };
 
 const emptyDraft: ProductDraft = {
@@ -45,6 +59,8 @@ const emptyDraft: ProductDraft = {
   imageKeys: "",
   highlights: "",
   relatedProductIds: "",
+  seo: emptySeoDraft,
+  en: emptyEnglishDraft,
 };
 
 function toDraft(product: AdminProductRecord): ProductDraft {
@@ -66,6 +82,29 @@ function toDraft(product: AdminProductRecord): ProductDraft {
     imageKeys: product.imageKeys.join(", "),
     highlights: product.highlights.join("\n"),
     relatedProductIds: product.relatedProductIds.join(", "),
+    seo: {
+      slug: product.seo.slug,
+      seoTitle: product.seo.seoTitle,
+      metaDescription: product.seo.metaDescription,
+      focusKeyword: product.seo.focusKeyword,
+      summary: product.seo.summary,
+      faq: faqToText(product.seo.faq),
+      gtin: product.seo.gtin,
+      imageAlts: product.seo.imageAlts.join("\n"),
+    },
+    en: {
+      name: product.en.name,
+      slug: product.en.slug,
+      packaging: product.en.packaging,
+      description: product.en.description,
+      seoTitle: product.en.seoTitle,
+      metaDescription: product.en.metaDescription,
+      focusKeyword: product.en.focusKeyword,
+      summary: product.en.summary,
+      faq: faqToText(product.en.faq),
+      highlights: product.en.highlights.join("\n"),
+      imageAlts: product.en.imageAlts.join("\n"),
+    },
   };
 }
 
@@ -83,14 +122,7 @@ function parseLineList(value: string) {
     .filter(Boolean);
 }
 
-const BADGE_LABELS: Record<string, string> = {
-  bestseller: "Bestseller",
-  sale: "Sale",
-  new: "Ново",
-  favorite: "Любимо",
-  featured: "Featured",
-  kids: "За деца",
-};
+const BADGES = new Set(["bestseller", "sale", "new", "favorite", "featured", "kids"]);
 
 function StarRow({ rating }: { rating: number }) {
   return (
@@ -106,6 +138,7 @@ function StarRow({ rating }: { rating: number }) {
 }
 
 function ProductPreview({ draft }: { draft: ProductDraft }) {
+  const t = useTranslations("AdminProducts");
   const priceEur = Number(draft.priceEur) || 0;
   const discount = Number(draft.discountPercent) || 0;
   const rating = Number(draft.rating) || 0;
@@ -113,13 +146,13 @@ function ProductPreview({ draft }: { draft: ProductDraft }) {
   const imageKeys = draft.imageKeys.split(",").map((k) => k.trim()).filter(Boolean);
   const categories = draft.categories.split(",").map((c) => c.trim()).filter(Boolean);
   const audiences = draft.audiences.split(",").map((a) => a.trim()).filter(Boolean);
-  const badgeLabel = BADGE_LABELS[draft.badge];
+  const badgeLabel = BADGES.has(draft.badge) ? t(`badges.${draft.badge}`) : undefined;
 
   const originalEur = discount > 0 ? priceEur / (1 - discount / 100) : null;
 
   return (
     <div className="border-t border-[#e7dfd1] pt-6">
-      <p className="mb-5 text-xs font-semibold uppercase tracking-[0.14em] text-[#8a6f45]">Преглед на продукта</p>
+      <p className="mb-5 text-xs font-semibold uppercase tracking-[0.14em] text-[#8a6f45]">{t("pregledNaProdukta")}</p>
 
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Images */}
@@ -148,7 +181,7 @@ function ProductPreview({ draft }: { draft: ProductDraft }) {
             </div>
           ) : (
             <div className="flex aspect-square items-center justify-center rounded-[20px] bg-[#f4eef8] text-sm text-[#9e8aae]">
-              Без снимки
+              {t("bezSnimki")}
             </div>
           )}
         </div>
@@ -167,15 +200,15 @@ function ProductPreview({ draft }: { draft: ProductDraft }) {
           </div>
 
           <h2 className="font-serif text-3xl leading-tight text-[#432855]">
-            {draft.name || <span className="opacity-30">Без заглавие</span>}
+            {draft.name || <span className="opacity-30">{t("bezZaglavie")}</span>}
           </h2>
 
           {rating > 0 && <StarRow rating={rating} />}
 
           {draft.packaging && (
             <p className="text-sm text-[#6b587f]">
-              <span className="font-semibold text-[#432855]">Опаковка:</span> {draft.packaging}
-              {draft.weight ? ` · ${draft.weight} кг` : ""}
+              <span className="font-semibold text-[#432855]">{t("opakovka")}</span> {draft.packaging}
+              {draft.weight ? t("kg", { weight: draft.weight }) : ""}
             </p>
           )}
 
@@ -200,7 +233,7 @@ function ProductPreview({ draft }: { draft: ProductDraft }) {
           </div>
 
           <div className="h-11 w-full rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] flex items-center justify-center text-sm font-semibold text-white">
-            Добави в количката
+            {t("dobaviVKolichkata")}
           </div>
         </div>
       </div>
@@ -208,10 +241,10 @@ function ProductPreview({ draft }: { draft: ProductDraft }) {
       <div className="mt-6 border-t border-[#eadde4] pt-5">
         <div className="mb-5 flex gap-1 border-b border-[#eadde4]">
           <span className="inline-flex cursor-default items-center border-b-2 border-[#432855] px-4 pb-3 text-sm font-semibold text-[#432855]">
-            Описание
+            {t("opisanie")}
           </span>
           <span className="inline-flex cursor-default items-center border-b-2 border-transparent px-4 pb-3 text-sm font-medium text-[#9e8aae]">
-            Отзиви
+            {t("otzivi")}
           </span>
         </div>
         {draft.description ? (
@@ -220,7 +253,7 @@ function ProductPreview({ draft }: { draft: ProductDraft }) {
             dangerouslySetInnerHTML={{ __html: draft.description }}
           />
         ) : (
-          <p className="text-sm text-[#9e8aae]">Няма описание.</p>
+          <p className="text-sm text-[#9e8aae]">{t("nyamaOpisanie")}</p>
         )}
       </div>
 
@@ -243,6 +276,7 @@ export function AdminProductsManager({
 }: {
   products: AdminProductRecord[];
 }) {
+  const t = useTranslations("AdminProducts");
   const router = useRouter();
   const [modalDraft, setModalDraft] = useState<ProductDraft | null>(null);
   const [showPreview, setShowPreview] = useState(false);
@@ -300,6 +334,17 @@ export function AdminProductsManager({
       imageKeys: parseCsvList(modalDraft.imageKeys),
       highlights: parseLineList(modalDraft.highlights),
       relatedProductIds: parseCsvList(modalDraft.relatedProductIds).map((value) => Number(value)),
+      seo: {
+        ...modalDraft.seo,
+        faq: textToFaq(modalDraft.seo.faq),
+        imageAlts: linesToList(modalDraft.seo.imageAlts),
+      },
+      en: {
+        ...modalDraft.en,
+        faq: textToFaq(modalDraft.en.faq),
+        highlights: linesToList(modalDraft.en.highlights),
+        imageAlts: linesToList(modalDraft.en.imageAlts),
+      },
     };
 
     const response = await fetch("/api/admin/products", {
@@ -313,18 +358,18 @@ export function AdminProductsManager({
       | null;
 
     if (!response.ok || !result?.ok) {
-      setFeedback(result?.error || "Неуспешен запис.");
+      setFeedback(result?.error || t("neuspeshenZapis"));
       return;
     }
 
-    setFeedback("Продуктът е записан.");
+    setFeedback(t("produktatEZapisan"));
     startTransition(() => {
       router.refresh();
     });
   }
 
   async function handleDelete(id: number) {
-    const shouldDelete = window.confirm(`Изтриване на продукт #${id}?`);
+    const shouldDelete = window.confirm(t("iztrivaneNaProdukt", { id }));
     if (!shouldDelete) return;
 
     setDeletingId(id);
@@ -338,7 +383,7 @@ export function AdminProductsManager({
     setDeletingId(null);
 
     if (!response.ok || !result?.ok) {
-      alert(result?.error || "Неуспешно изтриване.");
+      alert(result?.error || t("neuspeshnoIztrivane"));
       return;
     }
 
@@ -352,14 +397,14 @@ export function AdminProductsManager({
       <div>
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-sm font-semibold text-[#7c6f61]">
-            {sortedProducts.length} продукта
+            {t("produkta", { count: sortedProducts.length })}
           </h2>
           <button
             type="button"
             onClick={openNew}
             className="inline-flex h-9 items-center justify-center rounded-[8px] bg-[#1d2733] px-4 text-sm font-semibold text-white transition hover:bg-[#2b3847]"
           >
-            + Нов продукт
+            {t("novProdukt")}
           </button>
         </div>
 
@@ -397,7 +442,7 @@ export function AdminProductsManager({
                 <button
                   type="button"
                   onClick={() => openEdit(product)}
-                  title="Редактирай"
+                  title={t("redaktiray")}
                   className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#d2c8b8] text-[#1d2733] transition hover:bg-[#f8f4ec]"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -406,7 +451,7 @@ export function AdminProductsManager({
                   type="button"
                   onClick={() => handleDelete(product.id)}
                   disabled={deletingId === product.id}
-                  title="Изтрий"
+                  title={t("iztriy")}
                   className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-red-200 text-red-500 transition hover:bg-red-50 disabled:opacity-60"
                 >
                   {deletingId === product.id
@@ -429,7 +474,7 @@ export function AdminProductsManager({
                 <button
                   type="button"
                   onClick={() => setShowPreview((v) => !v)}
-                  title={showPreview ? "Скрий преглед" : "Преглед"}
+                  title={showPreview ? t("skriyPregled") : t("pregled")}
                   className={`flex h-8 w-8 items-center justify-center rounded-[8px] border transition ${
                     showPreview
                       ? "border-[#d8b36b] bg-[#fdf8ee] text-[#8a6f45]"
@@ -443,7 +488,7 @@ export function AdminProductsManager({
                 <button
                   type="submit"
                   disabled={isPending}
-                  title="Запази продукта"
+                  title={t("zapaziProdukta")}
                   className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-[#1d2733] text-white transition hover:bg-[#2b3847] disabled:opacity-60"
                 >
                   {isPending
@@ -454,7 +499,7 @@ export function AdminProductsManager({
                   type="button"
                   onClick={closeModal}
                   className="flex h-8 w-8 items-center justify-center rounded-full border border-[#d2c8b8] bg-white text-[#5f6b76] transition hover:bg-[#f8f4ec]"
-                  aria-label="Затвори"
+                  aria-label={t("zatvori")}
                 >
                   ✕
                 </button>
@@ -467,7 +512,7 @@ export function AdminProductsManager({
                     <div className="h-12 w-12 shrink-0 overflow-hidden rounded-[8px] border border-[#e7dfd1] bg-[#f8f4ec]">
                       <Image
                         src={image}
-                        alt={modalDraft.name || "Продукт"}
+                        alt={modalDraft.name || t("produkt")}
                         className="h-full w-full object-cover"
                       />
                     </div>
@@ -477,8 +522,8 @@ export function AdminProductsManager({
                   {modalDraft.name
                     ? modalDraft.name
                     : modalDraft.id
-                      ? `Продукт #${modalDraft.id}`
-                      : "Нов продукт"}
+                      ? t("produkt2", { id: modalDraft.id })
+                      : t("novProdukt2")}
                 </h2>
               </div>
             </div>
@@ -495,7 +540,7 @@ export function AdminProductsManager({
                 </label>
 
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-[#25313d]">Име</span>
+                  <span className="mb-2 block text-sm font-medium text-[#25313d]">{t("ime")}</span>
                   <input
                     value={modalDraft.name}
                     onChange={(e) => updateDraft("name", e.target.value)}
@@ -536,7 +581,7 @@ export function AdminProductsManager({
                 </label>
 
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-[#25313d]">Цена EUR</span>
+                  <span className="mb-2 block text-sm font-medium text-[#25313d]">{t("tsenaEur")}</span>
                   <input
                     type="number"
                     min="0"
@@ -566,7 +611,7 @@ export function AdminProductsManager({
                 </label>
 
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-[#25313d]">Опаковка</span>
+                  <span className="mb-2 block text-sm font-medium text-[#25313d]">{t("opakovka2")}</span>
                   <input
                     value={modalDraft.packaging}
                     onChange={(e) => updateDraft("packaging", e.target.value)}
@@ -576,7 +621,7 @@ export function AdminProductsManager({
                 </label>
 
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-[#25313d]">Тегло</span>
+                  <span className="mb-2 block text-sm font-medium text-[#25313d]">{t("teglo")}</span>
                   <input
                     type="number"
                     min="0"
@@ -603,7 +648,7 @@ export function AdminProductsManager({
                 </label>
 
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-[#25313d]">Количество (наличност)</span>
+                  <span className="mb-2 block text-sm font-medium text-[#25313d]">{t("kolichestvoNalichnost")}</span>
                   <input
                     type="number"
                     min="0"
@@ -616,7 +661,7 @@ export function AdminProductsManager({
                 </label>
 
                 <label className="block md:col-span-2">
-                  <span className="mb-2 block text-sm font-medium text-[#25313d]">Категории</span>
+                  <span className="mb-2 block text-sm font-medium text-[#25313d]">{t("kategorii")}</span>
                   <input
                     value={modalDraft.categories}
                     onChange={(e) => updateDraft("categories", e.target.value)}
@@ -626,7 +671,7 @@ export function AdminProductsManager({
                 </label>
 
                 <label className="block md:col-span-2">
-                  <span className="mb-2 block text-sm font-medium text-[#25313d]">Аудитории</span>
+                  <span className="mb-2 block text-sm font-medium text-[#25313d]">{t("auditorii")}</span>
                   <input
                     value={modalDraft.audiences}
                     onChange={(e) => updateDraft("audiences", e.target.value)}
@@ -646,7 +691,7 @@ export function AdminProductsManager({
                 </label>
 
                 <label className="block md:col-span-2">
-                  <span className="mb-2 block text-sm font-medium text-[#25313d]">Свързани продукти</span>
+                  <span className="mb-2 block text-sm font-medium text-[#25313d]">{t("svarzaniProdukti")}</span>
                   <input
                     value={modalDraft.relatedProductIds}
                     onChange={(e) => updateDraft("relatedProductIds", e.target.value)}
@@ -666,7 +711,7 @@ export function AdminProductsManager({
                 </label>
 
                 <label className="block md:col-span-2">
-                  <span className="mb-2 block text-sm font-medium text-[#25313d]">Описание</span>
+                  <span className="mb-2 block text-sm font-medium text-[#25313d]">{t("opisanie")}</span>
                   <textarea
                     value={modalDraft.description}
                     onChange={(e) => updateDraft("description", e.target.value)}
@@ -675,6 +720,13 @@ export function AdminProductsManager({
                   />
                 </label>
               </div>
+
+              <AdminProductSeoFields
+                seo={modalDraft.seo}
+                en={modalDraft.en}
+                onSeoChange={(next) => updateDraft("seo", next)}
+                onEnglishChange={(next) => updateDraft("en", next)}
+              />
               </div>
 
               {showPreview && <ProductPreview draft={modalDraft} />}

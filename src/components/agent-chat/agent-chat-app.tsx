@@ -1,9 +1,12 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useJsonFetch } from "@/lib/use-json-fetch";
 
 import { ArtifactPreviewCard } from "@/components/agent-chat/artifact-preview-card";
-import { CATEGORY_LABELS, StatusBadge } from "@/components/agent-chat/labels";
+import { StatusBadge } from "@/components/agent-chat/labels";
 import { TaskInspector, type TaskControlAction } from "@/components/agent-chat/task-inspector";
 import type {
   AgentDefinition,
@@ -31,17 +34,9 @@ type Props = {
   models: ModelDefinition[];
 };
 
-async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    ...init,
-    headers: { "content-type": "application/json", ...(init?.headers ?? {}) },
-  });
-  const data = (await res.json().catch(() => ({}))) as T & { error?: string };
-  if (!res.ok) throw new Error(data.error || `Грешка ${res.status}`);
-  return data;
-}
-
 export function AgentChatApp({ initialConversations, agents, models }: Props) {
+  const t = useTranslations("AgentChat");
+  const jsonFetch = useJsonFetch();
   const [conversations, setConversations] = useState<ConversationSummary[]>(initialConversations);
   const [activeId, setActiveId] = useState<string | null>(initialConversations[0]?.id ?? null);
   const [detail, setDetail] = useState<ConversationDetail | null>(null);
@@ -67,11 +62,11 @@ export function AgentChatApp({ initialConversations, agents, models }: Props) {
       // Only adopt the stored latest task when no run is being polled.
       if (!runningRef.current) setActiveTaskId(conversation.latestTaskId);
     } catch (err) {
-      if (!silent) setError(err instanceof Error ? err.message : "Неуспешно зареждане.");
+      if (!silent) setError(err instanceof Error ? err.message : t("neuspeshnoZarezhdane"));
     } finally {
       if (!silent) setLoadingDetail(false);
     }
-  }, []);
+  }, [jsonFetch, t]);
 
   const loadTask = useCallback(async (taskId: string) => {
     try {
@@ -81,7 +76,7 @@ export function AgentChatApp({ initialConversations, agents, models }: Props) {
     } catch {
       return null;
     }
-  }, []);
+  }, [jsonFetch]);
 
   useEffect(() => {
     if (activeId) loadDetail(activeId);
@@ -112,7 +107,7 @@ export function AgentChatApp({ initialConversations, agents, models }: Props) {
       setConversations((prev) => [conversation, ...prev]);
       setActiveId(conversation.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Неуспешно създаване.");
+      setError(err instanceof Error ? err.message : t("neuspeshnoSazdavane"));
     }
   }
 
@@ -144,7 +139,7 @@ export function AgentChatApp({ initialConversations, agents, models }: Props) {
       });
       await loadDetail(activeId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Неуспешно изпращане.");
+      setError(err instanceof Error ? err.message : t("neuspeshnoIzprashtane"));
       // Roll back the optimistic message.
       setDetail((d) =>
         d ? { ...d, messages: d.messages.filter((m) => m.id !== optimistic.id) } : d,
@@ -168,7 +163,7 @@ export function AgentChatApp({ initialConversations, agents, models }: Props) {
     if (taskType === "generic") {
       const agentCount = (detail?.members ?? []).filter((m) => m.memberType === "agent").length;
       if (agentCount === 0) {
-        setError("Добави поне един агент (напр. influencer, editor, marketing), преди да стартираш задача.");
+        setError(t("dobaviPoneEdinAgent"));
         return;
       }
     }
@@ -194,7 +189,7 @@ export function AgentChatApp({ initialConversations, agents, models }: Props) {
         }
       }, 1500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Неуспешно стартиране на задача.");
+      setError(err instanceof Error ? err.message : t("neuspeshnoStartiraneNaZadacha"));
       stopPolling();
     }
   }
@@ -228,7 +223,7 @@ export function AgentChatApp({ initialConversations, agents, models }: Props) {
         }, 900);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Неуспешно действие.");
+      setError(err instanceof Error ? err.message : t("neuspeshnoDeystvie"));
     } finally {
       setControlBusy(false);
     }
@@ -245,7 +240,7 @@ export function AgentChatApp({ initialConversations, agents, models }: Props) {
       setPickerOpen(false);
       await loadDetail(activeId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Неуспешно добавяне.");
+      setError(err instanceof Error ? err.message : t("neuspeshnoDobavyane"));
     }
   }
 
@@ -258,7 +253,7 @@ export function AgentChatApp({ initialConversations, agents, models }: Props) {
       });
       await loadDetail(activeId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Неуспешно премахване.");
+      setError(err instanceof Error ? err.message : t("neuspeshnoPremahvane"));
     }
   }
 
@@ -272,7 +267,7 @@ export function AgentChatApp({ initialConversations, agents, models }: Props) {
       });
       await loadDetail(activeId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Неуспешна смяна на модел.");
+      setError(err instanceof Error ? err.message : t("neuspeshnaSmyanaNaModel"));
     }
   }
 
@@ -359,20 +354,22 @@ function ConversationList({
   onSelect: (id: string) => void;
   onNew: () => void;
 }) {
+  const t = useTranslations("AgentChat");
+  const dateLocale = useLocale() === "en" ? "en-GB" : "bg-BG";
   return (
     <div className="flex min-h-0 flex-[3] flex-col overflow-hidden rounded-2xl border border-[#e3ddd1] bg-white">
       <div className="flex items-center justify-between border-b border-[#eee7da] px-4 py-3">
-        <h2 className="text-sm font-semibold text-[#1d2733]">Разговори</h2>
+        <h2 className="text-sm font-semibold text-[#1d2733]">{t("razgovori")}</h2>
         <button
           onClick={onNew}
           className="inline-flex h-8 items-center rounded-full bg-[#1d2733] px-3 text-xs font-medium text-white transition hover:bg-[#2b3947]"
         >
-          + Нов чат
+          {t("novChat")}
         </button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-2">
         {conversations.length === 0 ? (
-          <p className="px-2 py-4 text-sm text-[#8a94a0]">Няма разговори още.</p>
+          <p className="px-2 py-4 text-sm text-[#8a94a0]">{t("nyamaRazgovoriOshte")}</p>
         ) : (
           conversations.map((c) => (
             <button
@@ -384,7 +381,7 @@ function ConversationList({
             >
               <span className="line-clamp-1 text-sm font-medium text-[#1d2733]">{c.title}</span>
               <span className="text-[11px] text-[#8a94a0]">
-                {new Date(c.updatedAt).toLocaleString("bg-BG", {
+                {new Date(c.updatedAt).toLocaleString(dateLocale, {
                   day: "2-digit",
                   month: "short",
                   hour: "2-digit",
@@ -414,22 +411,23 @@ function AgentRoster({
   onRemove: (memberId: string) => void;
   onChangeModel: (memberId: string, modelConfigId: string) => void;
 }) {
+  const t = useTranslations("AgentChat");
   return (
     <div className="flex min-h-0 flex-[2] flex-col overflow-hidden rounded-2xl border border-[#e3ddd1] bg-white">
       <div className="flex items-center justify-between border-b border-[#eee7da] px-4 py-3">
-        <h2 className="text-sm font-semibold text-[#1d2733]">Агенти</h2>
+        <h2 className="text-sm font-semibold text-[#1d2733]">{t("agenti")}</h2>
         <button
           onClick={onAdd}
           disabled={disabled}
           className="inline-flex h-8 items-center rounded-full border border-[#d9d4ca] px-3 text-xs font-medium text-[#1d2733] transition hover:bg-[#f6f4ef] disabled:opacity-40"
         >
-          + Добави
+          {t("dobavi")}
         </button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-2">
         {members.length === 0 ? (
           <p className="px-2 py-4 text-sm text-[#8a94a0]">
-            {disabled ? "Избери разговор." : "Няма агенти. Добави от бутона горе."}
+            {disabled ? t("izberiRazgovor") : t("nyamaAgentiDobaviOt")}
           </p>
         ) : (
           members.map((m) => (
@@ -440,7 +438,7 @@ function AgentRoster({
               </div>
               {m.agentCategory && (
                 <span className="mt-1 inline-block text-[11px] text-[#8a94a0]">
-                  {CATEGORY_LABELS[m.agentCategory]}
+                  {t(`category.${m.agentCategory}`)}
                 </span>
               )}
               <div className="mt-2 flex items-center gap-2">
@@ -458,9 +456,9 @@ function AgentRoster({
                 <button
                   onClick={() => onRemove(m.id)}
                   className="shrink-0 rounded-lg px-2 py-1 text-xs text-[#a23b3b] transition hover:bg-[#fbf1f1]"
-                  title="Премахни агента"
+                  title={t("premahniAgenta")}
                 >
-                  Премахни
+                  {t("premahni")}
                 </button>
               </div>
             </div>
@@ -482,18 +480,19 @@ function AgentPicker({
   onPick: (agentId: string, modelConfigId: string | null) => void;
   onClose: () => void;
 }) {
+  const t = useTranslations("AgentChat");
   const [modelByAgent, setModelByAgent] = useState<Record<string, string>>({});
 
   return (
     <div className="rounded-2xl border border-[#e3ddd1] bg-white p-3 shadow-sm">
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#1d2733]">Добави агент</h3>
+        <h3 className="text-sm font-semibold text-[#1d2733]">{t("dobaviAgent")}</h3>
         <button onClick={onClose} className="text-xs text-[#8a94a0] hover:text-[#1d2733]">
-          Затвори
+          {t("zatvori")}
         </button>
       </div>
       {agents.length === 0 ? (
-        <p className="py-2 text-sm text-[#8a94a0]">Всички агенти вече са добавени.</p>
+        <p className="py-2 text-sm text-[#8a94a0]">{t("vsichkiAgentiVecheSa")}</p>
       ) : (
         <div className="space-y-2">
           {agents.map((a) => {
@@ -503,7 +502,7 @@ function AgentPicker({
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-[#1d2733]">{a.name}</span>
                   <span className="text-[11px] text-[#8a94a0]">
-                    {CATEGORY_LABELS[a.category]}
+                    {t(`category.${a.category}`)}
                   </span>
                 </div>
                 {a.description && (
@@ -527,7 +526,7 @@ function AgentPicker({
                     onClick={() => onPick(a.id, selected || null)}
                     className="shrink-0 rounded-lg bg-[#1d2733] px-3 py-1 text-xs font-medium text-white hover:bg-[#2b3947]"
                   >
-                    Добави
+                    {t("dobavi2")}
                   </button>
                 </div>
               </div>
@@ -548,6 +547,7 @@ function ChatTimeline({
   loading: boolean;
   onArtifactChanged?: () => void;
 }) {
+  const t = useTranslations("AgentChat");
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -556,11 +556,11 @@ function ChatTimeline({
   return (
     <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
       {loading && messages.length === 0 && (
-        <p className="text-center text-sm text-[#8a94a0]">Зареждане…</p>
+        <p className="text-center text-sm text-[#8a94a0]">{t("zarezhdane")}</p>
       )}
       {!loading && messages.length === 0 && (
         <p className="mt-8 text-center text-sm text-[#8a94a0]">
-          Напиши съобщение, за да започнеш. Скоро агентите ще отговарят тук.
+          {t("napishiSaobshtenieZaDa")}
         </p>
       )}
       {messages.map((m) => (
@@ -578,6 +578,7 @@ function MessageRow({
   message: ChatMessage;
   onArtifactChanged?: () => void;
 }) {
+  const t = useTranslations("AgentChat");
   if (message.messageType === "artifact" && typeof message.metadata?.artifactId === "string") {
     return (
       <div className="flex justify-start">
@@ -612,7 +613,7 @@ function MessageRow({
   }
 
   // Agent message (text/activity) — shown Phase 2+ when the orchestrator posts.
-  const senderLabel = message.senderId ? `${message.senderId}` : "Агент";
+  const senderLabel = message.senderId ? `${message.senderId}` : t("agent");
   return (
     <div className="flex justify-start">
       <div className="max-w-[78%] rounded-2xl rounded-bl-md border border-[#e3ddd1] bg-[#faf8f3] px-4 py-2 text-sm text-[#1d2733]">
@@ -642,12 +643,13 @@ function Composer({
   running: boolean;
   hasAgents: boolean;
 }) {
+  const t = useTranslations("AgentChat");
   return (
     <div className="border-t border-[#eee7da] p-3">
       {!hasAgents && (
         <p className="mb-2 rounded-lg bg-[#fdf0d8] px-3 py-1.5 text-[11px] text-[#8a6f45]">
-          ➕ Добави агент отляво (напр. influencer или marketing), за да стартираш задача. Без
-          агент бутонът „Изпрати“ само записва съобщение.
+          {t("dobaviAgentOtlyavoNapr")}
+          {t("agentButonatIzpratiSamo")}
         </p>
       )}
       <div className="flex items-end gap-2">
@@ -664,34 +666,34 @@ function Composer({
           rows={1}
           placeholder={
             hasAgents
-              ? "Опиши задача за агентите… (Enter стартира задачата)"
-              : "Напиши съобщение… (Enter за изпращане)"
+              ? t("opishiZadachaZaAgentite")
+              : t("napishiSaobshtenieEnterZa")
           }
           className="max-h-32 min-h-[42px] flex-1 resize-none rounded-xl border border-[#d9d4ca] px-3 py-2 text-sm text-[#1d2733] focus:border-[#8a6f45] focus:outline-none"
         />
         <button
           onClick={onSend}
           disabled={sending || running || !value.trim()}
-          title="Само съобщение (без стартиране на задача)"
+          title={t("samoSaobshtenieBezStartirane")}
           className="inline-flex h-[42px] shrink-0 items-center rounded-xl border border-[#d9d4ca] px-4 text-sm font-medium text-[#1d2733] transition hover:bg-[#f6f4ef] disabled:opacity-40"
         >
-          {sending ? "…" : "Изпрати"}
+          {sending ? "…" : t("izprati")}
         </button>
         <button
           onClick={onRunArticle}
           disabled={running || !value.trim()}
-          title="Създай цяла статия (writer → metadata → QA → одобрение)"
+          title={t("sazdayTsyalaStatiyaWriter")}
           className="inline-flex h-[42px] shrink-0 items-center rounded-xl border border-[#8a6f45] px-4 text-sm font-medium text-[#8a6f45] transition hover:bg-[#faf5ec] disabled:opacity-40"
         >
-          📝 Статия
+          {t("statiya")}
         </button>
         <button
           onClick={onRun}
           disabled={running || !value.trim() || !hasAgents}
-          title={hasAgents ? "Стартирай задача с агентите" : "Добави агент, за да стартираш задача"}
+          title={hasAgents ? t("startirayZadachaSAgentite") : t("dobaviAgentZaDa")}
           className="inline-flex h-[42px] shrink-0 items-center rounded-xl bg-[#1d2733] px-5 text-sm font-medium text-white transition hover:bg-[#2b3947] disabled:opacity-40"
         >
-          {running ? "Работи…" : "▶ Задача"}
+          {running ? t("raboti") : t("zadacha")}
         </button>
       </div>
     </div>
@@ -699,14 +701,15 @@ function Composer({
 }
 
 function EmptyState({ onNew }: { onNew: () => void }) {
+  const t = useTranslations("AgentChat");
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
-      <p className="text-sm text-[#8a94a0]">Избери разговор или създай нов.</p>
+      <p className="text-sm text-[#8a94a0]">{t("izberiRazgovorIliSazday")}</p>
       <button
         onClick={onNew}
         className="inline-flex h-9 items-center rounded-full bg-[#1d2733] px-4 text-sm font-medium text-white hover:bg-[#2b3947]"
       >
-        + Нов чат
+        {t("novChat")}
       </button>
     </div>
   );

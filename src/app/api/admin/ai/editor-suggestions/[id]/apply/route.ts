@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -30,15 +31,15 @@ export async function POST(_request: Request, { params }: RouteContext) {
     .eq("id", id)
     .maybeSingle<SuggestionRow>();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  if (!suggestion) return NextResponse.json({ error: "Предложението не е намерено." }, { status: 404 });
+  if (error) return NextResponse.json({ error: await localizeApiError(error.message) }, { status: 500 });
+  if (!suggestion) return NextResponse.json({ error: await localizeApiError("Предложението не е намерено.") }, { status: 404 });
   if (suggestion.status === "applied") {
-    return NextResponse.json({ error: "Вече е приложено." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Вече е приложено.") }, { status: 400 });
   }
 
   const blocks = Array.isArray(suggestion.suggested_blocks) ? suggestion.suggested_blocks : [];
   if (blocks.length === 0) {
-    return NextResponse.json({ error: "Празно предложение." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Празно предложение.") }, { status: 400 });
   }
 
   // blog_blocks.type allows only 'text'/'image'; headings encode as <h2>…</h2>
@@ -57,7 +58,7 @@ export async function POST(_request: Request, { params }: RouteContext) {
   const existingIds = (existing ?? []).map((b: { id: string }) => b.id);
 
   const { error: insertErr } = await supabase.from("blog_blocks").insert(rows);
-  if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 });
+  if (insertErr) return NextResponse.json({ error: await localizeApiError(insertErr.message) }, { status: 500 });
 
   if (existingIds.length > 0) {
     await supabase.from("blog_blocks").delete().in("id", existingIds);

@@ -1,0 +1,88 @@
+{
+  "Metadata": {
+    "defaultTitle": "Brami – natural Bulgarian saffron cosmetics",
+    "description": "Brami is a Bulgarian online shop for natural cosmetics made with saffron grown in Bulgaria. Shampoos, creams, shower gels and face, body and hair care, delivered across Bulgaria.",
+    "ogDescription": "Natural Bulgarian saffron cosmetics for face, body and hair – with fast delivery across Bulgaria.",
+    "organizationDescription": "Brami (Brami Trade) is a Bulgarian company that grows saffron (Crocus sativus) in Bulgaria and makes the natural cosmetics line Saffron Adela Sunny – shampoos, conditioners, shower gels, creams and soaps with saffron. Its online shop brami.shop also offers selected Bulgarian natural cosmetics by Voditsa and Shafpol Beauty.",
+    "saffronLineDescription": "Natural cosmetics with Bulgarian saffron (Crocus sativus, ISO 3632) – the first Bulgarian line of hair and body wash products with saffron.",
+    "founderName": "Rumyana Brankova",
+    "countryName": "Bulgaria",
+    "organizationKnowsAbout": "natural cosmetics|saffron|Crocus sativus|Bulgarian cosmetics|hair care|skin care",
+    "streetAddress": "13 \"Demokratsiya\" St., Krivina district",
+    "city": "Sofia"
+  },
+  "Nav": {
+    "home": "Home",
+    "products": "Products",
+    "about": "About us",
+    "beautyCare": "Beauty & care",
+    "partners": "Partners",
+    "contact": "Contact",
+    "faq": "Frequently asked questions",
+    "call": "Call us",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "goHome": "Go to homepage",
+    "searchProducts": "Search products",
+    "favorites": "Favourite products",
+    "myProfile": "My profile",
+    "profile": "Profile",
+    "myOrders": "My orders",
+    "merchant": "Merchant",
+    "activateMerchant": "Activate merchant account",
+    "adminPanel": "Admin panel",
+    "logout": "Log out",
+    "loginOrRegister": "Log in or sign up",
+    "openCart": "Open cart",
+    "closeSearch": "Close search",
+    "searchPlaceholder": "Search by product name",
+    "search": "Search",
+    "noSearchResults": "No products match this search.",
+    "quickLinks": "Quick links",
+    "email": "Email"
+  },
+  "LocaleSwitcher": {
+    "label": "Switch language to {language}",
+    "names": {
+      "bg": "Български",
+      "en": "English"
+    }
+  },
+  "Footer": {
+    "title": "Natural care for face, body and hair.",
+    "text": "Carefully selected formulas, gentle textures and care that fits into your everyday life.",
+    "useful": "Useful",
+    "navigation": "Navigation",
+    "contacts": "Contact",
+    "payments": "We ship with Speedy. Payment is made by postal money order / cash on delivery.",
+    "copyright": "© {year} Brami. All rights reserved.",
+    "tagline": "Made for easier shopping and clear product information.",
+    "links": {
+      "products": "Products",
+      "saffronCosmetics": "Saffron cosmetics",
+      "about": "About us",
+      "beautyCare": "Beauty & care",
+      "contact": "Contact",
+      "cart": "Cart",
+      "faq": "Frequently asked questions",
+      "deliveryReturns": "Delivery and returns",
+      "cancellationForm": "Withdrawal form",
+      "terms": "Terms and conditions",
+      "partners": "Partners",
+      "privacyPolicy": "Privacy policy"
+    }
+  },
+  "RequestErrors": {
+    "requestFailed": "The request failed (status {status}).",
+    "saveFailed": "Could not save."
+  },
+  "CookieBanner": {
+    "title": "This website uses cookies",
+    "text": "We use cookies to improve how the website works and your experience.",
+    "read": "Read our",
+    "privacy": "Privacy policy",
+    "and": "and",
+    "terms": "Terms and conditions",
+    "accept": "Got it"
+  }
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 export function CartQuantityStepper({
@@ -13,6 +14,7 @@ export function CartQuantityStepper({
   onChange: (next: number) => void;
   size?: "sm" | "md";
 }) {
+  const t = useTranslations("CartNotification");
   const [limitReached, setLimitReached] = useState(false);
   const atMax = quantity >= stock;
   const buttonSize = size === "sm" ? "h-8 w-8" : "h-9 w-9";
@@ -57,8 +59,7 @@ export function CartQuantityStepper({
       </div>
       {limitReached ? (
         <p className="text-xs font-medium text-[#c0392b]">
-          Наличните бройки са {stock}. Не може да поръчате повече от наличното,
-          затова количеството е зададено на максимума.
+          {t("stockLimitStepper", { stock })}
         </p>
       ) : null}
     </div>

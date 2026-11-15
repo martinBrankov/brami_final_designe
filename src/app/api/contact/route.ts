@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { createMailer, getMailRecipient, getSender } from "@/lib/order-mail/mailer";
+import { localizeApiError } from "@/lib/api-i18n";
 
 export const runtime = "nodejs";
 
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
     !isNonEmptyString(body.subject) ||
     !isNonEmptyString(body.message)
   ) {
-    return NextResponse.json({ error: "Invalid contact form payload." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Invalid contact form payload.") }, { status: 400 });
   }
 
   const recipient = "info@brami.shop";
@@ -70,6 +71,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true }, { status: 202 });
   } catch (error) {
     console.error("Failed to send contact form email", error);
-    return NextResponse.json({ error: "Failed to send contact form email." }, { status: 500 });
+    return NextResponse.json({ error: await localizeApiError("Failed to send contact form email.") }, { status: 500 });
   }
 }

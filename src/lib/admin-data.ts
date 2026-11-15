@@ -1,5 +1,6 @@
 import "server-only";
 
+import { slugifyQuestion } from "@/lib/faq-slug";
 import { syncMarketingSubscriberForProfile, unsubscribeMarketingEmail } from "@/lib/marketing-subscribers";
 import { normalizeOrderImageUrl } from "@/lib/order-image";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -20,8 +21,40 @@ export type AdminUserProfile = {
   updatedAt: string;
 };
 
+export type AdminFaqItem = { question: string; answer: string };
+
+/** Bulgarian SEO fields of a product (stored in the products row). */
+export type AdminProductSeo = {
+  slug: string;
+  seoTitle: string;
+  metaDescription: string;
+  focusKeyword: string;
+  summary: string;
+  faq: AdminFaqItem[];
+  gtin: string;
+  /** Alt text per image, in the order of imageKeys. */
+  imageAlts: string[];
+};
+
+/** English version of a product (products.translations.en + related rows). */
+export type AdminProductEnglish = {
+  name: string;
+  slug: string;
+  packaging: string;
+  description: string;
+  seoTitle: string;
+  metaDescription: string;
+  focusKeyword: string;
+  summary: string;
+  faq: AdminFaqItem[];
+  highlights: string[];
+  imageAlts: string[];
+};
+
 export type AdminProductRecord = {
   id: number;
+  seo: AdminProductSeo;
+  en: AdminProductEnglish;
   name: string;
   brand: "brami" | "Voditsa" | "Shafpol Beauty" | "other";
   badge: "bestseller" | "sale" | "new" | "favorite" | "featured" | "kids" | "none";
@@ -42,6 +75,8 @@ export type AdminProductRecord = {
 
 export type AdminProductInput = {
   id: number;
+  seo?: AdminProductSeo;
+  en?: AdminProductEnglish;
   name: string;
   brand: AdminProductRecord["brand"];
   badge: AdminProductRecord["badge"];
@@ -293,10 +328,18 @@ export async function getAdminProducts() {
       rating,
       stock_quantity,
       description,
+      slug,
+      seo_title,
+      meta_description,
+      focus_keyword,
+      summary,
+      faq,
+      gtin,
+      translations,
       product_categories(categories(slug)),
       product_audiences(audiences(slug)),
-      product_images(image_src, sort_order),
-      product_highlights(text, sort_order),
+      product_images(image_src, sort_order, alt, translations),
+      product_highlights(text, sort_order, translations),
       related_products!product_id(related_product_id)
     `)
     .order("id");
@@ -305,8 +348,40 @@ export async function getAdminProducts() {
     throw new Error(`Failed to fetch admin products: ${error.message}`);
   }
 
-  return (data ?? []).map((row) => ({
+  type ImageRow = { image_src: string; sort_order: number; alt: string | null; translations: Translations };
+  type HighlightRow = { text: string; sort_order: number; translations: Translations };
+  const bySortOrder = (a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order;
+
+  return (data ?? []).map((row) => {
+    const en = (row.translations as Translations)?.en ?? {};
+    const images = [...((row.product_images ?? []) as ImageRow[])].sort(bySortOrder);
+    const highlightRows = [...((row.product_highlights ?? []) as HighlightRow[])].sort(bySortOrder);
+
+    return {
     id: Number(row.id),
+    seo: {
+      slug: row.slug ?? "",
+      seoTitle: row.seo_title ?? "",
+      metaDescription: row.meta_description ?? "",
+      focusKeyword: row.focus_keyword ?? "",
+      summary: row.summary ?? "",
+      faq: toFaqList(row.faq),
+      gtin: row.gtin ?? "",
+      imageAlts: images.map((image) => image.alt ?? ""),
+    },
+    en: {
+      name: asString(en.name),
+      slug: asString(en.slug),
+      packaging: asString(en.packaging),
+      description: asString(en.description),
+      seoTitle: asString(en.seo_title),
+      metaDescription: asString(en.meta_description),
+      focusKeyword: asString(en.focus_keyword),
+      summary: asString(en.summary),
+      faq: toFaqList(en.faq),
+      highlights: highlightRows.map((h) => asString(h.translations?.en?.text)),
+      imageAlts: images.map((image) => asString(image.translations?.en?.alt)),
+    },
     name: row.name,
     brand: row.brand,
     badge: row.badge,
@@ -335,7 +410,33 @@ export async function getAdminProducts() {
     relatedProductIds: [...(row.related_products ?? [])]
       .map((entry: { related_product_id: number }) => Number(entry.related_product_id))
       .filter((value: number) => Number.isInteger(value)),
-  })) satisfies AdminProductRecord[];
+    };
+  }) satisfies AdminProductRecord[];
+}
+
+// ── i18n / SEO helpers ────────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Translations = Record<string, Record<string, any>> | null;
+
+function asString(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function toFaqList(value: unknown): AdminFaqItem[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => ({ question: asString(item?.question).trim(), answer: asString(item?.answer).trim() }))
+    .filter((item) => item.question && item.answer);
+}
+
+/** Drops empty values so missing English fields fall back to Bulgarian. */
+function compact(record: Record<string, unknown>) {
+  return Object.fromEntries(
+    Object.entries(record).filter(([, value]) =>
+      Array.isArray(value) ? value.length > 0 : typeof value === "string" ? value.trim() !== "" : value != null,
+    ),
+  );
 }
 
 export async function getAdminUsers() {
@@ -605,8 +706,71 @@ export async function saveAdminProduct(input: AdminProductInput) {
     throw new Error(`Unknown audiences: ${unknownAudiences.join(", ")}`);
   }
 
+  const { data: existing } = await supabase
+    .from("products")
+    .select("name, slug, old_slugs, translations")
+    .eq("id", normalizedInput.id)
+    .maybeSingle<{ name: string; slug: string | null; old_slugs: string[] | null; translations: Translations }>();
+
+  const seo = input.seo;
+  const en = input.en;
+  const slug = seo ? slugifyQuestion(seo.slug || normalizedInput.name) || null : (existing?.slug ?? null);
+  const enSlug = en ? slugifyQuestion(en.slug || en.name) : "";
+  const previousEnSlug = asString(existing?.translations?.en?.slug);
+  const effectiveEnSlug = en ? enSlug : previousEnSlug;
+  if (effectiveEnSlug) {
+    const { data: duplicate, error: duplicateError } = await supabase
+      .from("products")
+      .select("id")
+      .eq("translations->en->>slug", effectiveEnSlug)
+      .neq("id", normalizedInput.id)
+      .limit(1);
+    if (duplicateError) throw new Error(`Failed to check English URL: ${duplicateError.message}`);
+    if (duplicate?.length) throw new Error(`The English URL slug "${effectiveEnSlug}" is already used by another product.`);
+  }
+  // Retired slugs keep redirecting (any language), so changing a URL is safe.
+  const oldSlugs = [
+    ...new Set([
+      ...(existing?.old_slugs ?? []),
+      ...(existing ? [`${slugifyQuestion(existing.name)}-${normalizedInput.id}`] : []),
+      ...(existing?.slug && existing.slug !== slug ? [existing.slug] : []),
+      ...(previousEnSlug && en && previousEnSlug !== enSlug ? [previousEnSlug] : []),
+    ]),
+  ].filter((value) => value !== slug && value !== enSlug);
+
+  const translations = { ...(existing?.translations ?? {}) };
+  if (en) {
+    translations.en = compact({
+      ...(existing?.translations?.en ?? {}),
+      name: en.name.trim(),
+      slug: enSlug,
+      packaging: en.packaging.trim(),
+      description: en.description.trim(),
+      seo_title: en.seoTitle.trim(),
+      meta_description: en.metaDescription.trim(),
+      focus_keyword: en.focusKeyword.trim(),
+      summary: en.summary.trim(),
+      faq: toFaqList(en.faq),
+    });
+  }
+
   const { error: productError } = await supabase.from("products").upsert({
     id: normalizedInput.id,
+    // Used as lastModified in the sitemap.
+    updated_at: new Date().toISOString(),
+    slug,
+    old_slugs: oldSlugs,
+    translations,
+    ...(seo
+      ? {
+          seo_title: seo.seoTitle.trim() || null,
+          meta_description: seo.metaDescription.trim() || null,
+          focus_keyword: seo.focusKeyword.trim() || null,
+          summary: seo.summary.trim() || null,
+          faq: toFaqList(seo.faq),
+          gtin: seo.gtin.trim() || null,
+        }
+      : {}),
     name: normalizedInput.name,
     brand: normalizedInput.brand,
     badge: normalizedInput.badge,
@@ -621,6 +785,10 @@ export async function saveAdminProduct(input: AdminProductInput) {
   });
 
   if (productError) {
+    if (productError.code === "23505") {
+      const duplicateSlug = productError.message.includes("products_en_slug_key") ? effectiveEnSlug : slug;
+      throw new Error(`The URL slug "${duplicateSlug}" is already used by another product.`);
+    }
     throw new Error(`Failed to save product: ${productError.message}`);
   }
 
@@ -648,6 +816,9 @@ export async function saveAdminProduct(input: AdminProductInput) {
         product_id: normalizedInput.id,
         image_src: imageSrc,
         sort_order: index,
+        // Re-inserted rows must carry their alt texts, or they would be lost.
+        alt: seo?.imageAlts[index]?.trim() || null,
+        translations: en?.imageAlts[index]?.trim() ? { en: { alt: en.imageAlts[index].trim() } } : {},
       })),
     ),
     replaceRows(
@@ -657,6 +828,7 @@ export async function saveAdminProduct(input: AdminProductInput) {
         product_id: normalizedInput.id,
         text,
         sort_order: index,
+        translations: en?.highlights[index]?.trim() ? { en: { text: en.highlights[index].trim() } } : {},
       })),
     ),
     replaceRows(
@@ -760,11 +932,12 @@ export async function updateAdminOrderStatus(orderId: string, status: string) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", orderId)
-    .select("order_number, customer_full_name, customer_email")
+    .select("order_number, customer_full_name, customer_email, raw_payload")
     .single<{
       order_number: string;
       customer_full_name: string;
       customer_email: string;
+      raw_payload: unknown;
     }>();
 
   if (error) {
@@ -775,6 +948,7 @@ export async function updateAdminOrderStatus(orderId: string, status: string) {
     orderNumber: data.order_number,
     customerFullName: data.customer_full_name,
     customerEmail: data.customer_email,
+    rawPayload: data.raw_payload,
   };
 }
 

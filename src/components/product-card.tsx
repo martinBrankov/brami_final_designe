@@ -1,11 +1,12 @@
 ﻿"use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import { useFavorites } from "@/components/favorites-provider";
-import type { Product } from "@/data/products";
+import { getProductHref, type Product } from "@/data/products";
+import { Link } from "@/i18n/navigation";
 
 type ProductCardProps = {
   product: Product;
@@ -105,9 +106,10 @@ export function ProductCard({
   className = "",
   compact = false,
 }: ProductCardProps) {
+  const t = useTranslations("Product");
   const { isFavorite, toggleFavorite } = useFavorites();
   const productImage = product.imageSrc[0];
-  const detailsHref = `/products/${product.id}`;
+  const detailsHref = getProductHref(product);
   const favorite = isFavorite(product.id);
   const originalPriceEuro = parseEuroPrice(product.price);
   const isOnSale = product.badge === "sale";
@@ -124,7 +126,7 @@ export function ProductCard({
       <button
         type="button"
         onClick={() => toggleFavorite(product.id)}
-        aria-label={favorite ? "Премахни от любими" : "Добави в любими"}
+        aria-label={favorite ? t("removeFromFavorites") : t("addToFavorites")}
         aria-pressed={favorite}
         className={`absolute z-10 inline-flex items-center justify-center rounded-full border transition ${
           favorite
@@ -165,7 +167,7 @@ export function ProductCard({
               <>
                 <Image
                   src={productImage}
-                  alt={product.name}
+                  alt={product.imageAlts[0] ?? product.name}
                   className="block aspect-square w-full object-cover"
                 />
                 <div
@@ -192,7 +194,7 @@ export function ProductCard({
                 compact ? "text-xs" : "text-sm"
               } shrink-0 font-medium text-[#6b587f]`}
             >
-              ({product.reviewCount} {product.reviewCount === 1 ? "оценка" : "оценки"})
+              ({t("ratingCount", { count: product.reviewCount })})
             </span>
           </div>
           <div
@@ -282,7 +284,7 @@ export function ProductCard({
               : "h-12 px-6 text-sm"
           }`}
         >
-          Купи
+          {t("buy")}
         </AddToCartButton>
       </div>
     </article>

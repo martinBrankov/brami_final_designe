@@ -1,8 +1,10 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
 import { updateAdminOrderStatus } from "@/lib/admin-data";
 import { createOrderStatusUpdateEmail } from "@/lib/order-mail/email-template";
+import { getEmailTranslator, getOrderLocale } from "@/lib/order-mail/i18n";
 import { createMailer, getSender } from "@/lib/order-mail/mailer";
 
 export const runtime = "nodejs";
@@ -23,7 +25,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const status = typeof body?.status === "string" ? body.status.trim() : "";
 
     if (!status) {
-      return NextResponse.json({ error: "Missing order status." }, { status: 400 });
+      return NextResponse.json({ error: await localizeApiError("Missing order status.") }, { status: 400 });
     }
 
     const order = await updateAdminOrderStatus(id, status);
@@ -36,6 +38,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
           orderNumber: order.orderNumber,
           customerFullName: order.customerFullName,
           status,
+          t: await getEmailTranslator(getOrderLocale(order.rawPayload)),
         });
         const transporter = createMailer();
         await transporter.sendMail({
@@ -53,7 +56,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to update order status." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Failed to update order status.") },
       { status: 400 },
     );
   }

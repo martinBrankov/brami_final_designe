@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getMerchantTierStatus } from "@/lib/merchant-tier";
 import { createMerchantPromoCode, listPromoCodesForMerchant } from "@/lib/promo-codes";
 import { requireMerchantSession } from "@/lib/user-auth";
+import { localizeApiError } from "@/lib/api-i18n";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,14 +11,14 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const merchant = await requireMerchantSession();
   if (!merchant) {
-    return NextResponse.json({ error: "Само за търговци." }, { status: 401 });
+    return NextResponse.json({ error: await localizeApiError("Само за търговци.") }, { status: 401 });
   }
   try {
     const codes = await listPromoCodesForMerchant(merchant.session.id);
     return NextResponse.json({ codes });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to list codes." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Failed to list codes.") },
       { status: 500 },
     );
   }
@@ -26,11 +27,11 @@ export async function GET() {
 export async function POST(request: Request) {
   const merchant = await requireMerchantSession();
   if (!merchant) {
-    return NextResponse.json({ error: "Само за търговци." }, { status: 401 });
+    return NextResponse.json({ error: await localizeApiError("Само за търговци.") }, { status: 401 });
   }
   if (!merchant.profile.merchantTermsAcceptedAt) {
     return NextResponse.json(
-      { error: "Приеми условията за търговец, за да управляваш кодове." },
+      { error: await localizeApiError("Приеми условията за търговец, за да управляваш кодове.") },
       { status: 403 },
     );
   }
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ code });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to create code." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Failed to create code.") },
       { status: 400 },
     );
   }

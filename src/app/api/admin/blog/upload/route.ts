@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
 
   // In Node.js 18, FormData file entries are Blob instances (File is not a global until Node 20)
   if (!(raw instanceof Blob)) {
-    return NextResponse.json({ error: "Не е предоставен файл." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Не е предоставен файл.") }, { status: 400 });
   }
 
   const fileType = raw.type;
@@ -41,10 +42,10 @@ export async function POST(request: Request) {
   const fileName = ("name" in raw ? String((raw as { name: unknown }).name) : "") || "upload";
 
   if (!ALLOWED.includes(fileType)) {
-    return NextResponse.json({ error: "Неподдържан формат. Използвай JPG, PNG, WebP, GIF или AVIF." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Неподдържан формат. Използвай JPG, PNG, WebP, GIF или AVIF.") }, { status: 400 });
   }
   if (fileSize > MAX_BYTES) {
-    return NextResponse.json({ error: "Файлът е по-голям от 5 MB." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Файлът е по-голям от 5 MB.") }, { status: 400 });
   }
 
   const supabase = createSupabaseAdminClient();
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
     .upload(filename, buffer, { contentType: fileType, upsert: false });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: await localizeApiError(error.message) }, { status: 500 });
   }
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);

@@ -6,6 +6,7 @@ import {
   type PreferredSpeedyLocation,
   type SpeedyOfficeSnapshot,
 } from "@/lib/user-auth";
+import { localizeApiError } from "@/lib/api-i18n";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,13 +56,13 @@ export async function PATCH(request: Request) {
   const session = await getUserSession();
 
   if (!session) {
-    return NextResponse.json({ error: "Не сте влезли в профил." }, { status: 401 });
+    return NextResponse.json({ error: await localizeApiError("Не сте влезли в профил.") }, { status: 401 });
   }
 
   const body = (await request.json().catch(() => null)) as ProfileBody | null;
 
   if (!body) {
-    return NextResponse.json({ error: "Невалидни данни." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Невалидни данни.") }, { status: 400 });
   }
 
   try {
@@ -79,7 +80,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ ok: true, profile });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Грешка при запис." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Грешка при запис.") },
       { status: 500 },
     );
   }

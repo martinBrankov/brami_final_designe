@@ -8,6 +8,7 @@ import {
   USER_SESSION_COOKIE,
   verifyUserCredentials,
 } from "@/lib/user-auth";
+import { localizeApiError } from "@/lib/api-i18n";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
 
   if (!identifier || !password) {
     return NextResponse.json(
-      { error: "Моля въведи потребителско име/имейл и парола." },
+      { error: await localizeApiError("Моля въведи потребителско име/имейл и парола.") },
       { status: 400 },
     );
   }
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
 
     if (!result.ok) {
       return NextResponse.json(
-        { error: "Невалидни данни за вход." },
+        { error: await localizeApiError("Невалидни данни за вход.") },
         { status: 401 },
       );
     }
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, user: toPublicUser(result.session) });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Неуспешен вход." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Неуспешен вход.") },
       { status: 500 },
     );
   }

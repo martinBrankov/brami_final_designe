@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -70,6 +72,9 @@ export function AdminOrderStatusControl({
   onSaved?: (message: string) => void;
   saveMode?: "auto" | "manual";
 }) {
+  const t = useTranslations("AdminOrderStatus");
+  // Statuses are stored in Bulgarian; only the label is translated.
+  const tStatus = useTranslations("OrderStatus");
   const router = useRouter();
   const [savedStatus, setSavedStatus] = useState(status);
   const [selectedStatus, setSelectedStatus] = useState(status);
@@ -93,13 +98,13 @@ export function AdminOrderStatusControl({
       | null;
 
     if (!response.ok || !result?.ok) {
-      onSaved?.(result?.error || "Неуспешна промяна на статуса.");
+      onSaved?.(result?.error || t("neuspeshnaPromyanaNaStatusa"));
       setSelectedStatus(savedStatus);
       return;
     }
 
     setSavedStatus(nextStatus);
-    onSaved?.("Статусът на поръчката е записан.");
+    onSaved?.(t("statusatNaPorachkataE"));
     startTransition(() => {
       router.refresh();
     });
@@ -124,7 +129,7 @@ export function AdminOrderStatusControl({
       >
         {orderStatusOptions.map((option) => (
           <option key={option} value={option}>
-            {option}
+            {tStatus(option)}
           </option>
         ))}
         {!orderStatusOptions.includes(status as (typeof orderStatusOptions)[number]) ? (
@@ -136,7 +141,7 @@ export function AdminOrderStatusControl({
           type="button"
           onClick={() => void persistStatus(selectedStatus)}
           disabled={isPending || selectedStatus === savedStatus}
-          title="Запази статус"
+          title={t("zapaziStatus")}
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[#1d2733] text-white transition hover:bg-[#2b3847] disabled:cursor-not-allowed disabled:opacity-45"
         >
           {isPending

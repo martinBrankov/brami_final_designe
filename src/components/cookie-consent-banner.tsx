@@ -1,11 +1,14 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+
+import { Link } from "@/i18n/navigation";
 
 const COOKIE_CONSENT_KEY = "cookie-consent-accepted";
 
 export function CookieConsentBanner() {
+  const t = useTranslations("CookieBanner");
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -27,26 +30,25 @@ export function CookieConsentBanner() {
       <div className="mx-auto flex max-w-3xl flex-col gap-4 rounded-[28px] border border-[#ddd3e4] bg-[rgba(253,253,253,0.96)] px-5 py-5 shadow-[0_20px_60px_rgba(67,40,85,0.18)] backdrop-blur-xl sm:flex-row sm:items-end sm:justify-between sm:px-6">
         <div className="space-y-1.5">
           <p className="text-base font-semibold text-[#432855]">
-            Сайтът използва бисквитки
+            {t("title")}
           </p>
           <p className="text-sm leading-6 text-[#6b587f]">
-            Използваме бисквитки, за да подобрим работата на сайта и
-            потребителското изживяване.
+            {t("text")}
           </p>
           <p className="text-xs leading-5 text-[#8a739c]">
-            Прочети{" "}
+            {t("read")}{" "}
             <Link
               href="/privacy-policy"
               className="font-medium text-[#432855] underline decoration-[#cbb7d8] underline-offset-4"
             >
-              Политика за личните данни
+              {t("privacy")}
             </Link>{" "}
-            и{" "}
+            {t("and")}{" "}
             <Link
               href="/terms"
               className="font-medium text-[#432855] underline decoration-[#cbb7d8] underline-offset-4"
             >
-              Общи условия
+              {t("terms")}
             </Link>
             .
           </p>
@@ -57,7 +59,7 @@ export function CookieConsentBanner() {
           onClick={handleAccept}
           className="inline-flex h-11 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-5 text-sm font-semibold uppercase tracking-[0.06em] text-white"
         >
-          Разбрах
+          {t("accept")}
         </button>
       </div>
     </div>

@@ -1,7 +1,49 @@
+# brami.shop – natural Bulgarian saffron cosmetics
+# Search engines and AI assistants are welcome to crawl and cite the public pages.
+
 User-agent: *
 Allow: /
-
 Disallow: /api/
-Disallow: /cart
+Disallow: /admin-panel
+Disallow: /en/admin-panel
+Disallow: /kolichka
+Disallow: /en/cart
+Disallow: /profil
+Disallow: /en/account
+Disallow: /moite-porachki
+Disallow: /en/my-orders
+Disallow: /otpisvane
+Disallow: /en/unsubscribe
+
+# AI search and answer engines (live retrieval and citations)
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: Bingbot
+User-agent: Googlebot
+User-agent: Applebot
+User-agent: DuckAssistBot
+# AI model training crawlers (allowed on purpose, so models know Brami)
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: CCBot
+User-agent: Meta-ExternalAgent
+Allow: /
+Disallow: /api/
+Disallow: /admin-panel
+Disallow: /en/admin-panel
+Disallow: /kolichka
+Disallow: /en/cart
+Disallow: /profil
+Disallow: /en/account
+Disallow: /moite-porachki
+Disallow: /en/my-orders
+Disallow: /otpisvane
+Disallow: /en/unsubscribe
 
 Sitemap: https://brami.shop/sitemap.xml

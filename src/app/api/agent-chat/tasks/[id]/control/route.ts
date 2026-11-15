@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { after, NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -26,7 +27,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
   const action = body?.action as ControlAction | undefined;
   if (!action || !ACTIONS.includes(action)) {
-    return NextResponse.json({ error: "Невалидно действие." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Невалидно действие.") }, { status: 400 });
   }
 
   const instruction =
@@ -34,12 +35,12 @@ export async function POST(request: Request, { params }: RouteContext) {
       ? body.instruction.trim()
       : null;
   if (action === "redirect" && !instruction) {
-    return NextResponse.json({ error: "Пренасочването изисква инструкция." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Пренасочването изисква инструкция.") }, { status: 400 });
   }
 
   const ctx = await getTaskContext(taskId);
   if (!ctx) {
-    return NextResponse.json({ error: "Задачата не е намерена." }, { status: 404 });
+    return NextResponse.json({ error: await localizeApiError("Задачата не е намерена.") }, { status: 404 });
   }
 
   try {
@@ -56,6 +57,6 @@ export async function POST(request: Request, { params }: RouteContext) {
     return NextResponse.json({ ok: true, action });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Неуспешно действие.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: await localizeApiError(message) }, { status: 500 });
   }
 }

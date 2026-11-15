@@ -1,3 +1,5 @@
+import { useLocale, useTranslations } from "next-intl";
+
 import {
   AccountMerchantTierProgress,
   type MerchantTierProgressData,
@@ -21,34 +23,30 @@ function getCommissionState(order: MerchantOrderSummary): CommissionState {
 
 const COMMISSION_BADGE: Record<
   CommissionState,
-  { label: string; badge: string; amount: string }
+  { badge: string; amount: string }
 > = {
   paid: {
-    label: "Изплатена",
     badge: "bg-[#f3faf4] text-[#2e6b3a]",
     amount: "text-[#6b587f]",
   },
   ready: {
-    label: "Готова за изплащане",
     badge: "bg-[#f1f5fc] text-[#3d5a92]",
     amount: "text-[#2e6b3a]",
   },
   awaiting: {
-    label: "Очаква доставка",
     badge: "bg-[#faf7fc] text-[#8f72a7]",
     amount: "text-[#8f72a7]",
   },
   cancelled: {
-    label: "Отказана",
     badge: "bg-[#fff6f6] text-[#9a3f3f]",
     amount: "text-[#9a3f3f]",
   },
 };
 
-function formatDate(value: string) {
+function formatDate(value: string, locale: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("bg-BG", {
+  return date.toLocaleDateString(locale === "en" ? "en-GB" : "bg-BG", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -64,6 +62,9 @@ export function AccountMerchantSection({
   orders: MerchantOrderSummary[];
   tierData: MerchantTierProgressData;
 }) {
+  const t = useTranslations("MerchantSection");
+  const tStatus = useTranslations("OrderStatus");
+  const locale = useLocale();
   // Cancelled orders yield no dividend, so they are left out of the total.
   const totalCommission = orders
     .filter((order) => getCommissionState(order) !== "cancelled")
@@ -81,7 +82,7 @@ export function AccountMerchantSection({
   return (
     <section className="w-full">
       <p className="text-sm text-[#6b587f]">
-        Тук виждаш своето ниво на отстъпка, промо кодове и поръчки, направени през тях.
+        {t("intro")}
       </p>
 
       <div className="mt-6">
@@ -89,11 +90,10 @@ export function AccountMerchantSection({
       </div>
 
       <h3 className="mt-12 font-serif text-2xl text-[#432855]">
-        Моите промо кодове
+        {t("codesTitle")}
       </h3>
       <p className="mt-1 text-sm text-[#6b587f]">
-        Генерирай и управлявай кодовете си. За всеки код разпределяш пула между отстъпка за
-        клиента и твой дивидент.
+        {t("codesText")}
       </p>
 
       <div className="mt-6">
@@ -105,17 +105,16 @@ export function AccountMerchantSection({
 
       <div className="mt-12">
         <h3 className="font-serif text-2xl text-[#432855]">
-          Поръчки през твоите кодове
+          {t("ordersTitle")}
         </h3>
         <p className="mt-1 text-sm text-[#6b587f]">
-          Дивидентът се изплаща само за доставени поръчки. Докато поръчката не е
-          доставена, комисионата стои като „Очаква доставка“.
+          {t("ordersText")}
         </p>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-[18px] border border-[#ece3f2] bg-white p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8f72a7]">
-              Натрупана общо
+              {t("totalAccrued")}
             </p>
             <p className="mt-1 text-xl font-semibold text-[#432855]">
               {formatEur(totalCommission)}
@@ -123,7 +122,7 @@ export function AccountMerchantSection({
           </div>
           <div className="rounded-[18px] border border-[#cce4d3] bg-[#f3faf4] p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#2e6b3a]">
-              Изплатена
+              {t("commission.paid")}
             </p>
             <p className="mt-1 text-xl font-semibold text-[#2e6b3a]">
               {formatEur(paidCommission)}
@@ -131,7 +130,7 @@ export function AccountMerchantSection({
           </div>
           <div className="rounded-[18px] border border-[#cdd8ec] bg-[#f1f5fc] p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#3d5a92]">
-              Готова за изплащане
+              {t("commission.ready")}
             </p>
             <p className="mt-1 text-xl font-semibold text-[#3d5a92]">
               {formatEur(readyCommission)}
@@ -139,7 +138,7 @@ export function AccountMerchantSection({
           </div>
           <div className="rounded-[18px] border border-[#ece3f2] bg-[#faf7fc] p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8f72a7]">
-              Очаква доставка
+              {t("commission.awaiting")}
             </p>
             <p className="mt-1 text-xl font-semibold text-[#8f72a7]">
               {formatEur(awaitingCommission)}
@@ -149,7 +148,7 @@ export function AccountMerchantSection({
 
         {orders.length === 0 ? (
           <p className="mt-4 rounded-[18px] border border-[#ece3f2] bg-[#faf7fc] px-4 py-4 text-sm text-[#6b587f]">
-            Все още няма направени поръчки през твоите промо кодове.
+            {t("noOrders")}
           </p>
         ) : (
           <>
@@ -168,11 +167,11 @@ export function AccountMerchantSection({
                           #{order.orderNumber}
                         </p>
                         <p className="text-[11px] text-[#6b587f]">
-                          {formatDate(order.orderCreatedAt || order.createdAt)}
+                          {formatDate(order.orderCreatedAt || order.createdAt, locale)}
                         </p>
                       </div>
                       <span className="inline-flex shrink-0 items-center rounded-full bg-[#f6f2f9] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#432855]">
-                        {order.status}
+                        {tStatus.has(order.status) ? tStatus(order.status) : order.status}
                       </span>
                     </div>
 
@@ -188,7 +187,7 @@ export function AccountMerchantSection({
                     <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                       <div>
                         <dt className="text-[10px] uppercase tracking-[0.08em] text-[#8f72a7]">
-                          Код
+                          {t("code")}
                         </dt>
                         <dd className="mt-0.5 font-mono text-sm text-[#432855]">
                           {order.promoCodeText}
@@ -196,7 +195,7 @@ export function AccountMerchantSection({
                       </div>
                       <div>
                         <dt className="text-[10px] uppercase tracking-[0.08em] text-[#8f72a7]">
-                          Стойност
+                          {t("value")}
                         </dt>
                         <dd className="mt-0.5 text-sm font-medium text-[#432855]">
                           {formatEur(order.total)}
@@ -209,8 +208,8 @@ export function AccountMerchantSection({
                         className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${badge.badge}`}
                       >
                         {state === "paid"
-                          ? `Изплатена · ${formatDate(order.promoCommissionPaidAt!)}`
-                          : badge.label}
+                          ? t("paidOn", { date: formatDate(order.promoCommissionPaidAt!, locale) })
+                          : t(`commission.${state}`)}
                       </span>
                       <span className={`text-base font-semibold ${badge.amount}`}>
                         {state === "paid" ? "" : "+"}
@@ -226,14 +225,14 @@ export function AccountMerchantSection({
               <table className="w-full text-sm">
                 <thead className="border-b border-[#ece3f2] text-left text-xs uppercase tracking-[0.08em] text-[#8f72a7]">
                   <tr>
-                    <th className="py-2 pr-3 font-semibold">Поръчка</th>
-                    <th className="py-2 pr-3 font-semibold">Дата</th>
-                    <th className="py-2 pr-3 font-semibold">Клиент</th>
-                    <th className="py-2 pr-3 font-semibold">Код</th>
-                    <th className="py-2 pr-3 font-semibold">Статус поръчка</th>
-                    <th className="py-2 pr-3 text-right font-semibold">Стойност</th>
-                    <th className="py-2 pr-3 text-right font-semibold">Дивидент</th>
-                    <th className="py-2 pl-3 font-semibold">Статус дивидент</th>
+                    <th className="py-2 pr-3 font-semibold">{t("colOrder")}</th>
+                    <th className="py-2 pr-3 font-semibold">{t("colDate")}</th>
+                    <th className="py-2 pr-3 font-semibold">{t("colCustomer")}</th>
+                    <th className="py-2 pr-3 font-semibold">{t("colCode")}</th>
+                    <th className="py-2 pr-3 font-semibold">{t("colOrderStatus")}</th>
+                    <th className="py-2 pr-3 text-right font-semibold">{t("colValue")}</th>
+                    <th className="py-2 pr-3 text-right font-semibold">{t("colDividend")}</th>
+                    <th className="py-2 pl-3 font-semibold">{t("colDividendStatus")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#ece3f2]">
@@ -246,7 +245,7 @@ export function AccountMerchantSection({
                           #{order.orderNumber}
                         </td>
                         <td className="py-3 pr-3 text-xs text-[#6b587f]">
-                          {formatDate(order.orderCreatedAt || order.createdAt)}
+                          {formatDate(order.orderCreatedAt || order.createdAt, locale)}
                         </td>
                         <td className="py-3 pr-3">
                           <span className="block text-sm font-medium">
@@ -261,7 +260,7 @@ export function AccountMerchantSection({
                         </td>
                         <td className="py-3 pr-3">
                           <span className="inline-flex items-center rounded-full bg-[#f6f2f9] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#432855]">
-                            {order.status}
+                            {tStatus.has(order.status) ? tStatus(order.status) : order.status}
                           </span>
                         </td>
                         <td className="py-3 pr-3 text-right font-medium">
@@ -278,8 +277,8 @@ export function AccountMerchantSection({
                             className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${badge.badge}`}
                           >
                             {state === "paid"
-                              ? `Изплатена · ${formatDate(order.promoCommissionPaidAt!)}`
-                              : badge.label}
+                              ? t("paidOn", { date: formatDate(order.promoCommissionPaidAt!, locale) })
+                              : t(`commission.${state}`)}
                           </span>
                         </td>
                       </tr>

@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -14,10 +15,10 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as { topic?: unknown } | null;
   const topic = typeof body?.topic === "string" ? body.topic.trim() : "";
   if (!topic || topic.length < 3) {
-    return NextResponse.json({ error: "Темата трябва да е поне 3 символа." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Темата трябва да е поне 3 символа.") }, { status: 400 });
   }
   if (topic.length > 500) {
-    return NextResponse.json({ error: "Темата е твърде дълга (макс 500 символа)." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Темата е твърде дълга (макс 500 символа).") }, { status: 400 });
   }
 
   try {
@@ -26,6 +27,6 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("[blog generate] error:", err);
     const message = err instanceof Error ? err.message : "Неуспешно генериране.";
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json({ error: await localizeApiError(message) }, { status: 502 });
   }
 }

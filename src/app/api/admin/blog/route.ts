@@ -1,4 +1,6 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
+import { getBlogPostUrls, notifyIndexNow } from "@/lib/indexnow";
 
 import { requireAdminSession } from "@/lib/admin-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -15,7 +17,7 @@ export async function GET() {
     .select("id, title, slug, eyebrow, published, is_featured, show_in_list, published_at, read_time, created_at")
     .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: await localizeApiError(error.message) }, { status: 500 });
   return NextResponse.json({ posts: data ?? [] });
 }
 
@@ -23,7 +25,7 @@ export async function POST(request: Request) {
   await requireAdminSession();
 
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
-  if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  if (!body) return NextResponse.json({ error: await localizeApiError("Invalid body") }, { status: 400 });
 
   const { title, slug, eyebrow, excerpt, coverImage, readTime, publishedAt, isFeatured, published, showInList, blocks } = body as {
     title?: string;
@@ -40,7 +42,7 @@ export async function POST(request: Request) {
   };
 
   if (!title || !slug) {
-    return NextResponse.json({ error: "title and slug are required" }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("title and slug are required") }, { status: 400 });
   }
 
   const supabase = createSupabaseAdminClient();
@@ -66,7 +68,7 @@ export async function POST(request: Request) {
     .select("id")
     .single();
 
-  if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 });
+  if (insertErr) return NextResponse.json({ error: await localizeApiError(insertErr.message) }, { status: 500 });
 
   if (Array.isArray(blocks) && blocks.length > 0) {
     const rows = blocks.map((b, i) => ({
@@ -76,8 +78,9 @@ export async function POST(request: Request) {
       position: i + 1,
     }));
     const { error: blocksErr } = await supabase.from("blog_blocks").insert(rows);
-    if (blocksErr) return NextResponse.json({ error: blocksErr.message }, { status: 500 });
+    if (blocksErr) return NextResponse.json({ error: await localizeApiError(blocksErr.message) }, { status: 500 });
   }
 
+  notifyIndexNow(() => getBlogPostUrls(post.id));
   return NextResponse.json({ id: post.id });
 }

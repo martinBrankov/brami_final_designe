@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -22,12 +24,14 @@ type EditModal =
   | { kind: "loading"; id: string }
   | { kind: "ready"; id: string | "new"; post: DbPost | null };
 
-function formatDate(iso: string | null) {
+function formatDate(iso: string | null, locale: string) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("bg-BG", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
 }
 
 export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] }) {
+  const t = useTranslations("AdminBlogList");
+  const dateLocale = useLocale() === "en" ? "en-GB" : "bg-BG";
   const router = useRouter();
   const [posts, setPosts] = useState(initialPosts);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -58,7 +62,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
         error?: string;
       };
       if (!res.ok) {
-        setAiError(body.error ?? "Грешка при генериране.");
+        setAiError(body.error ?? t("greshkaPriGenerirane"));
         return;
       }
       setAiOpen(false);
@@ -69,7 +73,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
         await handleOpenEdit(body.id);
       }
     } catch (err) {
-      setAiError(err instanceof Error ? err.message : "Грешка при генериране.");
+      setAiError(err instanceof Error ? err.message : t("greshkaPriGenerirane"));
     } finally {
       setAiGenerating(false);
     }
@@ -105,7 +109,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({})) as { error?: string };
-        alert(body.error ?? "Грешка.");
+        alert(body.error ?? t("greshka"));
         return;
       }
       setPosts((prev) => prev.map((p) => p.id === id ? { ...p, published: !current } : p));
@@ -124,7 +128,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({})) as { error?: string };
-        alert(body.error ?? "Грешка.");
+        alert(body.error ?? t("greshka"));
         return;
       }
       setPosts((prev) =>
@@ -147,7 +151,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ showInList: !current }),
       });
-      if (!res.ok) { alert("Грешка."); return; }
+      if (!res.ok) { alert(t("greshka")); return; }
       setPosts((prev) => prev.map((p) => p.id === id ? { ...p, show_in_list: !current } : p));
     } finally {
       setTogglingList(null);
@@ -160,8 +164,8 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
     try {
       const res = await fetch("/api/admin/blog/cleanup-images", { method: "POST" });
       const body = await res.json().catch(() => ({})) as { deleted?: number; error?: string };
-      if (!res.ok) { setCleanResult(`Грешка: ${body.error ?? "неизвестна"}`); return; }
-      setCleanResult(body.deleted === 0 ? "Няма неизползвани снимки." : `Изтрити ${body.deleted} файла.`);
+      if (!res.ok) { setCleanResult(t("greshka2", { neizvestna: body.error ?? t("neizvestna") })); return; }
+      setCleanResult(body.deleted === 0 ? t("nyamaNeizpolzvaniSnimki") : t("iztritiFayla", { deleted: body.deleted ?? 0 }));
     } finally {
       setCleaning(false);
     }
@@ -173,7 +177,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
       const res = await fetch(`/api/admin/blog/${id}`, { method: "DELETE" });
       if (!res.ok) {
         const body = await res.json().catch(() => ({})) as { error?: string };
-        alert(body.error ?? "Грешка при изтриване.");
+        alert(body.error ?? t("greshkaPriIztrivane"));
         return;
       }
       setPosts((prev) => prev.filter((p) => p.id !== id));
@@ -188,7 +192,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
     <>
       <div>
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-[#5f6b76]">{posts.length} статии</p>
+          <p className="text-sm text-[#5f6b76]">{t("postCount", { count: posts.length })}</p>
           <div className="flex flex-wrap items-center gap-2">
             {cleanResult && (
               <span className="text-xs text-[#5f6b76]">{cleanResult}</span>
@@ -199,7 +203,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
               disabled={cleaning}
               className="inline-flex h-10 items-center rounded-[10px] border border-[#d2c8b8] bg-white px-4 text-sm font-medium text-[#5f6b76] transition hover:bg-[#f8f4ec] disabled:opacity-60"
             >
-              {cleaning ? "Почиства…" : "Почисти снимки"}
+              {cleaning ? t("pochistva") : t("pochistiSnimki")}
             </button>
             <button
               type="button"
@@ -209,20 +213,20 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.9 5.8 21.3l2.4-7.4L2 9.4h7.6L12 2z"/>
               </svg>
-              AI генерирай
+              {t("aiGeneriray")}
             </button>
             <button
               type="button"
               onClick={handleOpenNew}
               className="inline-flex h-10 items-center gap-2 rounded-[10px] bg-[#1d2733] px-5 text-sm font-semibold text-white transition hover:bg-[#2d3a47]"
             >
-              + Нова статия
+              {t("novaStatiya")}
             </button>
           </div>
         </div>
 
         {posts.length === 0 ? (
-          <p className="py-12 text-center text-sm text-[#5f6b76]">Няма статии. Създай първата.</p>
+          <p className="py-12 text-center text-sm text-[#5f6b76]">{t("nyamaStatiiSazdayParvata")}</p>
         ) : (
           <div className="divide-y divide-[#e7dfd1]">
             {posts.map((post) => (
@@ -235,7 +239,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
                     <span className="font-semibold text-[#1d2733]">{post.title}</span>
                     {post.is_featured && (
                       <span className="rounded-full bg-[#d8b36b]/20 px-2 py-0.5 text-xs font-semibold text-[#8a6f45]">
-                        Акцент
+                        {t("aktsent")}
                       </span>
                     )}
                     <span
@@ -245,14 +249,14 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
                           : "bg-gray-100 text-gray-500"
                       }`}
                     >
-                      {post.published ? "Публикувана" : "Чернова"}
+                      {post.published ? t("publikuvana") : t("chernova")}
                     </span>
                   </div>
                   <div className="mt-1 flex flex-wrap gap-3 text-xs text-[#8a9099]">
                     <span className="font-mono">{post.slug}</span>
                     {post.eyebrow && <span>{post.eyebrow}</span>}
-                    {post.read_time && <span>{post.read_time} четене</span>}
-                    <span>{formatDate(post.published_at ?? post.created_at)}</span>
+                    {post.read_time && <span>{t("readTime", { time: post.read_time })}</span>}
+                    <span>{formatDate(post.published_at ?? post.created_at, dateLocale)}</span>
                   </div>
                 </div>
 
@@ -260,7 +264,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
                   <button
                     onClick={() => handleTogglePublished(post.id, post.published)}
                     disabled={publishing === post.id || (post.published && post.is_featured)}
-                    title={post.published && post.is_featured ? "Смени акцента преди да скриеш статията" : post.published ? "Скрий от сайта" : "Публикувай"}
+                    title={post.published && post.is_featured ? t("smeniAktsentaPrediDa") : post.published ? t("skriyOtSayta") : t("publikuvay")}
                     className={`flex h-8 w-8 items-center justify-center rounded-[8px] border transition disabled:opacity-50 ${
                       post.published
                         ? "border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
@@ -277,7 +281,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
                   <button
                     onClick={() => handleToggleFeatured(post.id, post.is_featured)}
                     disabled={featuring === post.id || !post.published || post.is_featured}
-                    title={!post.published ? "Публикувай статията, за да я маркираш като акцент" : post.is_featured ? "Маркирай друга статия за да смениш акцента" : "Маркирай като акцент"}
+                    title={!post.published ? t("publikuvayStatiyataZaDa") : post.is_featured ? t("markirayDrugaStatiyaZa") : t("markirayKatoAktsent")}
                     className={`flex h-8 w-8 items-center justify-center rounded-[8px] border transition disabled:cursor-not-allowed disabled:opacity-40 ${
                       post.is_featured
                         ? "border-[#d8b36b] bg-[#fdf8ee] text-[#8a6f45] hover:bg-[#faefd6]"
@@ -293,7 +297,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
                     <button
                       onClick={() => handleToggleShowInList(post.id, post.show_in_list)}
                       disabled={togglingList === post.id}
-                      title={post.show_in_list ? "Скрий от списъка" : "Показвай и в списъка"}
+                      title={post.show_in_list ? t("skriyOtSpisaka") : t("pokazvayIVSpisaka")}
                       className={`flex h-8 w-8 items-center justify-center rounded-[8px] border transition disabled:opacity-50 ${
                         post.show_in_list
                           ? "border-[#b8d8b8] bg-[#eef8ee] text-[#4a7a4a] hover:bg-[#dff0df]"
@@ -310,7 +314,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
 
                   <button
                     onClick={() => handleOpenEdit(post.id)}
-                    title="Редактирай"
+                    title={t("redaktiray")}
                     className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#d2c8b8] text-[#1d2733] transition hover:bg-[#f8f4ec]"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -323,7 +327,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
                         disabled={deleting === post.id}
                         className="inline-flex h-8 items-center rounded-[8px] bg-red-600 px-3 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
                       >
-                        {deleting === post.id ? "…" : "Потвърди"}
+                        {deleting === post.id ? "…" : t("potvardi")}
                       </button>
                       <button
                         onClick={() => setConfirmId(null)}
@@ -335,7 +339,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
                   ) : (
                     <button
                       onClick={() => setConfirmId(post.id)}
-                      title="Изтрий"
+                      title={t("iztriy")}
                       className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-red-200 text-red-500 transition hover:bg-red-50"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
@@ -364,20 +368,20 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
                 </svg>
               </div>
               <div>
-                <h2 className="text-base font-semibold text-[#1d2733]">Генериране на статия с AI</h2>
+                <h2 className="text-base font-semibold text-[#1d2733]">{t("generiraneNaStatiyaS")}</h2>
                 <p className="mt-1 text-xs text-[#7c8a96]">
-                  Статията се създава като <strong>чернова</strong>. Можеш да я редактираш и да я публикуваш ръчно.
+                  {t.rich("createdAsDraft", { strong: (chunks) => <strong>{chunks}</strong> })}
                 </p>
               </div>
             </div>
 
             <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-[#8a6f45]">
-              Тема на статията
+              {t("temaNaStatiyata")}
             </label>
             <textarea
               value={aiTopic}
               onChange={(e) => setAiTopic(e.target.value)}
-              placeholder="Напр.: Грижа за кожата на лицето през лятото — съвети и рутина"
+              placeholder={t("naprGrizhaZaKozhata")}
               rows={3}
               disabled={aiGenerating}
               className="mt-1.5 w-full rounded-[8px] border border-[#e0dbd2] px-3 py-2 text-sm text-[#1d2733] outline-none focus:border-[#d8b36b] focus:ring-1 focus:ring-[#d8b36b]/40 disabled:opacity-60"
@@ -394,7 +398,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
                 disabled={aiGenerating}
                 className="inline-flex h-9 items-center rounded-[8px] border border-[#d2c8b8] bg-white px-4 text-sm font-medium text-[#5f6b76] transition hover:bg-[#f8f4ec] disabled:opacity-60"
               >
-                Отказ
+                {t("otkaz")}
               </button>
               <button
                 type="button"
@@ -407,10 +411,10 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
                       <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
                     </svg>
-                    Генерира се…
+                    {t("generiraSe")}
                   </>
                 ) : (
-                  "Генерирай чернова"
+                  t("generirayChernova")
                 )}
               </button>
             </div>
@@ -422,7 +426,7 @@ export function AdminBlogList({ posts: initialPosts }: { posts: BlogPostRow[] })
         <div className="fixed inset-0 z-50 overflow-y-auto bg-white">
           <div className="mx-auto w-full max-w-5xl px-6 py-8">
             {editModal.kind === "loading" ? (
-              <div className="py-20 text-center text-sm text-[#8a9099]">Зарежда се…</div>
+              <div className="py-20 text-center text-sm text-[#8a9099]">{t("zarezhdaSe")}</div>
             ) : (
               <AdminBlogEditor post={editModal.post} onClose={handleCloseModal} />
             )}

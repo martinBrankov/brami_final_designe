@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -25,6 +26,6 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("[ai editor] error:", err);
     const message = err instanceof Error ? err.message : "Неуспешно генериране.";
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json({ error: await localizeApiError(message) }, { status: 502 });
   }
 }

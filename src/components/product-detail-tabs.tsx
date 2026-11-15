@@ -1,8 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
+import { useState, type FormEvent, type ReactNode } from "react";
+
+import { Link } from "@/i18n/navigation";
 
 type DisplayReview = {
   id: string;
@@ -78,11 +80,9 @@ type ProductDetailTabsProps = {
   isAdmin?: boolean;
   userName?: string;
   initialUserReview: { rating: number; comment: string } | null;
+  /** Server-rendered extras shown under the description (specs table, FAQ). */
+  children?: ReactNode;
 };
-
-const DESCRIPTION_LABEL = "Описание";
-const REVIEWS_LABEL = "Отзиви";
-const NO_REVIEWS_LABEL = "Все още няма добавени оценки за този продукт.";
 
 export function ProductDetailTabs({
   productId,
@@ -93,8 +93,10 @@ export function ProductDetailTabs({
   isAdmin = false,
   userName = "",
   initialUserReview,
+  children,
 }: ProductDetailTabsProps) {
   const router = useRouter();
+  const t = useTranslations("ProductTabs");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"description" | "reviews">(
     "description",
@@ -144,7 +146,7 @@ export function ProductDetailTabs({
       | null;
 
     if (!response.ok || !result?.ok) {
-      throw new Error(result?.error || "Неуспешно записване.");
+      throw new Error(result?.error || t("saveFailed"));
     }
   }
 
@@ -153,7 +155,7 @@ export function ProductDetailTabs({
     setRatingError("");
 
     if (rating < 1) {
-      setRatingError("Избери брой звезди.");
+      setRatingError(t("chooseStars"));
       return;
     }
 
@@ -166,11 +168,11 @@ export function ProductDetailTabs({
       setUserRating(rating);
       setHasRated(true);
       setIsRatingFormOpen(false);
-      setRatingSuccess("Оценката е изпратена.");
+      setRatingSuccess(t("ratingSent"));
       router.refresh();
     } catch (error) {
       setRatingError(
-        error instanceof Error ? error.message : "Възникна грешка.",
+        error instanceof Error ? error.message : t("genericError"),
       );
     } finally {
       setIsSubmittingRating(false);
@@ -182,16 +184,16 @@ export function ProductDetailTabs({
     setCommentError("");
 
     const trimmedComment = commentText.trim();
-    // Empty name -> the comment is shown as "Анонимен потребител".
-    const authorName = name.trim() || "Анонимен потребител";
+    // Empty name -> the comment is shown as an anonymous user.
+    const authorName = name.trim() || t("anonymousUser");
 
     if (!trimmedComment) {
-      setCommentError("Напиши коментар, преди да го изпратиш.");
+      setCommentError(t("commentRequired"));
       return;
     }
 
     if (userRating < 1) {
-      setCommentError("Първо добави оценка на продукта.");
+      setCommentError(t("ratingRequired"));
       return;
     }
 
@@ -205,7 +207,7 @@ export function ProductDetailTabs({
       router.refresh();
     } catch (error) {
       setCommentError(
-        error instanceof Error ? error.message : "Възникна грешка.",
+        error instanceof Error ? error.message : t("genericError"),
       );
     } finally {
       setIsSubmittingComment(false);
@@ -213,7 +215,7 @@ export function ProductDetailTabs({
   }
 
   async function handleDelete(review: DisplayReview) {
-    if (!window.confirm("Сигурен ли си, че искаш да изтриеш този коментар?")) {
+    if (!window.confirm(t("confirmDelete"))) {
       return;
     }
 
@@ -247,7 +249,7 @@ export function ProductDetailTabs({
                 : "border border-[#d8d0de] bg-white text-[#432855] hover:bg-[#faf7fc]"
             }`}
           >
-            {DESCRIPTION_LABEL}
+            {t("description")}
           </button>
           <button
             type="button"
@@ -258,17 +260,15 @@ export function ProductDetailTabs({
                 : "border border-[#d8d0de] bg-white text-[#432855] hover:bg-[#faf7fc]"
             }`}
           >
-            {REVIEWS_LABEL}
+            {t("reviews")}
           </button>
         </div>
       </div>
 
-      <div
-        className={`px-6 sm:px-10 lg:px-14 ${
-          activeTab === "description" ? "py-8" : "pb-8 pt-0"
-        }`}
-      >
-        {activeTab === "description" ? (
+      {/* Both panels are always rendered so the description and the reviews
+          are in the server HTML for search engines and AI crawlers; the
+          inactive one is only hidden. */}
+      <div className="px-6 py-8 sm:px-10 lg:px-14" hidden={activeTab !== "description"}>
           <div className="space-y-5">
             <h2 className="font-serif text-[1.9rem] leading-tight text-[#432855] sm:text-[2.2rem]">
               {productName}
@@ -277,22 +277,24 @@ export function ProductDetailTabs({
               className="text-[#5f4b73]"
               dangerouslySetInnerHTML={{ __html: description }}
             />
+            {children}
           </div>
-        ) : (
+      </div>
+      <div className="px-6 pb-8 pt-0 sm:px-10 lg:px-14" hidden={activeTab !== "reviews"}>
           <div className="space-y-0">
             {!isAuthenticated ? (
               <section className="-mx-6 border-b border-[#e4dbea] bg-[#fbf8ff] px-6 py-5 sm:-mx-10 sm:px-10 lg:-mx-14 lg:px-14">
                 <h3 className="text-base font-semibold text-[#432855]">
-                  Оцени продукта
+                  {t("rateProduct")}
                 </h3>
                 <p className="mt-1 text-sm text-[#6b587f]">
-                  Влез в профила си, за да оставиш оценка и коментар.
+                  {t("loginToReview")}
                 </p>
                 <Link
                   href="/account"
                   className="mt-4 inline-flex h-11 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-6 text-sm font-semibold uppercase tracking-[0.06em] text-white"
                 >
-                  Вход / Регистрация
+                  {t("loginRegister")}
                 </Link>
               </section>
             ) : (
@@ -318,10 +320,10 @@ export function ProductDetailTabs({
                     >
                       <div>
                         <h3 className="text-base font-semibold text-[#432855]">
-                          Добави оценка
+                          {t("addRating")}
                         </h3>
                         <p className="mt-1 text-sm text-[#6b587f]">
-                          Избери брой звезди и изпрати оценка.
+                          {t("addRatingHint")}
                         </p>
                       </div>
                       <span className="flex h-10 w-10 shrink-0 aspect-square items-center justify-center rounded-full border border-[#d8d0de] bg-white text-[#432855]">
@@ -361,7 +363,7 @@ export function ProductDetailTabs({
                             disabled={isSubmittingRating}
                             className="inline-flex h-11 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-5 text-sm font-semibold uppercase tracking-[0.06em] text-white transition disabled:cursor-not-allowed disabled:opacity-60"
                           >
-                            {isSubmittingRating ? "Изпращане..." : "Оцени"}
+                            {isSubmittingRating ? t("sending") : t("rate")}
                           </button>
                         </div>
 
@@ -386,10 +388,10 @@ export function ProductDetailTabs({
                     >
                       <div>
                         <h3 className="text-base font-semibold text-[#432855]">
-                          Добави коментар
+                          {t("addComment")}
                         </h3>
                         <p className="mt-1 text-sm text-[#6b587f]">
-                          Сподели опита си за продукта и добави оценка със звездички.
+                          {t("addCommentHint")}
                         </p>
                       </div>
                       <span className="flex h-10 w-10 shrink-0 aspect-square items-center justify-center rounded-full border border-[#d8d0de] bg-white text-[#432855]">
@@ -405,7 +407,7 @@ export function ProductDetailTabs({
                         <label className="flex flex-col gap-2">
                           <span className="flex items-center justify-between gap-4">
                             <span className="text-sm font-medium text-[#432855]">
-                              Име
+                              {t("name")}
                             </span>
                             <span className="text-xs font-medium text-[#8f72a7]">
                               {nameLength}/50
@@ -416,13 +418,13 @@ export function ProductDetailTabs({
                             onChange={(event) => setName(event.target.value)}
                             maxLength={50}
                             className="h-11 rounded-full border border-[#d8d0de] bg-white px-4 text-[#432855] outline-none transition focus:border-[#8f72a7]"
-                            placeholder="Въведи име"
+                            placeholder={t("namePlaceholder")}
                           />
                         </label>
                         <label className="mt-4 flex flex-col gap-2">
                           <span className="flex items-center justify-between gap-4">
                             <span className="text-sm font-medium text-[#432855]">
-                              Отзив
+                              {t("review")}
                             </span>
                             <span className="text-xs font-medium text-[#8f72a7]">
                               {commentLength}/1000
@@ -434,7 +436,7 @@ export function ProductDetailTabs({
                             rows={4}
                             maxLength={1000}
                             className="rounded-[24px] border border-[#d8d0de] bg-white px-4 py-3 text-[#432855] outline-none transition focus:border-[#8f72a7]"
-                            placeholder="Сподели мнението си за продукта"
+                            placeholder={t("reviewPlaceholder")}
                           />
                         </label>
 
@@ -448,7 +450,7 @@ export function ProductDetailTabs({
                             disabled={isSubmittingComment}
                             className="inline-flex h-11 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-5 text-sm font-semibold uppercase tracking-[0.06em] text-white transition disabled:cursor-not-allowed disabled:opacity-60"
                           >
-                            {isSubmittingComment ? "Изпращане..." : "Изпрати коментара"}
+                            {isSubmittingComment ? t("sending") : t("sendComment")}
                           </button>
                         </div>
                       </form>
@@ -459,7 +461,7 @@ export function ProductDetailTabs({
                 {hasRated && hasCommented ? (
                   <section className="-mx-6 border-b border-[#e4dbea] bg-[#fbf8ff] px-6 py-5 sm:-mx-10 sm:px-10 lg:-mx-14 lg:px-14">
                     <p className="text-sm font-medium text-[#4f875d]">
-                      Благодарим за оценката и коментара!
+                      {t("thanks")}
                     </p>
                   </section>
                 ) : null}
@@ -482,8 +484,8 @@ export function ProductDetailTabs({
                             type="button"
                             onClick={() => handleDelete(review)}
                             disabled={deletingId === review.id}
-                            aria-label="Изтрий коментара"
-                            title="Изтрий коментара"
+                            aria-label={t("deleteComment")}
+                            title={t("deleteComment")}
                             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#e6c9c9] text-[#b04f68] transition hover:bg-[#fdf1f3] disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             <TrashIcon />
@@ -501,10 +503,9 @@ export function ProductDetailTabs({
                 ))}
               </div>
             ) : (
-              <p className="pt-4 text-[#6b587f]">{NO_REVIEWS_LABEL}</p>
+              <p className="pt-4 text-[#6b587f]">{t("noReviews")}</p>
             )}
           </div>
-        )}
       </div>
     </section>
   );

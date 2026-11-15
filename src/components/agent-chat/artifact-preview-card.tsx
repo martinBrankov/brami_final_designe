@@ -1,6 +1,9 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useCallback, useEffect, useState } from "react";
+import { useJsonFetch } from "@/lib/use-json-fetch";
 
 type ArtifactView = {
   id: string;
@@ -11,26 +14,6 @@ type ArtifactView = {
   publishedUrl: string | null;
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "Чернова",
-  reviewing: "Проверка",
-  ready_for_approval: "За одобрение",
-  changes_requested: "Нужни промени",
-  approved: "Одобрена",
-  publishing: "Публикува",
-  published: "Публикувана",
-  rejected: "Отхвърлена",
-};
-
-async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    ...init,
-    headers: { "content-type": "application/json", ...(init?.headers ?? {}) },
-  });
-  const data = (await res.json().catch(() => ({}))) as T & { error?: string };
-  if (!res.ok) throw new Error(data.error || `Грешка ${res.status}`);
-  return data;
-}
 
 // Preview card rendered in the chat for an "artifact" message. Shows the produced
 // deliverable, its status and preview link, and the approval / publish actions.
@@ -45,6 +28,8 @@ export function ArtifactPreviewCard({
   fallbackPreviewUrl?: string;
   onChanged?: () => void;
 }) {
+  const t = useTranslations("AgentChatArtifact");
+  const jsonFetch = useJsonFetch();
   const [artifact, setArtifact] = useState<ArtifactView | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +45,7 @@ export function ArtifactPreviewCard({
     } catch {
       /* keep fallbacks */
     }
-  }, [artifactId]);
+  }, [artifactId, jsonFetch]);
 
   useEffect(() => {
     load();
@@ -77,7 +62,7 @@ export function ArtifactPreviewCard({
       await load();
       onChanged?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Неуспешно действие.");
+      setError(err instanceof Error ? err.message : t("neuspeshnoDeystvie"));
     } finally {
       setBusy(false);
     }
@@ -98,13 +83,13 @@ export function ArtifactPreviewCard({
       await load();
       onChanged?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Неуспешно публикуване.");
+      setError(err instanceof Error ? err.message : t("neuspeshnoPublikuvane"));
     } finally {
       setBusy(false);
     }
   }
 
-  const name = artifact?.name ?? fallbackName ?? "Резултат";
+  const name = artifact?.name ?? fallbackName ?? t("rezultat");
   const status = artifact?.status ?? "ready_for_approval";
   const previewUrl = artifact?.previewUrl ?? fallbackPreviewUrl ?? null;
   const publishedUrl = artifact?.publishedUrl ?? null;
@@ -121,10 +106,10 @@ export function ArtifactPreviewCard({
     <div className="max-w-[80%] rounded-2xl border border-[#dbe7f7] bg-[#f6faff] p-3">
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] font-semibold uppercase tracking-wide text-[#2f5c8a]">
-          📄 Статия · v1
+          {t("statiyaV1")}
         </span>
         <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-[#2f5c8a]">
-          {STATUS_LABELS[status] ?? status}
+          {t.has(`status.${status}`) ? t(`status.${status}`) : status}
         </span>
       </div>
       <p className="mt-1 line-clamp-2 text-sm font-medium text-[#1d2733]">{name}</p>
@@ -138,7 +123,7 @@ export function ArtifactPreviewCard({
               rel="noreferrer"
               className="text-[#2f5c8a] underline hover:no-underline"
             >
-              Отвори preview
+              {t("otvoriPreview")}
             </a>
           )}
           {publishedUrl && (
@@ -148,7 +133,7 @@ export function ArtifactPreviewCard({
               rel="noreferrer"
               className="font-medium text-[#2f7d55] underline hover:no-underline"
             >
-              Публикувано ↗
+              {t("publikuvano")}
             </a>
           )}
         </div>
@@ -165,28 +150,28 @@ export function ArtifactPreviewCard({
                 disabled={busy}
                 className={`${btn} border-[#2f7d55] bg-[#dcefe4] text-[#2f7d55] hover:brightness-95`}
               >
-                Одобри и публикувай
+                {t("odobriIPublikuvay")}
               </button>
               <button
                 onClick={() => act("approve")}
                 disabled={busy}
                 className={`${btn} border-[#d9d4ca] text-[#1d2733] hover:bg-white`}
               >
-                Одобри
+                {t("odobri")}
               </button>
               <button
                 onClick={() => setChangesOpen((v) => !v)}
                 disabled={busy}
                 className={`${btn} border-[#d9d4ca] text-[#1d2733] hover:bg-white`}
               >
-                Поискай промени
+                {t("poiskayPromeni")}
               </button>
               <button
                 onClick={() => act("reject")}
                 disabled={busy}
                 className={`${btn} border-[#e0b4b4] text-[#a23b3b] hover:bg-white`}
               >
-                Отхвърли
+                {t("othvarli")}
               </button>
             </>
           )}
@@ -196,7 +181,7 @@ export function ArtifactPreviewCard({
               disabled={busy}
               className={`${btn} border-[#2f7d55] bg-[#dcefe4] text-[#2f7d55] hover:brightness-95`}
             >
-              Публикувай
+              {t("publikuvay")}
             </button>
           )}
         </div>
@@ -208,7 +193,7 @@ export function ArtifactPreviewCard({
             value={changesText}
             onChange={(e) => setChangesText(e.target.value)}
             rows={2}
-            placeholder="Какви промени са нужни?"
+            placeholder={t("kakviPromeniSaNuzhni")}
             className="w-full resize-none rounded-lg border border-[#d9d4ca] px-2 py-1 text-xs text-[#1d2733] focus:border-[#8a6f45] focus:outline-none"
           />
           <div className="mt-1 flex justify-end">
@@ -221,7 +206,7 @@ export function ArtifactPreviewCard({
               disabled={busy}
               className="rounded-lg bg-[#1d2733] px-3 py-1 text-xs font-medium text-white hover:bg-[#2b3947] disabled:opacity-40"
             >
-              Изпрати
+              {t("izprati")}
             </button>
           </div>
         </div>

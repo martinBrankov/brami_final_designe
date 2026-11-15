@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -13,7 +14,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const { id } = await params;
   const artifact = await getArtifact(id);
   if (!artifact) {
-    return NextResponse.json({ error: "Artifact не е намерен." }, { status: 404 });
+    return NextResponse.json({ error: await localizeApiError("Artifact не е намерен.") }, { status: 404 });
   }
   return NextResponse.json({ artifact });
 }

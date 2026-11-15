@@ -1,0 +1,289 @@
+{
+  "Legal": {
+    "backToCart": "Back to cart",
+    "deliveryReturns": {
+      "metaTitle": "Delivery and returns",
+      "metaDescription": "Brami delivery and returns policy – delivery times, delivery methods, prices and the procedure for returning a product.",
+      "ogDescription": "Information about Brami delivery times and methods, prices and the conditions for returning products.",
+      "title": "Delivery and returns",
+      "description": "Here you will find the key information about order processing, delivery times and methods, as well as the conditions and steps for returns.",
+      "sections": [
+        {
+          "title": "1. Order processing",
+          "paragraphs": [
+            "Orders placed on the website are processed during standard working hours. Once availability is confirmed, we prepare the parcel as quickly as possible so it can be handed over to the courier.",
+            "If a product is temporarily unavailable or we need further details, we contact the customer using the contact details provided."
+          ]
+        },
+        {
+          "title": "2. Delivery methods",
+          "paragraphs": [
+            "Delivery is made by courier to an address or to a courier office, when this option is available at checkout. The specific options are shown in the cart and when you fill in your delivery details.",
+            "Some delivery methods may not be available for all locations or during periods of increased demand."
+          ]
+        },
+        {
+          "title": "3. Delivery times",
+          "paragraphs": [
+            "The usual delivery time is 1 to 3 working days after the order is confirmed, unless otherwise stated for a specific product or campaign.",
+            "Delivery may take longer during public holidays, bad weather, difficulties at the courier partner or other exceptional circumstances."
+          ]
+        },
+        {
+          "title": "4. Delivery cost",
+          "paragraphs": [
+            "The delivery cost is calculated based on the chosen method and the conditions at the time of the order. When a free delivery threshold applies, it is clearly shown on the website and in the cart.",
+            "During promotional campaigns special conditions may apply, including free delivery for certain orders or products."
+          ]
+        },
+        {
+          "title": "5. Receiving the parcel",
+          "paragraphs": [
+            "When you receive the parcel, we recommend checking its condition and contents within a reasonable time after delivery. If the packaging is visibly damaged or something does not match, please contact us as soon as possible.",
+            "If you are unable to accept the parcel on the first attempt, the courier may try again or keep it at an office according to its internal rules."
+          ]
+        },
+        {
+          "title": "6. Right of withdrawal",
+          "paragraphs": [
+            "Consumers have the right to withdraw from a distance purchase within the time limits and under the conditions set out in applicable law, when the product meets the requirements for return.",
+            "For a return to be accepted, the product must be kept in a saleable condition, remain intact where applicable, and must not fall into a category of goods for which the law excludes the right of withdrawal."
+          ]
+        },
+        {
+          "title": "7. Return procedure",
+          "paragraphs": [
+            "To request a return, contact us by email or phone and provide information about the order, the product and the reason for the return. You will receive instructions for the next steps.",
+            "Once the returned product has been received and checked, the amount is refunded in the appropriate way and within the time limits that apply to the specific case."
+          ]
+        },
+        {
+          "title": "8. Complaints and assistance",
+          "paragraphs": [
+            "If you receive the wrong product, a defective product, a product damaged in transit or any other discrepancy, you can file a complaint through the contact channels on the website. We review every report individually and help find the most suitable solution.",
+            "For faster processing, it helps to include the order number, a description of the case and photos where possible."
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "metaTitle": "Terms and conditions",
+      "metaDescription": "Terms and conditions for using the Brami website – orders, payments, delivery, consumer rights and complaints policy.",
+      "ogDescription": "Read Brami's terms and conditions for orders, delivery, payments and consumer rights.",
+      "title": "Terms and conditions",
+      "description": "Here you will find the main rules for using the website, placing orders, payment, delivery and consumer rights.",
+      "sections": [
+        {
+          "title": "1. Scope",
+          "paragraphs": [
+            "These terms and conditions govern the relationship between the Brami brand – Brami Trade EOOD, UIC 206426005, 13 \"Demokratsiya\" St., Krivina district, Sofia 1588, Bulgaria, as the trader, and the persons who use the website, browse its content or place orders through it.",
+            "By using the website you confirm that you have read these terms and accept them to the extent they apply."
+          ]
+        },
+        {
+          "title": "2. Trader details",
+          "paragraphs": [
+            "The trader provides identification, contact details and ways to get in touch in the relevant sections of the website. If you need further information, you can use the published contacts."
+          ]
+        },
+        {
+          "title": "3. Product characteristics",
+          "paragraphs": [
+            "The main characteristics of the products, final prices and availability are shown on the respective product pages. There may be minor visual differences caused by the device used or by batch specifics.",
+            "The trader makes reasonable efforts to keep the information on the website up to date and accurate, but reserves the right to correct technical errors, inaccuracies or omissions."
+          ]
+        },
+        {
+          "title": "4. Orders and conclusion of the contract",
+          "paragraphs": [
+            "An order is placed by completing the form provided on the website and supplying the required delivery and contact details. The contract is deemed concluded once the trader confirms the order or takes steps to fulfil it.",
+            "The trader may refuse to fulfil an order in case of incomplete or incorrect details, inability to deliver, products out of stock or suspected abuse."
+          ]
+        },
+        {
+          "title": "5. Prices and payment",
+          "paragraphs": [
+            "All prices on the website are final and are stated in the displayed currency. Unless stated otherwise, the delivery cost is charged separately.",
+            "Payment can be made using the methods available at the time the order is completed. The trader may change the available payment methods without prior notice."
+          ]
+        },
+        {
+          "title": "6. Delivery",
+          "paragraphs": [
+            "Delivery is made to the address provided by the customer through a selected or available courier partner. Delivery times are approximate and may vary depending on the location, demand and external circumstances.",
+            "The customer should inspect the parcel on receipt and report any visible discrepancies or damage promptly."
+          ]
+        },
+        {
+          "title": "7. Withdrawal and complaints",
+          "paragraphs": [
+            "Consumers have rights under applicable consumer protection law, including the right to withdraw from a distance contract in the cases provided for by law.",
+            "Complaints, reports of non-conformity and requests for assistance can be sent through the contact channels on the website. When reviewing them, additional assistance or information may be requested."
+          ]
+        },
+        {
+          "title": "8. Intellectual property",
+          "paragraphs": [
+            "The content of the website, including texts, images, trade marks, graphics and design, is protected and may not be used without explicit permission, unless the law allows otherwise."
+          ]
+        },
+        {
+          "title": "9. Limitation of liability",
+          "paragraphs": [
+            "The trader is not liable for damage resulting from circumstances beyond its reasonable control, including temporary unavailability of the website, technical problems at third-party providers or force majeure."
+          ]
+        },
+        {
+          "title": "10. Changes to the terms and conditions",
+          "paragraphs": [
+            "The trader may update these terms and conditions. The current version is published on this page and takes effect from the date of its publication, unless stated otherwise."
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "metaTitle": "Privacy policy",
+      "metaDescription": "Brami privacy policy – information about the data we collect, why we process it, your rights and our use of cookies.",
+      "ogDescription": "Read how Brami processes and protects your personal data when you use the website and place orders.",
+      "title": "Privacy policy",
+      "description": "This page describes what personal data we process, why we use it, how long we keep it and what rights you have as a data subject.",
+      "sections": [
+        {
+          "title": "1. Data controller",
+          "paragraphs": [
+            "This policy sets out how Brami Trade EOOD, UIC 206426005, Sofia 1588, Bulgaria, processes and protects the personal data of visitors and customers of the website. The data controller is the trader who operates the website and accepts orders through it.",
+            "If you have questions about the processing of personal data, you can contact us through the contact channels published on the website."
+          ]
+        },
+        {
+          "title": "2. What data we process",
+          "paragraphs": [
+            "We may process data such as name, phone number, email, delivery address, invoice details, information about orders placed, communication with us and technical information related to the use of the website.",
+            "When you provide information in a notes field or through a contact form, you are responsible for not sending more personal data than is necessary for the specific service."
+          ]
+        },
+        {
+          "title": "3. Purposes and legal bases",
+          "paragraphs": [
+            "We process personal data to accept and fulfil orders, deliver them, issue accounting documents, communicate with customers, handle enquiries, protect legitimate interests and comply with legal obligations.",
+            "When we send marketing messages or a newsletter, we do so only on an applicable legal basis, including consent where it is required."
+          ]
+        },
+        {
+          "title": "4. Retention periods",
+          "paragraphs": [
+            "We keep data only for as long as necessary for the relevant purpose, as well as for the periods required by applicable law, including accounting and tax law.",
+            "Once the basis for processing no longer applies, the data is deleted or, where the law requires, archived or limited to the minimum necessary."
+          ]
+        },
+        {
+          "title": "5. Recipients of data",
+          "paragraphs": [
+            "Personal data may be shared with courier companies, payment providers, hosting and IT providers, accounting consultants and public authorities, when required by law or necessary to provide the service.",
+            "We do not share personal data with third parties for their own purposes, unless this is explicitly stated and permitted by law."
+          ]
+        },
+        {
+          "title": "6. Your rights",
+          "paragraphs": [
+            "You have the rights of access, rectification, restriction of processing, data portability, objection and erasure, and the right to withdraw consent where processing is based on consent.",
+            "If you believe your data is being processed unlawfully, you have the right to lodge a complaint with the Bulgarian Commission for Personal Data Protection."
+          ]
+        },
+        {
+          "title": "7. Cookies",
+          "paragraphs": [
+            "The website uses cookies and similar technologies for normal operation, security, improving the user experience and analysing how the website is used.",
+            "Detailed information about the cookies used and how to manage your preferences is provided through the cookie banner and the related information on the website."
+          ]
+        },
+        {
+          "title": "8. Updates to this policy",
+          "paragraphs": [
+            "We reserve the right to update this policy when the law, our services or the way the website works change. The current version will always be published on this page."
+          ]
+        }
+      ]
+    }
+  },
+  "Partners": {
+    "metaTitle": "Partners",
+    "metaDescription": "Brami's partners – World of Saffron, VODITSA and Shafpol Beauty. Brands of natural cosmetics and quality saffron products.",
+    "ogDescription": "Meet Brami's partners – World of Saffron, VODITSA and Shafpol Beauty.",
+    "title": "Partners",
+    "description": "We work with Bulgarian brands that share our dedication to natural ingredients and quality.",
+    "note": "Visit our partners' websites.",
+    "visit": "Visit website · {url}",
+    "list": [
+      {
+        "name": "World of Saffron",
+        "url": "https://worldofsaffron.bg/",
+        "displayUrl": "worldofsaffron.bg",
+        "tagline": "Bulgarian saffron",
+        "description": "World of Saffron (Shafran Trade OOD) offers one of the finest Bulgarian saffrons, ranking among the best in Europe, as well as innovative products made with it – cosmetics, foods and drinks created with care for nature.",
+        "tags": [
+          "Bulgarian saffron",
+          "Natural products",
+          "Cosmetics",
+          "Premium quality"
+        ]
+      },
+      {
+        "name": "VODITSA",
+        "url": "https://voditsa-cosmetics.com",
+        "displayUrl": "voditsa-cosmetics.com",
+        "tagline": "Natural cosmetics",
+        "description": "VODITSA (Art Up EOOD) is a Bulgarian natural cosmetics brand specialising in anti-ageing care for mature and dry skin. Its signature ingredient is tuberose extract, valued for its rejuvenating and brightening properties.",
+        "tags": [
+          "Natural cosmetics",
+          "Anti-ageing",
+          "Tuberose extract",
+          "Face care"
+        ]
+      },
+      {
+        "name": "Shafpol Beauty",
+        "url": "https://shafpol.beauty/",
+        "displayUrl": "shafpol.beauty",
+        "tagline": "Saffron cosmetics",
+        "description": "With Shafpol Beauty you choose natural care created by people with a mission. Every product is made in Bulgaria, with attention to every detail – from the formula to how it feels on the skin.",
+        "tags": [
+          "Botanical cosmetics",
+          "Saffron",
+          "Face care",
+          "For kids"
+        ]
+      }
+    ]
+  },
+  "MerchantTerms": {
+    "metaTitle": "Merchant terms",
+    "metaDescription": "Terms of the Brami merchant programme – discount tiers, promo codes, commissions and payouts.",
+    "title": "Merchant terms",
+    "description": "Read how the merchant programme works before you accept the terms.",
+    "s1Title": "1. Merchant programme",
+    "s1Text": "As a merchant you get a personal discount on products and can create promo codes to share with customers. For every order placed with your code you earn a commission. Access to the merchant panel and the discounts is activated once you accept these terms.",
+    "s2Title": "2. Discount tiers",
+    "s2Text": "Your discount grows with your <strong>total turnover</strong>. Only <strong>delivered</strong> orders count towards turnover – your own orders and those placed with your promo codes. Undelivered and refused orders do not count.",
+    "tierDiscount": "{percent}% discount",
+    "tierThreshold": "from {amount} turnover",
+    "s2Note": "The administrator may give you a <strong>starting discount</strong> that applies immediately, regardless of turnover. In that case lower tiers are already covered by this discount, and higher tiers unlock as your turnover grows.",
+    "s3Title": "3. Promo codes and allocation",
+    "s3Intro": "For each promo code, split your current discount percentage into two parts:",
+    "s3Customer": "<strong>Customer discount</strong> – the reduction the buyer gets when ordering with the code.",
+    "s3Dividend": "<strong>Your commission</strong> – the share you earn from the order.",
+    "s3Note": "The sum of the two cannot exceed your available discount percentage. If that percentage decreases (for example when the administrator changes the starting discount) and the sum for a code exceeds it, the code is deactivated automatically.",
+    "s4Title": "4. Commission payouts",
+    "s4P1": "Commissions accrue only for <strong>delivered</strong> orders. Until delivery the commission shows as “Awaiting delivery”; after delivery it becomes “Ready for payout”. Commissions due are paid <strong>by bank transfer at the end of each month</strong>.",
+    "s4P2": "To receive commissions you must provide a <strong>valid bank account</strong> – account holder, IBAN and BIC. Keep these details up to date in your profile; transfers are made to the account provided.",
+    "s4P3": "<strong>Brami Trade EOOD</strong> is not responsible for invalid, inaccurate or outdated bank details provided by the merchant, nor for delayed, failed or incorrect transfers resulting from them. The merchant is fully responsible for the accuracy of the details.",
+    "s5Title": "5. Withdrawing consent",
+    "s5Intro": "You can withdraw your consent at any time from your profile. In that case:",
+    "s5Item1": "your profile becomes a regular user account and you lose access to the merchant panel;",
+    "s5Item2": "merchant discounts stop applying;",
+    "s5Item3": "all your promo codes become inactive;",
+    "s5Item4": "data about promo codes, orders and accrued commissions is <strong>not deleted</strong>;",
+    "s5Item5": "commissions already due are paid by bank transfer at the end of the month, even after withdrawal.",
+    "s5Note": "To be reactivated as a merchant, <strong>an administrator must change your role</strong> back to merchant."
+  }
+}
