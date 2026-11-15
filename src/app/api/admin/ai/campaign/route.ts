@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -13,10 +14,10 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as { goal?: unknown } | null;
   const goal = typeof body?.goal === "string" ? body.goal.trim() : "";
   if (goal.length < 5) {
-    return NextResponse.json({ error: "Целта трябва да е поне 5 символа." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Целта трябва да е поне 5 символа.") }, { status: 400 });
   }
   if (goal.length > 1000) {
-    return NextResponse.json({ error: "Целта е твърде дълга (макс 1000 символа)." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Целта е твърде дълга (макс 1000 символа).") }, { status: 400 });
   }
 
   try {
@@ -25,6 +26,6 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("[ai campaign] error:", err);
     const message = err instanceof Error ? err.message : "Неуспешна кампания.";
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json({ error: await localizeApiError(message) }, { status: 502 });
   }
 }

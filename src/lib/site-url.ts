@@ -4,7 +4,8 @@
 // URL, and requests may also be crawled through that host. We must never expose
 // a *.vercel.app address in SEO output, so we ignore such values and fall back
 // to the production domain.
-const CANONICAL_FALLBACK = "https://brami.shop";
+// brami.shop redirects to www.brami.shop on Vercel, so www is the canonical host.
+const CANONICAL_FALLBACK = "https://www.brami.shop";
 
 export function isVercelHost(host: string): boolean {
   return host.endsWith(".vercel.app");

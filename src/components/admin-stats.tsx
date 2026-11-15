@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+
 import { useState } from "react";
 
 import type {
@@ -9,6 +11,7 @@ import type {
   AdminVisitRecord,
   AdminVisitorRecord,
 } from "@/lib/admin-data";
+import { detectAiSource } from "@/lib/ai-referrals";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -28,14 +31,14 @@ function groupCount<T>(items: T[], key: (item: T) => string): Record<string, num
   }, {});
 }
 
-function last6Months() {
+function last6Months(locale: string) {
   const now = new Date();
   return Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
     return {
       year: d.getFullYear(),
       month: d.getMonth(),
-      label: d.toLocaleDateString("bg-BG", { month: "short", year: "2-digit" }),
+      label: d.toLocaleDateString(locale, { month: "short", year: "2-digit" }),
     };
   });
 }
@@ -152,7 +155,8 @@ function CardTitle({ children }: { children: React.ReactNode }) {
 }
 
 function Empty() {
-  return <p className="text-sm text-[#7c8a96]">Няма данни</p>;
+  const t = useTranslations("AdminStats");
+  return <p className="text-sm text-[#7c8a96]">{t("nyamaDanni")}</p>;
 }
 
 // ── Monthly bar chart ─────────────────────────────────────────────────────────
@@ -162,6 +166,7 @@ function MonthlyBarChart({
 }: {
   data: { label: string; revenue: number; count: number }[];
 }) {
+  const t = useTranslations("AdminStats");
   const maxRev = Math.max(...data.map((d) => d.revenue), 1);
 
   return (
@@ -183,7 +188,7 @@ function MonthlyBarChart({
             </div>
             <p className="text-[9px] text-[#6a7480]">{d.label}</p>
             {d.count > 0 ? (
-              <p className="text-[9px] font-medium text-[#8a9aaa]">{d.count} бр.</p>
+              <p className="text-[9px] font-medium text-[#8a9aaa]">{t("pcs", { count: d.count })}</p>
             ) : null}
           </div>
         );
@@ -195,6 +200,8 @@ function MonthlyBarChart({
 // ── Orders ────────────────────────────────────────────────────────────────────
 
 function OrdersStats({ orders }: { orders: AdminOrderRecord[] }) {
+  const t = useTranslations("AdminStats");
+  const dateLocale = useLocale() === "en" ? "en-GB" : "bg-BG";
   const active = orders.filter((o) => o.status !== "Отказана");
   const revenue = sumBy(active, (o) => o.total);
   const avgOrder = active.length > 0 ? revenue / active.length : 0;
@@ -209,7 +216,7 @@ function OrdersStats({ orders }: { orders: AdminOrderRecord[] }) {
     (o) => o.total,
   );
 
-  const monthlyData = last6Months().map(({ year, month, label }) => {
+  const monthlyData = last6Months(dateLocale).map(({ year, month, label }) => {
     const mo = active.filter((o) => {
       const d = new Date(o.createdAt);
       return d.getFullYear() === year && d.getMonth() === month;
@@ -219,11 +226,11 @@ function OrdersStats({ orders }: { orders: AdminOrderRecord[] }) {
 
   const statusCounts = groupCount(orders, (o) => o.status);
   const statuses = [
-    { label: "Потвърдени", key: "Потвърдена", color: "#0891b2" },
-    { label: "В обработка", key: "В обработка", color: "#c9a227" },
-    { label: "Изпратени", key: "Изпратена", color: "#3d73b8" },
-    { label: "Доставени", key: "Доставена", color: "#218a54" },
-    { label: "Отказани", key: "Отказана", color: "#b64242" },
+    { label: t("potvardeni"), key: t("potvardena"), color: "#0891b2" },
+    { label: t("vObrabotka"), key: t("vObrabotka"), color: "#c9a227" },
+    { label: t("izprateni"), key: t("izpratena"), color: "#3d73b8" },
+    { label: t("dostaveni"), key: t("dostavena"), color: "#218a54" },
+    { label: t("otkazani"), key: t("otkazana"), color: "#b64242" },
   ];
   const maxStatus = Math.max(...statuses.map((s) => statusCounts[s.key] ?? 0), 1);
 
@@ -237,42 +244,42 @@ function OrdersStats({ orders }: { orders: AdminOrderRecord[] }) {
   );
 
   return (
-    <Section title="Поръчки" color="#8a6f45">
+    <Section title={t("porachki")} color="#8a6f45">
       <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          label="Общо приходи"
+          label={t("obshtoPrihodi")}
           value={`€ ${revenue.toFixed(2)}`}
-          sub="без отказани поръчки"
+          sub={t("bezOtkazaniPorachki")}
           accent="#218a54"
         />
         <MetricCard
-          label="Приходи — месеца"
+          label={t("prihodiMesetsa")}
           value={`€ ${thisMonthRevenue.toFixed(2)}`}
-          sub={now.toLocaleDateString("bg-BG", { month: "long", year: "numeric" })}
+          sub={now.toLocaleDateString(dateLocale, { month: "long", year: "numeric" })}
           accent="#3d73b8"
         />
         <MetricCard
-          label="Средна поръчка"
+          label={t("srednaPorachka")}
           value={`€ ${avgOrder.toFixed(2)}`}
-          sub={`${orders.length} поръчки общо`}
+          sub={t("porachkiObshto", { count: orders.length })}
           accent="#8a6f45"
         />
         <MetricCard
-          label="Продадени бройки"
+          label={t("prodadeniBroyki")}
           value={String(totalItems)}
-          sub="артикули от всички поръчки"
+          sub={t("artikuliOtVsichkiPorachki")}
           accent="#6a4fa3"
         />
       </div>
 
       <div className="mb-4 grid gap-4 lg:grid-cols-[1fr_300px]">
         <Card>
-          <CardTitle>Приходи по месеци (последните 6)</CardTitle>
+          <CardTitle>{t("prihodiPoMesetsiPoslednite")}</CardTitle>
           <MonthlyBarChart data={monthlyData} />
         </Card>
 
         <Card>
-          <CardTitle>Разпределение по статус</CardTitle>
+          <CardTitle>{t("razpredeleniePoStatus")}</CardTitle>
           <div className="space-y-3">
             {statuses.map((s) => (
               <HBar
@@ -281,13 +288,13 @@ function OrdersStats({ orders }: { orders: AdminOrderRecord[] }) {
                 value={statusCounts[s.key] ?? 0}
                 max={maxStatus}
                 color={s.color}
-                note={`${statusCounts[s.key] ?? 0} бр.`}
+                note={t("br", { key: statusCounts[s.key] ?? 0 })}
               />
             ))}
           </div>
           {cancelledRevLost > 0 ? (
             <p className="mt-4 text-xs text-[#7c8a96]">
-              Пропуснати приходи от отказани:{" "}
+              {t("propusnatiPrihodiOtOtkazani")}
               <span className="font-semibold text-[#b64242]">€ {cancelledRevLost.toFixed(2)}</span>
             </p>
           ) : null}
@@ -296,7 +303,7 @@ function OrdersStats({ orders }: { orders: AdminOrderRecord[] }) {
 
       {deliveryEntries.length > 0 ? (
         <Card>
-          <CardTitle>Методи на доставка</CardTitle>
+          <CardTitle>{t("metodiNaDostavka")}</CardTitle>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {deliveryEntries.map(([method, cnt]) => (
               <HBar
@@ -305,7 +312,7 @@ function OrdersStats({ orders }: { orders: AdminOrderRecord[] }) {
                 value={cnt}
                 max={maxDelivery}
                 color="#8a6f45"
-                note={`${cnt} бр.`}
+                note={t("br2", { cnt })}
               />
             ))}
           </div>
@@ -318,6 +325,8 @@ function OrdersStats({ orders }: { orders: AdminOrderRecord[] }) {
 // ── Users ─────────────────────────────────────────────────────────────────────
 
 function UsersStats({ users }: { users: AdminUserProfile[] }) {
+  const t = useTranslations("AdminStats");
+  const dateLocale = useLocale() === "en" ? "en-GB" : "bg-BG";
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
@@ -332,9 +341,9 @@ function UsersStats({ users }: { users: AdminUserProfile[] }) {
 
   const roleCounts = groupCount(users, (u) => u.role);
   const roles = [
-    { label: "Потребители", key: "user", color: "#3d73b8" },
-    { label: "Търговци", key: "merchant", color: "#c9a227" },
-    { label: "Администратори", key: "admin", color: "#b64242" },
+    { label: t("potrebiteli"), key: "user", color: "#3d73b8" },
+    { label: t("targovtsi"), key: "merchant", color: "#c9a227" },
+    { label: t("administratori"), key: "admin", color: "#b64242" },
   ];
   const maxRole = Math.max(...roles.map((r) => roleCounts[r.key] ?? 0), 1);
 
@@ -357,32 +366,32 @@ function UsersStats({ users }: { users: AdminUserProfile[] }) {
   const maxCountry = Math.max(...topCountries.map((c) => c[1]), 1);
 
   return (
-    <Section title="Потребители" color="#3d73b8">
+    <Section title={t("potrebiteli")} color="#3d73b8">
       <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Общо потребители" value={String(users.length)} accent="#3d73b8" />
+        <MetricCard label={t("obshtoPotrebiteli")} value={String(users.length)} accent="#3d73b8" />
         <MetricCard
-          label="Нови — тази седмица"
+          label={t("noviTaziSedmitsa")}
           value={String(thisWeek)}
-          sub="последните 7 дни"
+          sub={t("poslednite7Dni")}
           accent="#218a54"
         />
         <MetricCard
-          label="Нови — тоя месец"
+          label={t("noviToyaMesets")}
           value={String(thisMonth)}
-          sub={now.toLocaleDateString("bg-BG", { month: "long", year: "numeric" })}
+          sub={now.toLocaleDateString(dateLocale, { month: "long", year: "numeric" })}
           accent="#8a6f45"
         />
         <MetricCard
-          label="Маркетинг абонати"
+          label={t("marketingAbonati")}
           value={String(marketing)}
-          sub={`${marketingPct} % от всички`}
+          sub={t("otVsichki", { marketingPct })}
           accent="#6a4fa3"
         />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card>
-          <CardTitle>Роли</CardTitle>
+          <CardTitle>{t("roli")}</CardTitle>
           <div className="space-y-3">
             {roles.map((r) => (
               <HBar
@@ -391,14 +400,14 @@ function UsersStats({ users }: { users: AdminUserProfile[] }) {
                 value={roleCounts[r.key] ?? 0}
                 max={maxRole}
                 color={r.color}
-                note={`${roleCounts[r.key] ?? 0} бр.`}
+                note={t("br", { key: roleCounts[r.key] ?? 0 })}
               />
             ))}
           </div>
         </Card>
 
         <Card>
-          <CardTitle>Топ градове</CardTitle>
+          <CardTitle>{t("topGradove")}</CardTitle>
           {topCities.length === 0 ? (
             <Empty />
           ) : (
@@ -410,7 +419,7 @@ function UsersStats({ users }: { users: AdminUserProfile[] }) {
                   value={cnt}
                   max={maxCity}
                   color="#3d73b8"
-                  note={`${cnt} бр.`}
+                  note={t("br2", { cnt })}
                 />
               ))}
             </div>
@@ -418,7 +427,7 @@ function UsersStats({ users }: { users: AdminUserProfile[] }) {
         </Card>
 
         <Card>
-          <CardTitle>Топ държави</CardTitle>
+          <CardTitle>{t("topDarzhavi")}</CardTitle>
           {topCountries.length === 0 ? (
             <Empty />
           ) : (
@@ -430,7 +439,7 @@ function UsersStats({ users }: { users: AdminUserProfile[] }) {
                   value={cnt}
                   max={maxCountry}
                   color="#0891b2"
-                  note={`${cnt} бр.`}
+                  note={t("br2", { cnt })}
                 />
               ))}
             </div>
@@ -444,6 +453,7 @@ function UsersStats({ users }: { users: AdminUserProfile[] }) {
 // ── Products ──────────────────────────────────────────────────────────────────
 
 function ProductsStats({ products }: { products: AdminProductRecord[] }) {
+  const t = useTranslations("AdminStats");
   const avgPrice =
     products.length > 0 ? sumBy(products, (p) => p.priceEur) / products.length : 0;
   const minPrice = products.length > 0 ? Math.min(...products.map((p) => p.priceEur)) : 0;
@@ -454,7 +464,7 @@ function ProductsStats({ products }: { products: AdminProductRecord[] }) {
     { label: "Brami", key: "brami", color: "#8a6f45" },
     { label: "Voditsa", key: "Voditsa", color: "#218a54" },
     { label: "Shafpol Beauty", key: "Shafpol Beauty", color: "#c58a2f" },
-    { label: "Друго", key: "other", color: "#6a7480" },
+    { label: t("drugo"), key: "other", color: "#6a7480" },
   ];
   const maxBrand = Math.max(...brands.map((b) => brandCounts[b.key] ?? 0), 1);
 
@@ -462,11 +472,11 @@ function ProductsStats({ products }: { products: AdminProductRecord[] }) {
   const badges = [
     { label: "Bestseller", key: "bestseller", color: "#c9a227" },
     { label: "Sale", key: "sale", color: "#b64242" },
-    { label: "Ново", key: "new", color: "#218a54" },
-    { label: "Любимо", key: "favorite", color: "#e06fa0" },
+    { label: t("novo"), key: "new", color: "#218a54" },
+    { label: t("lyubimo"), key: "favorite", color: "#e06fa0" },
     { label: "Featured", key: "featured", color: "#3d73b8" },
-    { label: "За деца", key: "kids", color: "#e0872c" },
-    { label: "Без бадж", key: "none", color: "#8c96a0" },
+    { label: t("zaDetsa"), key: "kids", color: "#e0872c" },
+    { label: t("bezBadzh"), key: "none", color: "#8c96a0" },
   ].filter((b) => (badgeCounts[b.key] ?? 0) > 0);
   const maxBadge = Math.max(...badges.map((b) => badgeCounts[b.key] ?? 0), 1);
 
@@ -487,36 +497,36 @@ function ProductsStats({ products }: { products: AdminProductRecord[] }) {
       : 0;
 
   return (
-    <Section title="Продукти" color="#218a54">
+    <Section title={t("produkti")} color="#218a54">
       <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Общо продукти" value={String(products.length)} accent="#218a54" />
+        <MetricCard label={t("obshtoProdukti")} value={String(products.length)} accent="#218a54" />
         <MetricCard
-          label="Средна цена"
+          label={t("srednaTsena")}
           value={`€ ${avgPrice.toFixed(2)}`}
-          sub={`мин. €${minPrice.toFixed(2)} — макс. €${maxPrice.toFixed(2)}`}
+          sub={t("minMaks", { minPrice: minPrice.toFixed(2), maxPrice: maxPrice.toFixed(2) })}
           accent="#8a6f45"
         />
         <MetricCard
-          label="С намаление"
+          label={t("sNamalenie")}
           value={String(withDiscount)}
           sub={
             products.length > 0
-              ? `${Math.round((withDiscount / products.length) * 100)} % от каталога`
+              ? t("otKataloga", { count: Math.round((withDiscount / products.length) * 100) })
               : "—"
           }
           accent="#b64242"
         />
         <MetricCard
-          label="Средна оценка"
+          label={t("srednaOtsenka")}
           value={avgRating.toFixed(1)}
-          sub="от всички продукти"
+          sub={t("otVsichkiProdukti")}
           accent="#c9a227"
         />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card>
-          <CardTitle>По марка</CardTitle>
+          <CardTitle>{t("poMarka")}</CardTitle>
           <div className="space-y-3">
             {brands.map((b) => (
               <HBar
@@ -525,14 +535,14 @@ function ProductsStats({ products }: { products: AdminProductRecord[] }) {
                 value={brandCounts[b.key] ?? 0}
                 max={maxBrand}
                 color={b.color}
-                note={`${brandCounts[b.key] ?? 0} бр.`}
+                note={t("br", { key: brandCounts[b.key] ?? 0 })}
               />
             ))}
           </div>
         </Card>
 
         <Card>
-          <CardTitle>По бадж</CardTitle>
+          <CardTitle>{t("poBadzh")}</CardTitle>
           {badges.length === 0 ? (
             <Empty />
           ) : (
@@ -544,7 +554,7 @@ function ProductsStats({ products }: { products: AdminProductRecord[] }) {
                   value={badgeCounts[b.key] ?? 0}
                   max={maxBadge}
                   color={b.color}
-                  note={`${badgeCounts[b.key] ?? 0} бр.`}
+                  note={t("br", { key: badgeCounts[b.key] ?? 0 })}
                 />
               ))}
             </div>
@@ -552,7 +562,7 @@ function ProductsStats({ products }: { products: AdminProductRecord[] }) {
         </Card>
 
         <Card>
-          <CardTitle>Топ категории</CardTitle>
+          <CardTitle>{t("topKategorii")}</CardTitle>
           {topCategories.length === 0 ? (
             <Empty />
           ) : (
@@ -564,7 +574,7 @@ function ProductsStats({ products }: { products: AdminProductRecord[] }) {
                   value={cnt}
                   max={maxCat}
                   color="#218a54"
-                  note={`${cnt} бр.`}
+                  note={t("br2", { cnt })}
                 />
               ))}
             </div>
@@ -587,6 +597,7 @@ type ProductSaleEntry = {
 };
 
 function ProductSalesStats({ orders }: { orders: AdminOrderRecord[] }) {
+  const t = useTranslations("AdminStats");
   const activeOrders = orders.filter((o) => o.status !== "Отказана");
 
   const productMap = new Map<string, ProductSaleEntry>();
@@ -615,7 +626,7 @@ function ProductSalesStats({ orders }: { orders: AdminOrderRecord[] }) {
 
   if (entries.length === 0) {
     return (
-      <Section title="Продажби по продукт" color="#6a4fa3">
+      <Section title={t("prodazhbiPoProdukt")} color="#6a4fa3">
         <Empty />
       </Section>
     );
@@ -633,31 +644,31 @@ function ProductSalesStats({ orders }: { orders: AdminOrderRecord[] }) {
   const uniqueProducts = entries.length;
 
   return (
-    <Section title="Продажби по продукт" color="#6a4fa3">
+    <Section title={t("prodazhbiPoProdukt")} color="#6a4fa3">
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <MetricCard
-          label="Уникални продукта"
+          label={t("unikalniProdukta")}
           value={String(uniqueProducts)}
-          sub="различни SKU-та"
+          sub={t("razlichniSkuTa")}
           accent="#6a4fa3"
         />
         <MetricCard
-          label="Общо продадени бройки"
+          label={t("obshtoProdadeniBroyki")}
           value={String(totalQty)}
-          sub="от активни поръчки"
+          sub={t("otAktivniPorachki")}
           accent="#8a6f45"
         />
         <MetricCard
-          label="Общо приходи от артикули"
+          label={t("obshtoPrihodiOtArtikuli")}
           value={`€ ${totalRevenue.toFixed(2)}`}
-          sub="без отказани поръчки"
+          sub={t("bezOtkazaniPorachki")}
           accent="#218a54"
         />
       </div>
 
       <div className="mb-4 grid gap-4 lg:grid-cols-2">
         <Card>
-          <CardTitle>Топ 10 по приходи</CardTitle>
+          <CardTitle>{t("top10PoPrihodi")}</CardTitle>
           <div className="space-y-3">
             {byRevenue.map((e) => (
               <HBar
@@ -673,7 +684,7 @@ function ProductSalesStats({ orders }: { orders: AdminOrderRecord[] }) {
         </Card>
 
         <Card>
-          <CardTitle>Топ 10 по продадени бройки</CardTitle>
+          <CardTitle>{t("top10PoProdadeni")}</CardTitle>
           <div className="space-y-3">
             {byQty.map((e) => (
               <HBar
@@ -682,7 +693,7 @@ function ProductSalesStats({ orders }: { orders: AdminOrderRecord[] }) {
                 value={e.totalQty}
                 max={maxQty}
                 color="#8a6f45"
-                note={`${e.totalQty} бр.`}
+                note={t("br3", { totalQty: e.totalQty })}
               />
             ))}
           </div>
@@ -690,25 +701,25 @@ function ProductSalesStats({ orders }: { orders: AdminOrderRecord[] }) {
       </div>
 
       <Card>
-        <CardTitle>Пълна справка</CardTitle>
+        <CardTitle>{t("palnaSpravka")}</CardTitle>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-[#e7dfd1]">
                 <th className="pb-2.5 text-left text-[10px] font-semibold uppercase tracking-[0.1em] text-[#8a6f45]">
-                  Продукт
+                  {t("produkt")}
                 </th>
                 <th className="pb-2.5 pr-1 text-right text-[10px] font-semibold uppercase tracking-[0.1em] text-[#8a6f45]">
-                  Поръчки
+                  {t("porachki")}
                 </th>
                 <th className="pb-2.5 pr-1 text-right text-[10px] font-semibold uppercase tracking-[0.1em] text-[#8a6f45]">
-                  Бройки
+                  {t("broyki")}
                 </th>
                 <th className="pb-2.5 pr-1 text-right text-[10px] font-semibold uppercase tracking-[0.1em] text-[#8a6f45]">
-                  Ед. цена
+                  {t("edTsena")}
                 </th>
                 <th className="pb-2.5 text-right text-[10px] font-semibold uppercase tracking-[0.1em] text-[#8a6f45]">
-                  Приход
+                  {t("prihod")}
                 </th>
               </tr>
             </thead>
@@ -738,7 +749,7 @@ function ProductSalesStats({ orders }: { orders: AdminOrderRecord[] }) {
             </tbody>
             <tfoot>
               <tr className="border-t-2 border-[#ddd7cb]">
-                <td className="pt-3 text-xs font-semibold text-[#8a6f45]">Общо</td>
+                <td className="pt-3 text-xs font-semibold text-[#8a6f45]">{t("obshto")}</td>
                 <td />
                 <td className="pt-3 text-right text-sm font-bold text-[#1d2733]">{totalQty}</td>
                 <td />
@@ -756,27 +767,32 @@ function ProductSalesStats({ orders }: { orders: AdminOrderRecord[] }) {
 
 // ── Visits ────────────────────────────────────────────────────────────────────
 
-function formatDuration(ms: number) {
-  if (ms < 1000) return "<1 сек";
+/** `t` is bound to the AdminStats namespace (units under "duration"). */
+function formatDuration(ms: number, t: (key: string, values?: Record<string, number>) => string) {
+  if (ms < 1000) return t("duration.underSecond");
   const totalSec = Math.round(ms / 1000);
-  if (totalSec < 60) return `${totalSec} сек`;
+  if (totalSec < 60) return t("duration.seconds", { s: totalSec });
   const minutes = Math.floor(totalSec / 60);
   const seconds = totalSec % 60;
-  if (minutes < 60) return seconds > 0 ? `${minutes} мин ${seconds} сек` : `${minutes} мин`;
+  if (minutes < 60) return seconds > 0 ? t("duration.minutesSeconds", { m: minutes, s: seconds }) : t("duration.minutes", { m: minutes });
   const hours = Math.floor(minutes / 60);
   const restMin = minutes % 60;
-  return restMin > 0 ? `${hours} ч ${restMin} мин` : `${hours} ч`;
+  return restMin > 0 ? t("duration.hoursMinutes", { h: hours, m: restMin }) : t("duration.hours", { h: hours });
 }
 
-function formatRelative(iso: string) {
+function formatRelative(iso: string, locale: string) {
   const date = new Date(iso);
-  return date.toLocaleString("bg-BG", {
+  return date.toLocaleString(locale, {
     day: "2-digit",
     month: "2-digit",
     year: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function landingPathOnly(path: string) {
+  return path.split("?")[0] || "/";
 }
 
 function hostFromReferrer(ref: string | null) {
@@ -811,7 +827,7 @@ function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function buildBuckets(granularity: Granularity): Bucket[] {
+function buildBuckets(granularity: Granularity, locale: string): Bucket[] {
   const now = new Date();
   const buckets: Bucket[] = [];
 
@@ -842,7 +858,7 @@ function buildBuckets(granularity: Granularity): Bucket[] {
       key: start.toISOString(),
       start,
       end,
-      label: start.toLocaleDateString("bg-BG", { day: "2-digit", month: "2-digit" }),
+      label: start.toLocaleDateString(locale, { day: "2-digit", month: "2-digit" }),
     });
   }
   return buckets;
@@ -855,8 +871,10 @@ function VisitsTimeChart({
   visits: AdminVisitRecord[];
   visitors: AdminVisitorRecord[];
 }) {
+  const t = useTranslations("AdminStats");
+  const dateLocale = useLocale() === "en" ? "en-GB" : "bg-BG";
   const [granularity, setGranularity] = useState<Granularity>("day");
-  const buckets = buildBuckets(granularity);
+  const buckets = buildBuckets(granularity, dateLocale);
   const earliestStart = buckets[0]?.start.getTime() ?? 0;
 
   // visitor_id → first session timestamp (so we can count "new visitors" per bucket)
@@ -900,9 +918,9 @@ function VisitsTimeChart({
   })();
 
   const granularityButtons: Array<{ value: Granularity; label: string }> = [
-    { value: "day", label: "Ден" },
-    { value: "week", label: "Седмица" },
-    { value: "month", label: "Месец" },
+    { value: "day", label: t("den") },
+    { value: "week", label: t("sedmitsa") },
+    { value: "month", label: t("mesets") },
   ];
 
   return (
@@ -910,14 +928,14 @@ function VisitsTimeChart({
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
         <CardTitle>
           {granularity === "day"
-            ? "Сесии и уникални потребители днес (по час)"
+            ? t("sesiiIUnikalniPotrebiteli")
             : granularity === "week"
-              ? "Сесии и уникални потребители за последните 7 дни"
-              : "Сесии и уникални потребители за последния месец"}
+              ? t("sesiiIUnikalniPotrebiteli2")
+              : t("sesiiIUnikalniPotrebiteli3")}
         </CardTitle>
         <div className="flex items-center gap-3">
           <span className="text-[10px] text-[#7c8a96]">
-            {totalVisitors} уник. · {totalSessions} сесии в периода
+            {t("unikSesiiVPerioda", { totalVisitors, totalSessions })}
           </span>
           <div className="flex overflow-hidden rounded-full border border-[#e7dfd1]">
             {granularityButtons.map((btn) => (
@@ -940,13 +958,13 @@ function VisitsTimeChart({
 
       <div className="mb-2 flex items-center gap-4 text-[10px] text-[#6a7480]">
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2 w-3 rounded-sm bg-[#0891b2]" /> уник. потребители
+          <span className="inline-block h-2 w-3 rounded-sm bg-[#0891b2]" /> {t("legendUnique")}
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2 w-3 rounded-sm bg-[#3d73b8]" /> сесии
+          <span className="inline-block h-2 w-3 rounded-sm bg-[#3d73b8]" /> {t("legendSessions")}
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2 w-3 rounded-sm bg-[#218a54]" /> нови потребители
+          <span className="inline-block h-2 w-3 rounded-sm bg-[#218a54]" /> {t("legendNew")}
         </span>
       </div>
 
@@ -969,9 +987,9 @@ function VisitsTimeChart({
           // Show each metric's count above its own bar, for every view
           // including the hourly day view.
           const bars = [
-            { value: d.visitors, h: visitorH, color: "#0891b2", title: `${d.label}: ${d.visitors} уник.` },
-            { value: d.sessions, h: sessionH, color: "#3d73b8", title: `${d.label}: ${d.sessions} сесии` },
-            { value: d.newVisitors, h: newH, color: "#218a54", title: `${d.label}: ${d.newVisitors} нови` },
+            { value: d.visitors, h: visitorH, color: "#0891b2", title: t("unik", { label: d.label, visitors: d.visitors }) },
+            { value: d.sessions, h: sessionH, color: "#3d73b8", title: t("sesii", { label: d.label, sessions: d.sessions }) },
+            { value: d.newVisitors, h: newH, color: "#218a54", title: t("novi", { label: d.label, newVisitors: d.newVisitors }) },
           ];
           return (
             <div key={i} className="flex flex-1 flex-col items-center gap-1">
@@ -1016,10 +1034,12 @@ function VisitRow({
   visit: AdminVisitRecord;
   isReturning: boolean;
 }) {
+  const t = useTranslations("AdminStats");
+  const dateLocale = useLocale() === "en" ? "en-GB" : "bg-BG";
   const [open, setOpen] = useState(false);
   const durationMs =
     new Date(visit.lastSeenAt).getTime() - new Date(visit.startedAt).getTime();
-  const refHost = hostFromReferrer(visit.referrer) ?? "директно";
+  const refHost = hostFromReferrer(visit.referrer) ?? t("direktno");
   const flag = flagFromCountryCode(visit.countryCode);
   const geo = geoLabel(visit);
 
@@ -1041,18 +1061,18 @@ function VisitRow({
                   : "bg-[#eef2f7] text-[#3d73b8]"
               }`}
             >
-              {isReturning ? "Връщащ се" : "Нов"}
+              {isReturning ? t("vrashtashtSe") : t("nov")}
             </span>
           </p>
           <p className="truncate text-xs text-[#6a7480]">
-            {formatRelative(visit.startedAt)} · {geo ?? "неизвестна локация"} · от {refHost}
+            {t("ot", { startedAt: formatRelative(visit.startedAt, dateLocale), neizvestnaLokatsiya: geo ?? t("neizvestnaLokatsiya"), refHost })}
           </p>
         </div>
         <span className="shrink-0 text-xs font-semibold text-[#3d73b8]">
-          {visit.pageviewCount} стр.
+          {t("str", { pageviewCount: visit.pageviewCount })}
         </span>
         <span className="shrink-0 text-xs text-[#7c8a96]">
-          {formatDuration(Math.max(durationMs, 0))}
+          {formatDuration(Math.max(durationMs, 0), t)}
         </span>
         <svg
           className="h-4 w-4 shrink-0 text-[#8a9099] transition-transform"
@@ -1081,7 +1101,7 @@ function VisitRow({
                   <span className="ml-2 text-[#7c8a96]">— {pv.title}</span>
                 ) : null}
                 <span className="ml-2 text-[10px] text-[#8a9099]">
-                  {new Date(pv.viewedAt).toLocaleTimeString("bg-BG", {
+                  {new Date(pv.viewedAt).toLocaleTimeString(dateLocale, {
                     hour: "2-digit",
                     minute: "2-digit",
                     second: "2-digit",
@@ -1103,6 +1123,7 @@ function VisitsStats({
   visits: AdminVisitRecord[];
   visitors: AdminVisitorRecord[];
 }) {
+  const t = useTranslations("AdminStats");
   const now = new Date();
   const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const weekAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
@@ -1182,7 +1203,7 @@ function VisitsStats({
 
   // Referrers
   const referrerCounts = visits.reduce<Record<string, number>>((acc, v) => {
-    const host = hostFromReferrer(v.referrer) ?? "директно";
+    const host = hostFromReferrer(v.referrer) ?? t("direktno");
     acc[host] = (acc[host] ?? 0) + 1;
     return acc;
   }, {});
@@ -1191,62 +1212,85 @@ function VisitsStats({
     .slice(0, 6);
   const maxReferrer = Math.max(...topReferrers.map((e) => e[1]), 1);
 
+  // Visits from AI assistants (referrer or utm_source)
+  const aiVisits = visits
+    .map((v) => ({ visit: v, source: detectAiSource(v.referrer, v.landingPath) }))
+    .filter((entry): entry is { visit: AdminVisitRecord; source: NonNullable<typeof entry.source> } => entry.source !== null);
+  const aiSourceCounts = Object.entries(
+    aiVisits.reduce<Record<string, number>>((acc, { source }) => {
+      acc[source.label] = (acc[source.label] ?? 0) + 1;
+      return acc;
+    }, {}),
+  ).sort((a, b) => b[1] - a[1]);
+  const maxAiSource = Math.max(...aiSourceCounts.map((e) => e[1]), 1);
+  const aiLandingCounts = Object.entries(
+    aiVisits.reduce<Record<string, number>>((acc, { visit }) => {
+      const path = landingPathOnly(visit.landingPath ?? "/");
+      acc[path] = (acc[path] ?? 0) + 1;
+      return acc;
+    }, {}),
+  )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+  const maxAiLanding = Math.max(...aiLandingCounts.map((e) => e[1]), 1);
+  const aiPercent = visits.length > 0 ? Math.round((aiVisits.length / visits.length) * 1000) / 10 : 0;
+
   // Recent visits to show in expandable list
   const recentVisits = visits.slice(0, 25);
 
   return (
-    <Section title="Посещения" color="#0891b2">
+    <Section title={t("poseshteniya")} color="#0891b2">
       <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          label="Уникални потребители"
+          label={t("unikalniPotrebiteli")}
           value={String(totalVisitors)}
-          sub={`${newVisitors} нови · ${returningVisitors} връщащи се`}
-          hint="Брой различни устройства/браузъри, които някога са посещавали сайта. Един човек = един потребител (на базата на постоянен токен в localStorage и фингърпринт)."
+          sub={t("noviVrashtashtiSe", { newVisitors, returningVisitors })}
+          hint={t("broyRazlichniUstroystvaBrauzari")}
           accent="#0891b2"
         />
         <MetricCard
-          label="% връщащи се"
+          label={t("vrashtashtiSe")}
           value={`${returningPct} %`}
-          sub={`${returningVisitors} от ${totalVisitors}`}
-          hint="Какъв дял от уникалните потребители са се връщали поне още веднъж (имат повече от една сесия). Висок процент означава лоялна аудитория."
+          sub={t("ot2", { returningVisitors, totalVisitors })}
+          hint={t("kakavDyalOtUnikalnite")}
           accent="#218a54"
         />
         <MetricCard
-          label="Сесии общо"
+          label={t("sesiiObshto")}
           value={String(visits.length)}
-          sub={`${totalPageviews} прегледа на страница`}
-          hint="Брой посещения. Една сесия = един път, в който някой влиза на сайта. Ако напусне и се върне по-късно, броим нова сесия."
+          sub={t("pregledaNaStranitsa", { totalPageviews })}
+          hint={t("broyPoseshteniyaEdnaSesiya")}
           accent="#3d73b8"
         />
         <MetricCard
-          label="Средно стр./сесия"
+          label={t("srednoStrSesiya")}
           value={avgPageviews.toFixed(1)}
-          sub={`~${formatDuration(avgDuration)} средна продължителност`}
-          hint="Средно колко страници разглежда един посетител в рамките на една сесия и колко време прекарва на сайта."
+          sub={t("srednaProdalzhitelnost", { avgDuration: formatDuration(avgDuration, t) })}
+          hint={t("srednoKolkoStranitsiRazglezhda")}
           accent="#8a6f45"
         />
       </div>
 
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <MetricCard
-          label="Нови потребители днес"
+          label={t("noviPotrebiteliDnes")}
           value={String(todayVisitors)}
-          sub="за първи път на сайта"
-          hint="Потребители, чието първо в историята посещение е днес. Не включва връщащи се хора, дори ако влизат за първи път за деня."
+          sub={t("zaParviPatNa")}
+          hint={t("potrebiteliChietoParvoV")}
           accent="#218a54"
         />
         <MetricCard
-          label="Сесии днес"
+          label={t("sesiiDnes")}
           value={String(todayVisits.length)}
-          sub={`${sumBy(todayVisits, (v) => v.pageviewCount)} прегледа`}
-          hint="Общ брой посещения, започнали днес от 00:00. Включва както нови, така и връщащи се потребители."
+          sub={t("pregleda", { pageviewCount: sumBy(todayVisits, (v) => v.pageviewCount) })}
+          hint={t("obshtBroyPoseshteniyaZapochnali")}
           accent="#0891b2"
         />
         <MetricCard
-          label="Сесии последните 7 дни"
+          label={t("sesiiPoslednite7Dni")}
           value={String(weekVisits.length)}
-          sub={`${sumBy(weekVisits, (v) => v.pageviewCount)} прегледа`}
-          hint="Общ брой сесии за изминалата седмица. Полезно за бърз преглед на седмичния трафик."
+          sub={t("pregleda", { pageviewCount: sumBy(weekVisits, (v) => v.pageviewCount) })}
+          hint={t("obshtBroySesiiZa")}
           accent="#6a4fa3"
         />
       </div>
@@ -1257,7 +1301,38 @@ function VisitsStats({
 
       <div className="mb-4 grid gap-4 lg:grid-cols-2">
         <Card>
-          <CardTitle>Топ държави</CardTitle>
+          <CardTitle>{t("aiVisitsTitle")}</CardTitle>
+          <p className="-mt-2 mb-4 text-xs text-[#6a7480]">
+            {t("aiVisitsSummary", { count: aiVisits.length, total: visits.length, percent: aiPercent })}
+          </p>
+          {aiSourceCounts.length === 0 ? (
+            <p className="text-sm text-[#6a7480]">{t("aiVisitsNone")}</p>
+          ) : (
+            <div className="space-y-3">
+              {aiSourceCounts.map(([label, cnt]) => (
+                <HBar key={label} label={label} value={cnt} max={maxAiSource} color="#7c4dbd" note={`${cnt}`} />
+              ))}
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <CardTitle>{t("aiLandingTitle")}</CardTitle>
+          {aiLandingCounts.length === 0 ? (
+            <Empty />
+          ) : (
+            <div className="space-y-3">
+              {aiLandingCounts.map(([path, cnt]) => (
+                <HBar key={path} label={path} value={cnt} max={maxAiLanding} color="#a07ad6" note={`${cnt}`} />
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <div className="mb-4 grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardTitle>{t("topDarzhavi")}</CardTitle>
           {topCountries.length === 0 ? (
             <Empty />
           ) : (
@@ -1280,7 +1355,7 @@ function VisitsStats({
         </Card>
 
         <Card>
-          <CardTitle>Топ градове</CardTitle>
+          <CardTitle>{t("topGradove")}</CardTitle>
           {topCities.length === 0 ? (
             <Empty />
           ) : (
@@ -1302,7 +1377,7 @@ function VisitsStats({
 
       <div className="mb-4 grid gap-4 lg:grid-cols-2">
         <Card>
-          <CardTitle>Топ страници (всички прегледи)</CardTitle>
+          <CardTitle>{t("topStranitsiVsichkiPregledi")}</CardTitle>
           {topPaths.length === 0 ? (
             <Empty />
           ) : (
@@ -1322,7 +1397,7 @@ function VisitsStats({
         </Card>
 
         <Card>
-          <CardTitle>Топ входни страници</CardTitle>
+          <CardTitle>{t("topVhodniStranitsi")}</CardTitle>
           {topLandings.length === 0 ? (
             <Empty />
           ) : (
@@ -1344,7 +1419,7 @@ function VisitsStats({
 
       <div className="mb-4 grid gap-4 lg:grid-cols-2">
         <Card>
-          <CardTitle>Източници (referrer)</CardTitle>
+          <CardTitle>{t("iztochnitsiReferrer")}</CardTitle>
           {topReferrers.length === 0 ? (
             <Empty />
           ) : (
@@ -1364,7 +1439,7 @@ function VisitsStats({
         </Card>
 
         <Card>
-          <CardTitle>Последни {recentVisits.length} посещения</CardTitle>
+          <CardTitle>{t("recentVisits", { count: recentVisits.length })}</CardTitle>
           {recentVisits.length === 0 ? (
             <Empty />
           ) : (

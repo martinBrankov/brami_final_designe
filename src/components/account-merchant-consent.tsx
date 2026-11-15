@@ -1,8 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
+
+import { Link } from "@/i18n/navigation";
 
 export type BankDetailsInput = {
   bankAccountHolder: string;
@@ -11,6 +13,7 @@ export type BankDetailsInput = {
 };
 
 async function postConsent(
+  fallbackError: string,
   accepted: boolean,
   bank?: BankDetailsInput,
 ): Promise<string | null> {
@@ -23,7 +26,7 @@ async function postConsent(
     | { ok?: boolean; error?: string }
     | null;
   if (!response.ok || !result?.ok) {
-    return result?.error || "Грешка при запис.";
+    return result?.error || fallbackError;
   }
   return null;
 }
@@ -40,16 +43,18 @@ function BankFields({
   value: BankDetailsInput;
   onChange: (next: BankDetailsInput) => void;
 }) {
+  const t = useTranslations("MerchantConsent");
+
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="block sm:col-span-2">
-        <span className={labelClass}>Титуляр на сметката</span>
+        <span className={labelClass}>{t("accountHolder")}</span>
         <input
           value={value.bankAccountHolder}
           onChange={(e) =>
             onChange({ ...value, bankAccountHolder: e.target.value })
           }
-          placeholder="Име на титуляря"
+          placeholder={t("accountHolderPlaceholder")}
           className={inputClass}
         />
       </label>
@@ -85,6 +90,7 @@ export function MerchantConsentGate({
 }: {
   initialBank: BankDetailsInput;
 }) {
+  const t = useTranslations("MerchantConsent");
   const router = useRouter();
   const [agreed, setAgreed] = useState(false);
   const [bank, setBank] = useState<BankDetailsInput>(initialBank);
@@ -102,7 +108,7 @@ export function MerchantConsentGate({
   async function accept() {
     setSubmitting(true);
     setError(null);
-    const err = await postConsent(true, bank);
+    const err = await postConsent(t("saveError"), true, bank);
     setSubmitting(false);
     if (err) {
       setError(err);
@@ -114,7 +120,7 @@ export function MerchantConsentGate({
   async function confirmDecline() {
     setDeclining(true);
     setError(null);
-    const err = await postConsent(false);
+    const err = await postConsent(t("saveError"), false);
     setDeclining(false);
     if (err) {
       setError(err);
@@ -127,12 +133,10 @@ export function MerchantConsentGate({
   return (
     <div className="mx-auto max-w-2xl rounded-[18px] border border-[#e6dcef] bg-white p-6 sm:p-8">
       <h2 className="font-serif text-2xl text-[#432855]">
-        Активирай профила си на търговец
+        {t("gateTitle")}
       </h2>
       <p className="mt-2 text-sm leading-relaxed text-[#6b587f]">
-        За да ползваш търговските отстъпки и да управляваш промо кодове, трябва да
-        приемеш условията на програмата за търговци — нива на отстъпка, промо кодове,
-        дивиденти и изплащане по банков път в края на всеки месец.
+        {t("gateText")}
       </p>
 
       <Link
@@ -140,16 +144,15 @@ export function MerchantConsentGate({
         target="_blank"
         className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#7a4f95] underline-offset-2 hover:underline"
       >
-        Прочети пълните условия за търговец →
+        {t("readTerms")}
       </Link>
 
       <div className="mt-6 rounded-[16px] border border-[#e6dcef] bg-[#faf7fc] p-5">
         <h3 className="text-sm font-semibold text-[#432855]">
-          Банкова сметка за изплащане на дивиденти
+          {t("bankTitle")}
         </h3>
         <p className="mt-1 text-xs leading-relaxed text-[#6b587f]">
-          За да получаваш дивиденти, трябва да предоставиш валидна банкова сметка —
-          титуляр, IBAN и BIC код, по които да ти бъдат превеждани парите.
+          {t("bankText")}
         </p>
         <div className="mt-4">
           <BankFields value={bank} onChange={setBank} />
@@ -164,15 +167,15 @@ export function MerchantConsentGate({
           className="mt-0.5 h-4 w-4 rounded border-[#bca5cc] accent-[#432855]"
         />
         <span>
-          Прочетох и приемам{" "}
+          {t("agreePrefix")}{" "}
           <Link
             href="/merchant-terms"
             target="_blank"
             className="font-semibold text-[#7a4f95] underline-offset-2 hover:underline"
           >
-            условията за търговец
+            {t("agreeLink")}
           </Link>{" "}
-          и предоставям валидни банкови данни за изплащане.
+          {t("agreeSuffix")}
         </span>
       </label>
 
@@ -187,7 +190,7 @@ export function MerchantConsentGate({
           disabled={!agreed || !bankFilled || submitting || isPending || declining}
           className="inline-flex h-11 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-6 text-sm font-semibold text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {submitting ? "Активиране…" : "Съгласявам се и активирам"}
+          {submitting ? t("activating") : t("activate")}
         </button>
         <button
           type="button"
@@ -198,7 +201,7 @@ export function MerchantConsentGate({
           disabled={submitting || declining || isPending}
           className="inline-flex h-11 items-center justify-center rounded-full border border-[#e8c7c7] px-6 text-sm font-semibold text-[#9a3f3f] transition hover:bg-[#fff6f6] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Отказвам се
+          {t("decline")}
         </button>
       </div>
 
@@ -209,17 +212,12 @@ export function MerchantConsentGate({
           aria-modal="true"
         >
           <div className="w-full max-w-md rounded-[20px] bg-white p-6 shadow-xl">
-            <h4 className="font-serif text-xl text-[#432855]">Отказ от търговец</h4>
-            <p className="mt-2 text-sm text-[#6b587f]">Ако се откажеш:</p>
+            <h4 className="font-serif text-xl text-[#432855]">{t("declineTitle")}</h4>
+            <p className="mt-2 text-sm text-[#6b587f]">{t("declineIntro")}</p>
             <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-[#5b4a6b]">
-              <li>профилът ти става обикновен потребител;</li>
-              <li>
-                данните ти (ако има натрупани поръчки) <strong>не се изтриват</strong>;
-              </li>
-              <li>
-                за повторно активиране администратор трябва да смени ролята ти на
-                търговец.
-              </li>
+              <li>{t("effects.regularUser")}</li>
+              <li>{t.rich("effects.dataKeptShort", { strong: (chunks) => <strong>{chunks}</strong> })}</li>
+              <li>{t("effects.reactivate")}</li>
             </ul>
 
             {error ? (
@@ -233,7 +231,7 @@ export function MerchantConsentGate({
                 disabled={declining}
                 className="inline-flex h-10 items-center justify-center rounded-full border border-[#d9cfe2] px-4 text-sm font-semibold text-[#6b587f] transition hover:bg-[#f8f4fc] disabled:opacity-60"
               >
-                Назад
+                {t("back")}
               </button>
               <button
                 type="button"
@@ -241,7 +239,7 @@ export function MerchantConsentGate({
                 disabled={declining || isPending}
                 className="inline-flex h-10 items-center justify-center rounded-full bg-[#9a3f3f] px-4 text-sm font-semibold text-white transition hover:bg-[#82302f] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {declining ? "Отказване…" : "Да, отказвам се"}
+                {declining ? t("declining") : t("confirmDecline")}
               </button>
             </div>
           </div>
@@ -259,6 +257,8 @@ export function MerchantConsentManager({
   acceptedAt: string | null;
   initialBank: BankDetailsInput;
 }) {
+  const t = useTranslations("MerchantConsent");
+  const locale = useLocale();
   const router = useRouter();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -272,7 +272,7 @@ export function MerchantConsentManager({
   const [savingBank, setSavingBank] = useState(false);
 
   const acceptedLabel = acceptedAt
-    ? new Date(acceptedAt).toLocaleDateString("bg-BG", {
+    ? new Date(acceptedAt).toLocaleDateString(locale === "en" ? "en-GB" : "bg-BG", {
         day: "2-digit",
         month: "short",
         year: "numeric",
@@ -292,17 +292,17 @@ export function MerchantConsentManager({
       | null;
     setSavingBank(false);
     if (!response.ok || !result?.ok) {
-      setBankFeedback({ kind: "error", message: result?.error || "Грешка при запис." });
+      setBankFeedback({ kind: "error", message: result?.error || t("saveError") });
       return;
     }
-    setBankFeedback({ kind: "success", message: "Банковите данни са записани." });
+    setBankFeedback({ kind: "success", message: t("bankSaved") });
     startTransition(() => router.refresh());
   }
 
   async function withdraw() {
     setSubmitting(true);
     setError(null);
-    const err = await postConsent(false);
+    const err = await postConsent(t("saveError"), false);
     setSubmitting(false);
     if (err) {
       setError(err);
@@ -314,20 +314,19 @@ export function MerchantConsentManager({
 
   return (
     <div className="rounded-[18px] border border-[#e6dcef] bg-white p-5 sm:p-6">
-      <h3 className="font-serif text-xl text-[#432855]">Условия и съгласие</h3>
+      <h3 className="font-serif text-xl text-[#432855]">{t("managerTitle")}</h3>
       <p className="mt-1 text-sm text-[#6b587f]">
         {acceptedLabel
-          ? `Прие условията за търговец на ${acceptedLabel}.`
-          : "Прие условията за търговец."}
+          ? t("acceptedOn", { date: acceptedLabel })
+          : t("accepted")}
       </p>
 
       <div className="mt-5 rounded-[16px] border border-[#e6dcef] bg-[#faf7fc] p-5">
         <h4 className="text-sm font-semibold text-[#432855]">
-          Банкова сметка за изплащане
+          {t("bankManagerTitle")}
         </h4>
         <p className="mt-1 text-xs leading-relaxed text-[#6b587f]">
-          Дивидентите се превеждат по тази сметка в края на всеки месец. Поддържай я
-          актуална и валидна.
+          {t("bankManagerText")}
         </p>
         <div className="mt-4">
           <BankFields value={bank} onChange={setBank} />
@@ -348,7 +347,7 @@ export function MerchantConsentManager({
             disabled={savingBank}
             className="inline-flex h-10 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-5 text-sm font-semibold text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {savingBank ? "Запазване…" : "Запази банкови данни"}
+            {savingBank ? t("saving") : t("saveBank")}
           </button>
         </div>
       </div>
@@ -359,7 +358,7 @@ export function MerchantConsentManager({
           target="_blank"
           className="inline-flex h-10 items-center justify-center rounded-full border border-[#d9cfe2] px-4 text-sm font-semibold text-[#432855] transition hover:bg-[#f8f4fc]"
         >
-          Виж условията
+          {t("viewTerms")}
         </Link>
         <button
           type="button"
@@ -369,7 +368,7 @@ export function MerchantConsentManager({
           }}
           className="inline-flex h-10 items-center justify-center rounded-full border border-[#e8c7c7] px-4 text-sm font-semibold text-[#9a3f3f] transition hover:bg-[#fff6f6]"
         >
-          Оттегли съгласие
+          {t("withdraw")}
         </button>
       </div>
 
@@ -381,26 +380,18 @@ export function MerchantConsentManager({
         >
           <div className="w-full max-w-md rounded-[20px] bg-white p-6 shadow-xl">
             <h4 className="font-serif text-xl text-[#432855]">
-              Оттегляне на съгласие
+              {t("withdrawTitle")}
             </h4>
             <p className="mt-2 text-sm text-[#6b587f]">
-              Ако оттеглиш съгласието си:
+              {t("withdrawIntro")}
             </p>
             <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-[#5b4a6b]">
-              <li>профилът ти става обикновен потребител;</li>
-              <li>губиш достъп до търговския панел и отстъпки;</li>
-              <li>всичките ти промо кодове стават неактивни;</li>
-              <li>
-                данните за кодове, поръчки и натрупани комисиони{" "}
-                <strong>не се изтриват</strong>;
-              </li>
-              <li>
-                вече дължимите комисиони се изплащат по банков път в края на месеца;
-              </li>
-              <li>
-                за повторно активиране администратор трябва да смени ролята ти на
-                търговец.
-              </li>
+              <li>{t("effects.regularUser")}</li>
+              <li>{t("effects.noAccess")}</li>
+              <li>{t("effects.codesInactive")}</li>
+              <li>{t.rich("effects.dataKept", { strong: (chunks) => <strong>{chunks}</strong> })}</li>
+              <li>{t("effects.duePaid")}</li>
+              <li>{t("effects.reactivate")}</li>
             </ul>
 
             {error ? (
@@ -414,7 +405,7 @@ export function MerchantConsentManager({
                 disabled={submitting}
                 className="inline-flex h-10 items-center justify-center rounded-full border border-[#d9cfe2] px-4 text-sm font-semibold text-[#6b587f] transition hover:bg-[#f8f4fc] disabled:opacity-60"
               >
-                Отказ
+                {t("cancel")}
               </button>
               <button
                 type="button"
@@ -422,7 +413,7 @@ export function MerchantConsentManager({
                 disabled={submitting || isPending}
                 className="inline-flex h-10 items-center justify-center rounded-full bg-[#9a3f3f] px-4 text-sm font-semibold text-white transition hover:bg-[#82302f] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {submitting ? "Оттегляне…" : "Да, оттегли съгласието"}
+                {submitting ? t("withdrawing") : t("confirmWithdraw")}
               </button>
             </div>
           </div>

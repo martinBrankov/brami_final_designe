@@ -6,6 +6,7 @@ import {
   upsertProductReview,
 } from "@/lib/product-reviews";
 import { getUserSession } from "@/lib/user-auth";
+import { localizeApiError } from "@/lib/api-i18n";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
   if (!session) {
     return NextResponse.json(
-      { error: "Трябва да влезеш в профила си, за да оставиш отзив." },
+      { error: await localizeApiError("Трябва да влезеш в профила си, за да оставиш отзив.") },
       { status: 401 },
     );
   }
@@ -30,7 +31,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   const productId = Number.parseInt(id, 10);
 
   if (!Number.isInteger(productId)) {
-    return NextResponse.json({ error: "Invalid product id." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Invalid product id.") }, { status: 400 });
   }
 
   const body = (await request.json().catch(() => null)) as
@@ -41,7 +42,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
   if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
     return NextResponse.json(
-      { error: "Избери оценка от 1 до 5 звезди." },
+      { error: await localizeApiError("Избери оценка от 1 до 5 звезди.") },
       { status: 400 },
     );
   }
@@ -86,7 +87,7 @@ export async function DELETE(request: Request) {
   // Only admins may remove comments from the site interface.
   if (!session || session.role !== "admin") {
     return NextResponse.json(
-      { error: "Нямаш права за това действие." },
+      { error: await localizeApiError("Нямаш права за това действие.") },
       { status: 403 },
     );
   }
@@ -105,7 +106,7 @@ export async function DELETE(request: Request) {
     ) {
       await deleteProductComment(Number(body.id));
     } else {
-      return NextResponse.json({ error: "Невалидни данни." }, { status: 400 });
+      return NextResponse.json({ error: await localizeApiError("Невалидни данни.") }, { status: 400 });
     }
 
     return NextResponse.json({ ok: true });

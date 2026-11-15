@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { localizeApiError } from "@/lib/api-i18n";
 
 import {
   buildAuthorizationUrl,
@@ -30,12 +31,12 @@ export async function GET(request: Request, { params }: RouteContext) {
   const { provider } = await params;
 
   if (!isSupportedProvider(provider)) {
-    return NextResponse.json({ error: "Неподдържан доставчик." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Неподдържан доставчик.") }, { status: 400 });
   }
 
   if (!isProviderConfigured(provider)) {
     return NextResponse.json(
-      { error: `Доставчикът ${provider} не е конфигуриран.` },
+      { error: await localizeApiError(`Доставчикът ${provider} не е конфигуриран.`) },
       { status: 500 },
     );
   }

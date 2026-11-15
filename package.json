@@ -20,7 +20,8 @@
     "migrate:faq": "node scripts/apply-faq-migration.mjs",
     "seed": "node scripts/seed-supabase.mjs",
     "add-product": "node scripts/add-product.mjs",
-    "clear-cache": "node -e \"require('fs').rmSync('.next/cache/fetch-cache', {recursive:true,force:true}); console.log('Cache cleared');\""
+    "clear-cache": "node -e \"require('fs').rmSync('.next/cache/fetch-cache', {recursive:true,force:true}); console.log('Cache cleared');\"",
+    "test:seo": "node tests/seo-regressions.cjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.105.0",
@@ -30,6 +31,7 @@
     "@tiptap/starter-kit": "^3.23.1",
     "bcryptjs": "^3.0.3",
     "next": "15.5.9",
+    "next-intl": "^4.15.1",
     "nodemailer": "^8.0.5",
     "pg": "^8.20.0",
     "react": "19.2.4",

@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   type CSSProperties,
   useDeferredValue,
@@ -15,9 +14,12 @@ import {
 
 import { useCart } from "@/components/cart-provider";
 import { useFavorites } from "@/components/favorites-provider";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { useProducts } from "@/components/products-context";
 import { useUser } from "@/components/user-provider";
-import logo from "@/assets/images/logo.png";
+import { getProductHref } from "@/data/products";
+import { Link, useRouter } from "@/i18n/navigation";
+import logo from "@/assets/images/brami-logo.png";
 
 function BurgerIcon() {
   return (
@@ -176,21 +178,22 @@ export function Navbar() {
   const searchResultsRef = useRef<HTMLDivElement | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
+  const t = useTranslations("Nav");
   const { itemCount } = useCart();
   const { favoriteCount } = useFavorites();
   const { isAuthenticated, logout, user, profile } = useUser();
   const products = useProducts();
   const deferredSearchValue = useDeferredValue(searchValue);
 
-  const faqNavItem = { href: "/faq", label: "Често задавани въпроси" };
+  const faqNavItem = { href: "/faq", label: t("faq") } as const;
   const baseNavItems = [
-    { href: "/", label: "Начало" },
-    { href: "/products", label: "Продукти" },
-    { href: "/about", label: "За нас" },
-    { href: "/beauty-care", label: "Красота & грижа" },
-    { href: "/partners", label: "Партньори" },
-    { href: "/contact", label: "Контакти" },
-  ];
+    { href: "/", label: t("home") },
+    { href: "/products", label: t("products") },
+    { href: "/about", label: t("about") },
+    { href: "/beauty-care", label: t("beautyCare") },
+    { href: "/partners", label: t("partners") },
+    { href: "/contact", label: t("contact") },
+  ] as const;
   // Portrait is a single column, so ЧЗВ sits right after „Красота & грижа“.
   // The landscape grid fills row by row, so there the long label goes last —
   // on a row of its own.
@@ -210,7 +213,7 @@ export function Navbar() {
     },
     {
       href: "tel:+359889342781",
-      label: "Обади се",
+      label: t("call"),
       icon: <PhoneIcon />,
     },
   ];
@@ -312,7 +315,7 @@ export function Navbar() {
 
         return productNameWords.some((word) => word.includes(query));
       });
-  }, [deferredSearchValue]);
+  }, [deferredSearchValue, products]);
 
   useEffect(() => {
     if (!isSearchOpen || isMobileSearchViewport) {
@@ -363,7 +366,7 @@ export function Navbar() {
 
     const query = searchValue.trim();
     setShowSearchResults(false);
-    router.push(query ? `/products?q=${encodeURIComponent(query)}` : "/products");
+    router.push(query ? { pathname: "/products", query: { q: query } } : "/products");
     setIsSearchOpen(false);
   }
 
@@ -443,7 +446,7 @@ export function Navbar() {
         <div className="relative flex h-14 w-full items-center justify-between px-4 sm:h-16 sm:px-10 lg:px-14">
           <button
             type="button"
-            aria-label="Open menu"
+            aria-label={t("openMenu")}
             aria-expanded={isMenuOpen}
             onClick={() => setIsMenuOpen((value) => !value)}
             className="flex h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#e9ddf3] sm:-ml-1 sm:h-12 sm:w-12"
@@ -454,7 +457,7 @@ export function Navbar() {
           <Link
             href="/"
             className="absolute left-1/2 hidden -translate-x-1/2 text-center sm:block"
-            aria-label="Go to homepage"
+            aria-label={t("goHome")}
           >
             <Image
               src={logo}
@@ -467,7 +470,7 @@ export function Navbar() {
           <div className="ml-auto flex items-center gap-0.5 sm:-mr-1 sm:gap-2">
             <button
               type="button"
-              aria-label="Р СћРЎР‰РЎР‚РЎРѓР С‘ Р С—РЎР‚Р С•Р Т‘РЎС“Р С”РЎвЂљР С‘"
+              aria-label={t("searchProducts")}
               onClick={() => setIsSearchOpen(true)}
               className="flex h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#e9ddf3] sm:h-12 sm:w-12"
             >
@@ -475,8 +478,8 @@ export function Navbar() {
             </button>
 
             <Link
-              href="/products?favorites=1"
-              aria-label="Р вЂєРЎР‹Р В±Р С‘Р СР С‘ Р С—РЎР‚Р С•Р Т‘РЎС“Р С”РЎвЂљР С‘"
+              href={{ pathname: "/products", query: { favorites: "1" } }}
+              aria-label={t("favorites")}
               className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#e9ddf3] sm:h-12 sm:w-12"
             >
               <HeartIcon />
@@ -491,7 +494,7 @@ export function Navbar() {
               <div ref={userMenuRef} className="relative">
                 <button
                   type="button"
-                  aria-label="Моят профил"
+                  aria-label={t("myProfile")}
                   aria-haspopup="menu"
                   aria-expanded={isUserMenuOpen}
                   onClick={() => setIsUserMenuOpen((value) => !value)}
@@ -512,7 +515,7 @@ export function Navbar() {
                       onClick={() => setIsUserMenuOpen(false)}
                       className="block px-5 py-3 text-sm font-medium text-[#432855] transition hover:bg-[#faf7fc]"
                     >
-                      Профил
+                      {t("profile")}
                     </Link>
                     <Link
                       role="menuitem"
@@ -520,7 +523,7 @@ export function Navbar() {
                       onClick={() => setIsUserMenuOpen(false)}
                       className="block border-t border-[#ece3f2] px-5 py-3 text-sm font-medium text-[#432855] transition hover:bg-[#faf7fc]"
                     >
-                      Моите поръчки
+                      {t("myOrders")}
                     </Link>
                     {user?.role === "merchant" ? (
                       <Link
@@ -530,8 +533,8 @@ export function Navbar() {
                         className="block border-t border-[#ece3f2] px-5 py-3 text-sm font-medium text-[#432855] transition hover:bg-[#faf7fc]"
                       >
                         {profile?.merchantTermsAccepted
-                          ? "Търговец"
-                          : "Активирай търговец"}
+                          ? t("merchant")
+                          : t("activateMerchant")}
                       </Link>
                     ) : null}
                     {user?.role === "admin" ? (
@@ -541,7 +544,7 @@ export function Navbar() {
                         onClick={() => setIsUserMenuOpen(false)}
                         className="block border-t border-[#ece3f2] px-5 py-3 text-sm font-medium text-[#432855] transition hover:bg-[#faf7fc]"
                       >
-                        Админ панел
+                        {t("adminPanel")}
                       </Link>
                     ) : null}
                     <button
@@ -553,7 +556,7 @@ export function Navbar() {
                       }}
                       className="block w-full border-t border-[#ece3f2] px-5 py-3 text-left text-sm font-medium text-[#9a3f3f] transition hover:bg-[#fff6f6]"
                     >
-                      Изход
+                      {t("logout")}
                     </button>
                   </div>
                 ) : null}
@@ -561,7 +564,7 @@ export function Navbar() {
             ) : (
               <Link
                 href="/account"
-                aria-label="Вход или регистрация"
+                aria-label={t("loginOrRegister")}
                 className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#e9ddf3] sm:h-12 sm:w-12"
               >
                 <UserIcon />
@@ -570,7 +573,7 @@ export function Navbar() {
 
             <Link
               href="/cart"
-              aria-label="Open cart"
+              aria-label={t("openCart")}
               className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#e9ddf3] sm:h-12 sm:w-12"
             >
               <CartIcon />
@@ -588,7 +591,7 @@ export function Navbar() {
         <div className="fixed inset-0 z-40 overflow-hidden bg-[rgba(48,31,62,0.18)] p-4 backdrop-blur-sm sm:p-6">
           <button
             type="button"
-            aria-label="Затвори търсенето"
+            aria-label={t("closeSearch")}
             className="absolute inset-0"
             onClick={handleSearchClose}
           />
@@ -600,11 +603,11 @@ export function Navbar() {
             >
               <div className="mb-4 hidden items-center justify-between gap-4 sm:flex">
                 <h2 className="hidden font-serif text-3xl text-[#432855] sm:block">
-                  Търси продукти
+                  {t("searchProducts")}
                 </h2>
                 <button
                   type="button"
-                  aria-label="Затвори търсенето"
+                  aria-label={t("closeSearch")}
                   onClick={handleSearchClose}
                   className="ml-auto flex h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#f1e8f5]"
                 >
@@ -620,12 +623,12 @@ export function Navbar() {
                       setShowSearchResults(true);
                     }}
                     autoFocus
-                    placeholder="Търси по име на продукт"
+                    placeholder={t("searchPlaceholder")}
                     className="min-h-12 w-full rounded-[24px] border border-[#ddd3e4] bg-[#faf7fc] pl-4 pr-14 text-[#432855] outline-none transition focus:border-[#9f79ac] sm:h-12"
                   />
                   <button
                     type="submit"
-                    aria-label="Търси"
+                    aria-label={t("search")}
                     className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#ddd3e4] bg-[#faf7fc] text-[#6f5587] transition hover:border-[#cdbad9] hover:bg-[#f4edf8] hover:text-[#432855] sm:hidden"
                   >
                     <SearchIcon />
@@ -633,7 +636,7 @@ export function Navbar() {
                 </div>
                 <button
                   type="button"
-                  aria-label="Затвори търсенето"
+                  aria-label={t("closeSearch")}
                   onClick={handleSearchClose}
                   className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#ddd3e4] bg-[#faf7fc] text-[#6f5587] transition hover:border-[#cdbad9] hover:bg-[#f4edf8] hover:text-[#432855] sm:hidden"
                 >
@@ -643,7 +646,7 @@ export function Navbar() {
                   type="submit"
                   className="hidden h-12 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-white sm:inline-flex"
                 >
-                  Търси
+                  {t("search")}
                 </button>
               </form>
 
@@ -663,7 +666,7 @@ export function Navbar() {
                             return (
                               <Link
                                 key={product.id}
-                                href={`/products/${product.id}`}
+                                href={getProductHref(product)}
                                 onClick={handleSearchClose}
                                 className="flex items-center gap-3 rounded-[22px] border border-[#e6dcef] bg-[#faf7fc] p-3 transition hover:border-[#cbb7d8] hover:bg-white"
                               >
@@ -701,7 +704,7 @@ export function Navbar() {
                     </>
                   ) : (
                     <p className="rounded-[18px] border border-[#e6dcef] bg-[#faf7fc] px-4 py-3 text-sm text-[#6b587f]">
-                      Няма намерени продукти по това търсене.
+                      {t("noSearchResults")}
                     </p>
                   )}
                 </div>
@@ -715,7 +718,7 @@ export function Navbar() {
         <div className="fixed inset-0 z-40 bg-[rgba(48,31,62,0.18)] backdrop-blur-sm">
           <button
             type="button"
-            aria-label="Close menu"
+            aria-label={t("closeMenu")}
             className="absolute inset-0"
             onClick={() => setIsMenuOpen(false)}
           />
@@ -724,7 +727,7 @@ export function Navbar() {
               <Image src={logo} alt="Brami" className="h-auto w-[86px]" />
               <button
                 type="button"
-                aria-label="Close menu"
+                aria-label={t("closeMenu")}
                 onClick={() => setIsMenuOpen(false)}
                 className="flex h-10 w-10 items-center justify-center rounded-full text-[#4B2E6F] transition hover:bg-[#f1e8f5]"
               >
@@ -734,7 +737,7 @@ export function Navbar() {
 
             <button
               type="button"
-              aria-label="Close menu"
+              aria-label={t("closeMenu")}
               onClick={() => setIsMenuOpen(false)}
               className={floatingCloseButtonClassName}
             >
@@ -749,7 +752,7 @@ export function Navbar() {
 
                 <div className={quickLinksBodyClassName}>
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8f72a7]">
-                    Бързи връзки
+                    {t("quickLinks")}
                   </p>
                   <div className={quickLinksListClassName}>
                     {quickLinks.map((item) => {
@@ -789,7 +792,7 @@ export function Navbar() {
                       }
 
                       return (
-                        <Link
+                        <a
                           key={item.label}
                           href={item.href}
                           aria-label={item.label}
@@ -797,13 +800,19 @@ export function Navbar() {
                           className={quickLinkItemClassName}
                         >
                           {content}
-                        </Link>
+                        </a>
                       );
                     })}
+                    <LocaleSwitcher
+                      className={quickLinkItemClassName}
+                      iconClassName={quickLinkIconClassName}
+                      labelClassName={quickLinkLabelClassName}
+                      onNavigate={() => setIsMenuOpen(false)}
+                    />
                   </div>
                   <div className={emailBlockClassName}>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8f72a7]">
-                      Имейл
+                      {t("email")}
                     </p>
                     <a
                       href="mailto:info@brami.shop"

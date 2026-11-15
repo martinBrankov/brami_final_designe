@@ -1,7 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useDeferredValue, useMemo, useState } from "react";
+
+import { Link } from "@/i18n/navigation";
 
 export type FaqListItem = {
   id: string;
@@ -35,6 +37,7 @@ function SearchIcon() {
 }
 
 export function FaqList({ items }: { items: FaqListItem[] }) {
+  const t = useTranslations("Faq");
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>(ALL_CATEGORIES);
   const deferredQuery = useDeferredValue(query);
@@ -64,7 +67,7 @@ export function FaqList({ items }: { items: FaqListItem[] }) {
     <div>
       <div className="rounded-[26px] border border-[#eadde4] bg-white p-5 shadow-[0_16px_50px_rgba(67,40,85,0.05)] sm:p-6">
         <label htmlFor="faq-search" className="sr-only">
-          Търсене във въпросите и отговорите
+          {t("searchLabel")}
         </label>
         <div className="relative">
           <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-[#9f79ac]">
@@ -75,7 +78,7 @@ export function FaqList({ items }: { items: FaqListItem[] }) {
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Търси по ключова дума — например „доставка“ или „връщане“"
+            placeholder={t("searchPlaceholder")}
             className="h-14 w-full rounded-[18px] border border-[#ddd3e4] bg-[#fdfbfe] pl-12 pr-4 text-[#432855] outline-none transition placeholder:text-[#a897b5] focus:border-[#9f79ac] focus:bg-white"
           />
         </div>
@@ -91,7 +94,7 @@ export function FaqList({ items }: { items: FaqListItem[] }) {
                   : "border border-[#e2d3e6] bg-white text-[#6b587f] hover:bg-[#faf7fc]"
               }`}
             >
-              Всички
+              {t("all")}
             </button>
             {categories.map((name) => (
               <button
@@ -112,17 +115,16 @@ export function FaqList({ items }: { items: FaqListItem[] }) {
 
         <p className="mt-4 text-sm text-[#8f72a7]" aria-live="polite">
           {filtered.length === items.length
-            ? `${items.length} въпроса`
-            : `${filtered.length} от ${items.length} въпроса`}
+            ? t("count", { count: items.length })
+            : t("filteredCount", { filtered: filtered.length, count: items.length })}
         </p>
       </div>
 
       {filtered.length === 0 ? (
         <div className="mt-6 rounded-[26px] border border-dashed border-[#ddd3e4] bg-white/70 px-6 py-12 text-center">
-          <p className="font-serif text-2xl text-[#432855]">Няма намерени въпроси</p>
+          <p className="font-serif text-2xl text-[#432855]">{t("noResultsTitle")}</p>
           <p className="mt-3 text-sm leading-7 text-[#6b587f]">
-            Опитай с друга дума или ни задай въпроса си във формуляра по-долу — ще
-            отговорим и ще го публикуваме тук.
+            {t("noResultsText")}
           </p>
         </div>
       ) : (
@@ -130,7 +132,7 @@ export function FaqList({ items }: { items: FaqListItem[] }) {
           {filtered.map((item) => (
             <li key={item.id}>
               <Link
-                href={`/faq/${item.slug}`}
+                href={{ pathname: "/faq/[slug]", params: { slug: item.slug } }}
                 className="group flex items-center gap-4 rounded-[22px] border border-[#eadde4] bg-white px-5 py-5 shadow-[0_14px_40px_rgba(67,40,85,0.04)] transition hover:border-[#d9c6e0] hover:shadow-[0_18px_50px_rgba(67,40,85,0.09)] sm:px-7"
               >
                 <div className="min-w-0 flex-1">

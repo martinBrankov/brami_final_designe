@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as { instruction?: unknown } | null;
   const instruction = typeof body?.instruction === "string" ? body.instruction.trim() : "";
   if (instruction.length < 5) {
-    return NextResponse.json({ error: "Инструкцията трябва да е поне 5 символа." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Инструкцията трябва да е поне 5 символа.") }, { status: 400 });
   }
 
   try {
@@ -22,6 +23,6 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("[ai influencer] error:", err);
     const message = err instanceof Error ? err.message : "Неуспешно генериране.";
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json({ error: await localizeApiError(message) }, { status: 502 });
   }
 }

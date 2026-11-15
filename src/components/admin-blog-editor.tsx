@@ -1,11 +1,14 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useEditor, EditorContent, useEditorState, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { AdminBlogEnglishFields, type BlogEnglishMeta } from "@/components/admin-blog-english-fields";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -27,6 +30,7 @@ type DbBlock = {
   type: string;
   content: string | null;
   position: number;
+  translations?: { en?: { content?: string } } | null;
 };
 
 export type DbPost = {
@@ -42,6 +46,9 @@ export type DbPost = {
   show_in_list: boolean;
   published: boolean;
   blog_blocks: DbBlock[];
+  translations?: {
+    en?: { title?: string; slug?: string; eyebrow?: string; excerpt?: string; read_time?: string };
+  } | null;
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -74,19 +81,19 @@ function parseDbBlock(b: DbBlock): EditorBlock {
     try {
       const img = JSON.parse(raw) as Partial<ImageData>;
       return {
-        id: uid(), type: "image", initialText: "",
+        id: b.id, type: "image", initialText: "",
         initialImage: { url: img.url ?? "", alt: img.alt ?? "", caption: img.caption ?? "" },
       };
     } catch {
-      return { id: uid(), type: "image", initialText: "", initialImage: { url: raw, alt: "", caption: "" } };
+      return { id: b.id, type: "image", initialText: "", initialImage: { url: raw, alt: "", caption: "" } };
     }
   }
 
   if (raw.startsWith("<h2>")) {
-    return { id: uid(), type: "heading", initialText: raw.replace(/^<h2>/, "").replace(/<\/h2>$/, "") };
+    return { id: b.id, type: "heading", initialText: raw.replace(/^<h2>/, "").replace(/<\/h2>$/, "") };
   }
 
-  return { id: uid(), type: "paragraph", initialText: raw };
+  return { id: b.id, type: "paragraph", initialText: raw };
 }
 
 // ── Image block editor ────────────────────────────────────────────────────────
@@ -100,6 +107,7 @@ function ImageBlockEditor({
   initial: ImageData;
   registerRef: (id: string, data: ImageData | null) => void;
 }) {
+  const t = useTranslations("AdminBlogEditor");
   const [url, setUrl] = useState(initial.url);
   const [alt, setAlt] = useState(initial.alt);
   const [caption, setCaption] = useState(initial.caption);
@@ -120,7 +128,7 @@ function ImageBlockEditor({
       form.append("file", file);
       const res = await fetch("/api/admin/blog/upload", { method: "POST", body: form });
       const body = await res.json().catch(() => ({})) as { url?: string; error?: string };
-      if (!res.ok) { setUploadError(body.error ?? "Грешка при качване."); return; }
+      if (!res.ok) { setUploadError(body.error ?? t("greshkaPriKachvane")); return; }
       setUrl(body.url ?? "");
     } finally {
       setUploading(false);
@@ -144,7 +152,7 @@ function ImageBlockEditor({
       {url ? (
         <div>
           <div className="relative h-[200px] overflow-hidden rounded-[10px] bg-[#f0ebe3]">
-            <Image src={url} alt={alt || "блог снимка"} fill className="object-cover" sizes="700px" />
+            <Image src={url} alt={alt || t("blogSnimka")} fill className="object-cover" sizes="700px" />
           </div>
           <button
             type="button"
@@ -152,7 +160,7 @@ function ImageBlockEditor({
             disabled={uploading}
             className="mt-2 inline-flex h-8 items-center rounded-[7px] border border-[#d2c8b8] bg-white px-3 text-xs font-medium text-[#1d2733] transition hover:bg-[#f8f4ec] disabled:opacity-60"
           >
-            {uploading ? "Качва се…" : "Смени снимката"}
+            {uploading ? t("kachvaSe") : t("smeniSnimkata")}
           </button>
         </div>
       ) : (
@@ -165,8 +173,8 @@ function ImageBlockEditor({
           <svg className="h-8 w-8 opacity-40" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 19.5h16.5M12 3v9m0 0l-3-3m3 3l3-3" />
           </svg>
-          <span className="text-sm font-medium">{uploading ? "Качва се…" : "Избери или пусни снимка"}</span>
-          <span className="text-xs opacity-60">JPG, PNG, WebP, GIF · до 5 MB</span>
+          <span className="text-sm font-medium">{uploading ? t("kachvaSe") : t("izberiIliPusniSnimka")}</span>
+          <span className="text-xs opacity-60">{t("jpgPngWebpGif")}</span>
         </label>
       )}
 
@@ -178,7 +186,7 @@ function ImageBlockEditor({
         type="text"
         value={alt}
         onChange={(e) => setAlt(e.target.value)}
-        placeholder="Alt текст / описание за SEO…"
+        placeholder={t("altTekstOpisanieZa")}
         className="w-full rounded-[8px] border border-[#e0dbd2] px-3 py-2 text-sm text-[#1d2733] outline-none focus:border-[#d8b36b] focus:ring-1 focus:ring-[#d8b36b]/40"
       />
 
@@ -186,7 +194,7 @@ function ImageBlockEditor({
         type="text"
         value={caption}
         onChange={(e) => setCaption(e.target.value)}
-        placeholder="Надпис под снимката (по желание)…"
+        placeholder={t("nadpisPodSnimkataPo")}
         className="w-full rounded-[8px] border border-[#e0dbd2] px-3 py-2 text-sm text-[#1d2733] outline-none focus:border-[#d8b36b] focus:ring-1 focus:ring-[#d8b36b]/40"
       />
     </div>
@@ -204,6 +212,7 @@ function ParagraphEditor({
   initialHtml: string;
   registerRef: (id: string, editor: Editor | null) => void;
 }) {
+  const t = useTranslations("AdminBlogEditor");
   const [isFocused, setIsFocused] = useState(false);
 
   const editor = useEditor({
@@ -256,14 +265,14 @@ function ParagraphEditor({
         <button type="button" disabled={!isFocused}
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => editor?.chain().focus().toggleBold().run()}
-          title="Удебелен (Ctrl+B)"
+          title={t("udebelenCtrlB")}
           className={`h-7 w-7 font-bold ${cls(activeState?.isBold ?? false)}`}>
           B
         </button>
         <button type="button" disabled={!isFocused}
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => editor?.chain().focus().toggleItalic().run()}
-          title="Курсив (Ctrl+I)"
+          title={t("kursivCtrlI")}
           className={`h-7 w-7 ${cls(activeState?.isItalic ?? false)}`}>
           <em className="font-serif text-base">i</em>
         </button>
@@ -273,7 +282,7 @@ function ParagraphEditor({
         <button type="button" disabled={!isFocused}
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => editor?.chain().focus().toggleBulletList().run()}
-          title="Списък с точки"
+          title={t("spisakSTochki")}
           className={`h-7 gap-1 px-2 ${cls(activeState?.isBulletList ?? false)}`}>
           <span className="text-base leading-none">•</span>
           <span className="flex flex-col gap-[3px]">
@@ -284,12 +293,12 @@ function ParagraphEditor({
         <button type="button" disabled={!isFocused || !(activeState?.canSink ?? false)}
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => editor?.chain().focus().sinkListItem("listItem").run()}
-          title="Отстъп навътре (Tab)"
+          title={t("otstapNavatreTab")}
           className={`h-7 w-7 ${cls(false)}`}>→</button>
         <button type="button" disabled={!isFocused || !(activeState?.canLift ?? false)}
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => editor?.chain().focus().liftListItem("listItem").run()}
-          title="Отстъп навън (Shift+Tab)"
+          title={t("otstapNavanShiftTab")}
           className={`h-7 w-7 ${cls(false)}`}>←</button>
       </div>
 
@@ -303,6 +312,7 @@ function ParagraphEditor({
 // ── Main editor ───────────────────────────────────────────────────────────────
 
 export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClose?: () => void }) {
+  const t = useTranslations("AdminBlogEditor");
   const router = useRouter();
   const isNew = post === null;
 
@@ -318,6 +328,21 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
     showInList: post?.show_in_list ?? true,
     published: post?.published ?? false,
   });
+  const [english, setEnglish] = useState<BlogEnglishMeta>({
+    title: post?.translations?.en?.title ?? "",
+    slug: post?.translations?.en?.slug ?? "",
+    eyebrow: post?.translations?.en?.eyebrow ?? "",
+    excerpt: post?.translations?.en?.excerpt ?? "",
+    readTime: post?.translations?.en?.read_time ?? "",
+  });
+  // English HTML per saved text block (image blocks are shared).
+  const [blockEnglish, setBlockEnglish] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      (post?.blog_blocks ?? [])
+        .filter((block) => block.type !== "image")
+        .map((block) => [block.id, block.translations?.en?.content ?? ""]),
+    ),
+  );
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverError, setCoverError] = useState<string | null>(null);
 
@@ -329,7 +354,7 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
       form.append("file", file);
       const res = await fetch("/api/admin/blog/upload", { method: "POST", body: form });
       const body = await res.json().catch(() => ({})) as { url?: string; error?: string };
-      if (!res.ok) { setCoverError(body.error ?? "Грешка при качване."); return; }
+      if (!res.ok) { setCoverError(body.error ?? t("greshkaPriKachvane")); return; }
       setMeta((m) => ({ ...m, coverImage: body.url ?? "" }));
     } finally {
       setCoverUploading(false);
@@ -421,7 +446,7 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
 
   async function handleSave() {
     if (!meta.title.trim() || !meta.slug.trim()) {
-      setSaveError("Заглавието и slug-ът са задължителни.");
+      setSaveError(t("zaglavietoISlugAt"));
       return;
     }
 
@@ -429,17 +454,18 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
     setSaveError(null);
 
     const serializedBlocks = collectBlocks()
-      .map(({ type, content }) => {
+      .map(({ id, type, content }) => {
+        const persistedId = post?.blog_blocks.some((block) => block.id === id) ? id : undefined;
         if (type === "heading") {
           const c = content.trim();
           if (!c) return { content: "" };
-          return { content: `<h2>${c}</h2>` };
+          return { id: persistedId, content: `<h2>${c}</h2>` };
         }
         if (type === "image") {
           try {
             const img = JSON.parse(content) as ImageData;
             if (!img.url) return { content: "" };
-            return { type: "image", content };
+            return { id: persistedId, type: "image", content };
           } catch {
             return { content: "" };
           }
@@ -447,7 +473,7 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
         // paragraph — TipTap getHTML()
         const isEmpty = !content || content === "<p></p>";
         if (isEmpty) return { content: "" };
-        return { content };
+        return { id: persistedId, content };
       })
       .filter((b) => b.content);
 
@@ -463,6 +489,7 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
       showInList: meta.showInList,
       published: meta.published,
       blocks: serializedBlocks,
+      ...(isNew ? {} : { english, blockEnglish }),
     };
 
     try {
@@ -474,7 +501,7 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({})) as { error?: string };
-        setSaveError(body.error ?? "Грешка при запазване.");
+        setSaveError(body.error ?? t("greshkaPriZapazvane"));
         return;
       }
 
@@ -485,7 +512,7 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
         router.push("/admin-panel/blog");
       }
     } catch {
-      setSaveError("Мрежова грешка. Опитай отново.");
+      setSaveError(t("mrezhovaGreshkaOpitayOtnovo"));
     } finally {
       setSaving(false);
     }
@@ -493,7 +520,7 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
-  const blockLabel: Record<BlockType, string> = { heading: "Заглавие", paragraph: "Параграф", image: "Снимка" };
+  const blockLabel: Record<BlockType, string> = { heading: t("zaglavie"), paragraph: t("paragraf"), image: t("snimka") };
 
   return (
     <div className="space-y-5">
@@ -502,7 +529,7 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
         <div className="flex items-center justify-end gap-2">
           {saveError && <p className="mr-auto text-xs font-medium text-red-600">{saveError}</p>}
           <button type="button" onClick={togglePreview}
-            title={showPreview ? "Скрий преглед" : "Преглед"}
+            title={showPreview ? t("skriyPregled") : t("pregled")}
             className={`flex h-8 w-8 items-center justify-center rounded-[8px] border transition ${
               showPreview ? "border-[#d8b36b] bg-[#fdf8ee] text-[#8a6f45]" : "border-[#d2c8b8] bg-white text-[#1d2733] hover:bg-[#f8f4ec]"
             }`}>
@@ -511,7 +538,7 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
               : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
           </button>
           <button type="button" onClick={handleSave} disabled={saving}
-            title={isNew ? "Създай статия" : "Запази промените"}
+            title={isNew ? t("sazdayStatiya") : t("zapaziPromenite")}
             className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-[#1d2733] text-white transition hover:bg-[#2d3a47] disabled:opacity-60">
             {saving
               ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
@@ -519,7 +546,7 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
           </button>
           <button type="button" onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-full border border-[#d2c8b8] bg-white text-[#5f6b76] transition hover:bg-[#f8f4ec]"
-            aria-label="Затвори">
+            aria-label={t("zatvori")}>
             ✕
           </button>
         </div>
@@ -527,10 +554,10 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
         <div className="flex flex-wrap items-center justify-end gap-3">
           <Link href="/admin-panel/blog"
             className="mr-auto inline-flex h-10 items-center rounded-[8px] border border-[#d2c8b8] bg-white px-4 text-sm font-medium text-[#1d2733] transition hover:bg-[#f8f4ec]">
-            ← Назад
+            {t("nazad")}
           </Link>
           <button type="button" onClick={togglePreview}
-            title={showPreview ? "Скрий преглед" : "Преглед"}
+            title={showPreview ? t("skriyPregled") : t("pregled")}
             className={`flex h-9 w-9 items-center justify-center rounded-[8px] border transition ${
               showPreview ? "border-[#d8b36b] bg-[#fdf8ee] text-[#8a6f45]" : "border-[#d2c8b8] bg-white text-[#1d2733] hover:bg-[#f8f4ec]"
             }`}>
@@ -539,7 +566,7 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
               : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
           </button>
           <button type="button" onClick={handleSave} disabled={saving}
-            title={isNew ? "Създай статия" : "Запази промените"}
+            title={isNew ? t("sazdayStatiya") : t("zapaziPromenite")}
             className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-[#1d2733] text-white transition hover:bg-[#2d3a47] disabled:opacity-60">
             {saving
               ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
@@ -551,13 +578,13 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
 
       {/* Metadata */}
       <div className={`border-t border-[#e7dfd1] pt-6${showPreview ? " hidden" : ""}`}>
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-[#8a6f45]">Настройки на статията</p>
+        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-[#8a6f45]">{t("nastroykiNaStatiyata")}</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">Заглавие</label>
+            <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">{t("zaglavie")}</label>
             <input type="text" value={meta.title}
               onChange={(e) => setMeta((m) => ({ ...m, title: e.target.value }))}
-              placeholder="Напр. Шафранът в козметиката"
+              placeholder={t("naprShafranatVKozmetikata")}
               className="w-full rounded-[8px] border border-[#e0dbd2] px-3 py-2 text-sm text-[#1d2733] outline-none focus:border-[#d8b36b] focus:ring-1 focus:ring-[#d8b36b]/40" />
           </div>
           <div>
@@ -568,48 +595,48 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
               className="w-full rounded-[8px] border border-[#e0dbd2] px-3 py-2 font-mono text-sm text-[#1d2733] outline-none focus:border-[#d8b36b] focus:ring-1 focus:ring-[#d8b36b]/40" />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">Категория (eyebrow)</label>
+            <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">{t("kategoriyaEyebrow")}</label>
             <input type="text" value={meta.eyebrow}
               onChange={(e) => setMeta((m) => ({ ...m, eyebrow: e.target.value }))}
-              placeholder="Напр. Активна грижа"
+              placeholder={t("naprAktivnaGrizha")}
               className="w-full rounded-[8px] border border-[#e0dbd2] px-3 py-2 text-sm text-[#1d2733] outline-none focus:border-[#d8b36b] focus:ring-1 focus:ring-[#d8b36b]/40" />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">Резюме (excerpt)</label>
+            <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">{t("rezyumeExcerpt")}</label>
             <textarea value={meta.excerpt}
               onChange={(e) => setMeta((m) => ({ ...m, excerpt: e.target.value }))}
-              rows={2} placeholder="Кратко описание за листа с статии…"
+              rows={2} placeholder={t("kratkoOpisanieZaLista")}
               className="w-full resize-none rounded-[8px] border border-[#e0dbd2] px-3 py-2 text-sm text-[#1d2733] outline-none focus:border-[#d8b36b] focus:ring-1 focus:ring-[#d8b36b]/40" />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">Време за четене</label>
+            <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">{t("vremeZaChetene")}</label>
             <input type="text" value={meta.readTime}
               onChange={(e) => setMeta((m) => ({ ...m, readTime: e.target.value }))}
-              placeholder="Напр. 4 мин"
+              placeholder={t("napr4Min")}
               className="w-full rounded-[8px] border border-[#e0dbd2] px-3 py-2 text-sm text-[#1d2733] outline-none focus:border-[#d8b36b] focus:ring-1 focus:ring-[#d8b36b]/40" />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">Дата на публикуване</label>
+            <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">{t("dataNaPublikuvane")}</label>
             <input type="date" value={meta.publishedAt}
               onChange={(e) => setMeta((m) => ({ ...m, publishedAt: e.target.value }))}
               className="w-full rounded-[8px] border border-[#e0dbd2] px-3 py-2 text-sm text-[#1d2733] outline-none focus:border-[#d8b36b] focus:ring-1 focus:ring-[#d8b36b]/40" />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">Хиро снимка (корица)</label>
+            <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">{t("hiroSnimkaKoritsa")}</label>
             {meta.coverImage ? (
               <div className="flex flex-col gap-2">
                 <div className="relative h-[180px] overflow-hidden rounded-[10px] bg-[#f0ebe3]">
-                  <Image src={meta.coverImage} alt="корица" fill className="object-cover" sizes="700px" />
+                  <Image src={meta.coverImage} alt={t("koritsa")} fill className="object-cover" sizes="700px" />
                 </div>
                 <div className="flex gap-2">
                   <label className="inline-flex h-8 cursor-pointer items-center rounded-[7px] border border-[#d2c8b8] bg-white px-3 text-xs font-medium text-[#1d2733] transition hover:bg-[#f8f4ec]">
-                    {coverUploading ? "Качва се…" : "Смени снимката"}
+                    {coverUploading ? t("kachvaSe") : t("smeniSnimkata")}
                     <input type="file" accept="image/*" className="hidden"
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCoverFile(f); e.target.value = ""; }} />
                   </label>
                   <button type="button" onClick={() => setMeta((m) => ({ ...m, coverImage: "" }))}
                     className="inline-flex h-8 items-center rounded-[7px] border border-red-200 bg-white px-3 text-xs font-medium text-red-500 hover:bg-red-50">
-                    Премахни
+                    {t("premahni")}
                   </button>
                 </div>
                 {coverError && <p className="text-xs font-medium text-red-600">{coverError}</p>}
@@ -623,8 +650,8 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
                 <svg className="h-7 w-7 opacity-40" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 19.5h16.5M12 3v9m0 0l-3-3m3 3l3-3" />
                 </svg>
-                <span className="text-sm font-medium">{coverUploading ? "Качва се…" : "Избери или пусни хиро снимка"}</span>
-                <span className="text-xs opacity-60">JPG, PNG, WebP · до 5 MB</span>
+                <span className="text-sm font-medium">{coverUploading ? t("kachvaSe") : t("izberiIliPusniHiro")}</span>
+                <span className="text-xs opacity-60">{t("jpgPngWebpDo")}</span>
                 <input type="file" accept="image/*" className="hidden"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCoverFile(f); e.target.value = ""; }} />
               </label>
@@ -637,20 +664,20 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
               <input type="checkbox" checked={meta.published}
                 onChange={(e) => setMeta((m) => ({ ...m, published: e.target.checked }))}
                 className="h-4 w-4 rounded border-[#d2c8b8] accent-[#d8b36b]" />
-              Публикувана
+              {t("publikuvana")}
             </label>
             <label className="flex cursor-pointer items-center gap-2 text-sm text-[#1d2733]">
               <input type="checkbox" checked={meta.isFeatured}
                 onChange={(e) => setMeta((m) => ({ ...m, isFeatured: e.target.checked }))}
                 className="h-4 w-4 rounded border-[#d2c8b8] accent-[#d8b36b]" />
-              Акцентирана (Featured)
+              {t("aktsentiranaFeatured")}
             </label>
             {meta.isFeatured && (
               <label className="flex cursor-pointer items-center gap-2 text-sm text-[#5f6b76]">
                 <input type="checkbox" checked={meta.showInList}
                   onChange={(e) => setMeta((m) => ({ ...m, showInList: e.target.checked }))}
                   className="h-4 w-4 rounded border-[#d2c8b8] accent-[#d8b36b]" />
-                Показвай и в списъка
+                {t("pokazvayIVSpisaka")}
               </label>
             )}
           </div>
@@ -661,26 +688,26 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
       <div className={`border-t border-[#e7dfd1] pt-6${showPreview ? " hidden" : ""}`}>
         <div className="mb-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#8a6f45]">
-            Съдържание — {blocks.length} {blocks.length === 1 ? "блок" : "блока"}
+            {t("sadarzhanie", { count: blocks.length, bloka: blocks.length === 1 ? t("blok") : t("bloka") })}
           </p>
           <div className="flex gap-2">
             <button type="button" onClick={() => addBlock("heading")}
               className="inline-flex h-8 items-center rounded-[7px] border border-[#d2c8b8] bg-white px-3 text-xs font-semibold text-[#1d2733] hover:bg-[#f8f4ec]">
-              + Заглавие
+              {t("zaglavie2")}
             </button>
             <button type="button" onClick={() => addBlock("paragraph")}
               className="inline-flex h-8 items-center rounded-[7px] border border-[#d2c8b8] bg-white px-3 text-xs font-semibold text-[#1d2733] hover:bg-[#f8f4ec]">
-              + Параграф
+              {t("paragraf2")}
             </button>
             <button type="button" onClick={() => addBlock("image")}
               className="inline-flex h-8 items-center rounded-[7px] border border-[#d2c8b8] bg-white px-3 text-xs font-semibold text-[#1d2733] hover:bg-[#f8f4ec]">
-              + Снимка
+              {t("snimka2")}
             </button>
           </div>
         </div>
 
         {blocks.length === 0 && (
-          <p className="py-8 text-center text-sm text-[#aaa]">Добави блокове за съдържание.</p>
+          <p className="py-8 text-center text-sm text-[#aaa]">{t("dobaviBlokoveZaSadarzhanie")}</p>
         )}
 
         <div className="divide-y divide-[#e7dfd1]">
@@ -706,7 +733,7 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
               {block.type === "heading" && (
                 <input key={block.id} type="text" defaultValue={block.initialText}
                   ref={(el) => { if (el) headingRefs.current.set(block.id, el); else headingRefs.current.delete(block.id); }}
-                  placeholder="Въведи заглавие…"
+                  placeholder={t("vavediZaglavie")}
                   className="w-full rounded-[8px] border border-[#e0dbd2] bg-white px-3 py-2 font-serif text-xl text-[#432855] outline-none focus:border-[#d8b36b] focus:ring-1 focus:ring-[#d8b36b]/40" />
               )}
 
@@ -728,54 +755,69 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
           <div className="mt-4 flex gap-2">
             <button type="button" onClick={() => addBlock("heading")}
               className="inline-flex h-8 items-center rounded-[7px] border border-[#d2c8b8] bg-white px-3 text-xs font-semibold text-[#1d2733] hover:bg-[#f8f4ec]">
-              + Заглавие
+              {t("zaglavie2")}
             </button>
             <button type="button" onClick={() => addBlock("paragraph")}
               className="inline-flex h-8 items-center rounded-[7px] border border-[#d2c8b8] bg-white px-3 text-xs font-semibold text-[#1d2733] hover:bg-[#f8f4ec]">
-              + Параграф
+              {t("paragraf2")}
             </button>
             <button type="button" onClick={() => addBlock("image")}
               className="inline-flex h-8 items-center rounded-[7px] border border-[#d2c8b8] bg-white px-3 text-xs font-semibold text-[#1d2733] hover:bg-[#f8f4ec]">
-              + Снимка
+              {t("snimka2")}
             </button>
           </div>
         )}
       </div>
 
+      {/* English version (existing posts only: blocks need an id first) */}
+      {!isNew ? (
+        <AdminBlogEnglishFields
+          meta={english}
+          blocks={(post?.blog_blocks ?? [])
+            .filter((block) => block.type !== "image" && blocks.some((b) => b.id === block.id))
+            .map((block) => ({ id: block.id, source: block.content ?? "", content: blockEnglish[block.id] ?? "" }))}
+          hasUnsavedBlocks={blocks.some((b) => b.type !== "image" && !post?.blog_blocks.some((block) => block.id === b.id))}
+          onMetaChange={setEnglish}
+          onBlockChange={(id, content) => setBlockEnglish((current) => ({ ...current, [id]: content }))}
+        />
+      ) : (
+        <p className="text-xs text-[#8a9099]">{t("englishAfterSave")}</p>
+      )}
+
       {/* Preview */}
       {showPreview && (
         <div className="border-t border-[#e7dfd1] pt-6">
           <div className="mb-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8a6f45]">Преглед на статията</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8a6f45]">{t("pregledNaStatiyata")}</p>
           </div>
           <div className="mx-auto max-w-2xl space-y-6">
             {meta.coverImage && (
               <div className="relative h-[260px] overflow-hidden rounded-[16px]">
-                <Image src={meta.coverImage} alt={meta.title || "корица"} fill className="object-cover" sizes="700px" />
+                <Image src={meta.coverImage} alt={meta.title || t("koritsa")} fill className="object-cover" sizes="700px" />
               </div>
             )}
             {meta.eyebrow && (
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#8f72a7]">{meta.eyebrow}</p>
             )}
             <h1 className="font-serif text-4xl leading-tight text-[#432855]">
-              {meta.title || <span className="opacity-30">Заглавие…</span>}
+              {meta.title || <span className="opacity-30">{t("zaglavie3")}</span>}
             </h1>
             {meta.excerpt && <p className="text-lg leading-8 text-[#6b587f]">{meta.excerpt}</p>}
             <hr className="border-[#eadde4]" />
             <div className="space-y-6">
-              {previewData.length === 0 && <p className="italic text-[#aaa]">Няма блокове.</p>}
+              {previewData.length === 0 && <p className="italic text-[#aaa]">{t("nyamaBlokove")}</p>}
               {previewData.map((item) => {
                 if (item.type === "heading") {
                   return (
                     <h2 key={item.id} className="font-serif text-3xl leading-snug text-[#432855]">
-                      {item.content || <span className="opacity-30">Заглавие…</span>}
+                      {item.content || <span className="opacity-30">{t("zaglavie3")}</span>}
                     </h2>
                   );
                 }
                 if (item.type === "image") {
                   try {
                     const img = JSON.parse(item.content) as ImageData;
-                    if (!img.url) return <div key={item.id} className="flex h-[160px] items-center justify-center rounded-[12px] bg-[#f0ebe3] text-sm text-[#aaa]">Няма снимка</div>;
+                    if (!img.url) return <div key={item.id} className="flex h-[160px] items-center justify-center rounded-[12px] bg-[#f0ebe3] text-sm text-[#aaa]">{t("nyamaSnimka")}</div>;
                     return (
                       <figure key={item.id} className="my-2">
                         <div className="relative h-[240px] overflow-hidden rounded-[14px]">
@@ -789,7 +831,7 @@ export function AdminBlogEditor({ post, onClose }: { post: DbPost | null; onClos
                 return (
                   <div key={item.id}
                     className="text-base leading-8 text-[#5f4b73] [&_em]:italic [&_i]:italic [&_strong]:font-semibold [&_b]:font-semibold [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:leading-7 [&_li>p]:m-0 [&_ul_ul]:mt-1 [&_ul_ul]:list-[circle] [&_ul_ul]:pl-4"
-                    dangerouslySetInnerHTML={{ __html: item.content || "<span style='opacity:.4'>Празен параграф…</span>" }}
+                    dangerouslySetInnerHTML={{ __html: item.content || `<span style='opacity:.4'>${t("prazenParagraf")}</span>` }}
                   />
                 );
               })}

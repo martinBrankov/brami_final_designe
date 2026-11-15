@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState, useTransition, type ReactNode } from "react";
 
 import { AccountDiscountProgress } from "@/components/account-discount-progress";
@@ -98,8 +99,10 @@ function FieldRow({
   onCancel,
   onSubmit,
   inputNode,
-  emptyLabel = "Не е попълнено",
+  emptyLabel,
 }: FieldRowProps) {
+  const t = useTranslations("ProfileForm");
+
   return (
     <div className="border-b border-[#ece3f2] py-4">
       <div className="flex flex-col gap-1">
@@ -117,7 +120,7 @@ function FieldRow({
                 disabled={isSaving}
                 className="inline-flex h-10 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-5 text-xs font-semibold uppercase tracking-[0.08em] text-white transition disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSaving ? "Запис..." : "Запази"}
+                {isSaving ? t("saving") : t("save")}
               </button>
               <button
                 type="button"
@@ -125,7 +128,7 @@ function FieldRow({
                 disabled={isSaving}
                 className="inline-flex h-10 items-center justify-center rounded-full border border-[#ddd3e4] px-5 text-xs font-semibold uppercase tracking-[0.08em] text-[#6b587f] transition hover:border-[#9f79ac] hover:text-[#432855] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Откажи
+                {t("cancel")}
               </button>
             </div>
           </div>
@@ -136,7 +139,7 @@ function FieldRow({
                 value ? "font-medium text-[#432855]" : "text-[#a890ba] italic"
               }`}
             >
-              {value || emptyLabel}
+              {value || (emptyLabel ?? t("notFilled"))}
             </span>
             <button
               type="button"
@@ -144,7 +147,7 @@ function FieldRow({
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#ddd3e4] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-[#6b587f] transition hover:border-[#9f79ac] hover:text-[#432855]"
             >
               <PencilIcon />
-              Редактирай
+              {t("edit")}
             </button>
           </div>
         )}
@@ -180,6 +183,8 @@ function SlotRow({
   onSelectDraft,
   onSubmit,
 }: SlotRowProps) {
+  const t = useTranslations("ProfileForm");
+
   return (
     <div className="border-b border-[#ece3f2] py-4">
       <div className="flex flex-col gap-1">
@@ -202,7 +207,7 @@ function SlotRow({
                 disabled={isSaving || !slotDraft}
                 className="inline-flex h-10 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-5 text-xs font-semibold uppercase tracking-[0.08em] text-white transition disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSaving ? "Запис..." : "Запази"}
+                {isSaving ? t("saving") : t("save")}
               </button>
               <button
                 type="button"
@@ -210,7 +215,7 @@ function SlotRow({
                 disabled={isSaving}
                 className="inline-flex h-10 items-center justify-center rounded-full border border-[#ddd3e4] px-5 text-xs font-semibold uppercase tracking-[0.08em] text-[#6b587f] transition hover:border-[#9f79ac] hover:text-[#432855] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Откажи
+                {t("cancel")}
               </button>
             </div>
           </div>
@@ -222,7 +227,7 @@ function SlotRow({
                   {formatOfficeLabel(saved.data)}
                 </span>
               ) : (
-                <span className="text-base italic text-[#a890ba]">Не е избран</span>
+                <span className="text-base italic text-[#a890ba]">{t("notSelected")}</span>
               )}
             </div>
             <button
@@ -231,7 +236,7 @@ function SlotRow({
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#ddd3e4] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-[#6b587f] transition hover:border-[#9f79ac] hover:text-[#432855]"
             >
               <PencilIcon />
-              Редактирай
+              {t("edit")}
             </button>
           </div>
         )}
@@ -253,6 +258,7 @@ export function AccountProfileForm({
   initialPreferredLocker?: PreferredOfficeValue | null;
   initialHasPassword?: boolean;
 }) {
+  const t = useTranslations("ProfileForm");
   const { profile: contextProfile, setProfile: setUserProfile } = useUser();
   const [values, setValues] = useState<AccountProfileFormValues>(initial);
   const [preferredOffice, setPreferredOffice] = useState<PreferredOfficeValue | null>(
@@ -322,7 +328,7 @@ export function AccountProfileForm({
       if (!response.ok || !result?.ok) {
         setFeedback({
           kind: "error",
-          message: result?.error || "Грешка при запис.",
+          message: result?.error || t("saveError"),
         });
         return;
       }
@@ -348,7 +354,7 @@ export function AccountProfileForm({
           contextProfile?.effectiveMerchantDiscountPercent ?? 0,
         merchantTermsAccepted: contextProfile?.merchantTermsAccepted ?? false,
       });
-      setFeedback({ kind: "success", message: "Профилът е обновен." });
+      setFeedback({ kind: "success", message: t("saved") });
       onSuccess?.();
     });
   }
@@ -380,12 +386,12 @@ export function AccountProfileForm({
   }
 
   function validatePasswordClient(value: string): string | null {
-    if (value.length < 8) return "Паролата трябва да е поне 8 символа.";
-    if (!/[a-z]/.test(value)) return "Паролата трябва да съдържа малка буква.";
-    if (!/[A-Z]/.test(value)) return "Паролата трябва да съдържа главна буква.";
-    if (!/\d/.test(value)) return "Паролата трябва да съдържа цифра.";
+    if (value.length < 8) return t("password.min");
+    if (!/[a-z]/.test(value)) return t("password.lower");
+    if (!/[A-Z]/.test(value)) return t("password.upper");
+    if (!/\d/.test(value)) return t("password.digit");
     if (!/[^A-Za-z0-9]/.test(value)) {
-      return "Паролата трябва да съдържа специален символ.";
+      return t("password.special");
     }
     return null;
   }
@@ -400,7 +406,7 @@ export function AccountProfileForm({
     }
 
     if (passwordConfirm !== passwordValue) {
-      setPasswordError("Паролите не съвпадат.");
+      setPasswordError(t("password.mismatch"));
       return;
     }
 
@@ -416,7 +422,7 @@ export function AccountProfileForm({
         | null;
 
       if (!response.ok || !result?.ok) {
-        setPasswordError(result?.error || "Грешка при запис на парола.");
+        setPasswordError(result?.error || t("password.saveError"));
         return;
       }
 
@@ -431,7 +437,7 @@ export function AccountProfileForm({
 
       setFeedback({
         kind: "success",
-        message: "Паролата е зададена. Вече можеш да влизаш с имейл и парола.",
+        message: t("password.saved"),
       });
     });
   }
@@ -474,7 +480,7 @@ export function AccountProfileForm({
           <input
             type="text"
             autoComplete="name"
-            placeholder="Например: Мария Иванова"
+            placeholder={t("placeholders.fullName")}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             className={inputClass}
@@ -486,7 +492,7 @@ export function AccountProfileForm({
           <input
             type="tel"
             autoComplete="tel"
-            placeholder="Например: 0888 123 456"
+            placeholder={t("placeholders.phone")}
             value={draft}
             onChange={(event) => setDraft(formatPhoneInput(event.target.value))}
             className={inputClass}
@@ -498,7 +504,7 @@ export function AccountProfileForm({
           <input
             type="text"
             autoComplete="address-level2"
-            placeholder="Например: София"
+            placeholder={t("placeholders.city")}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             className={inputClass}
@@ -511,7 +517,7 @@ export function AccountProfileForm({
             type="text"
             autoComplete="postal-code"
             inputMode="numeric"
-            placeholder="Например: 1000"
+            placeholder={t("placeholders.postalCode")}
             value={draft}
             onChange={(event) =>
               setDraft(event.target.value.replace(/\D/g, "").slice(0, 10))
@@ -525,7 +531,7 @@ export function AccountProfileForm({
           <input
             type="text"
             autoComplete="street-address"
-            placeholder="Например: ул. Шипка 12, вх. Б, ап. 4"
+            placeholder={t("placeholders.address")}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             className={inputClass}
@@ -536,11 +542,11 @@ export function AccountProfileForm({
   }
 
   const fieldOrder: { key: FieldKey; label: string }[] = [
-    { key: "fullName", label: "Име и фамилия" },
-    { key: "phone", label: "Телефон" },
-    { key: "city", label: "Град" },
-    { key: "postalCode", label: "Пощенски код" },
-    { key: "address", label: "Адрес" },
+    { key: "fullName", label: t("fields.fullName") },
+    { key: "phone", label: t("fields.phone") },
+    { key: "city", label: t("fields.city") },
+    { key: "postalCode", label: t("fields.postalCode") },
+    { key: "address", label: t("fields.address") },
   ];
 
   return (
@@ -549,7 +555,7 @@ export function AccountProfileForm({
         <div className="border-b border-[#ece3f2] py-4">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8f72a7]">
-              Имейл
+              {t("fields.email")}
             </span>
             <span className="mt-1 min-w-0 truncate text-base font-medium text-[#432855]">
               {email}
@@ -574,7 +580,7 @@ export function AccountProfileForm({
         ))}
 
         <SlotRow
-          label="Предпочитан офис на Спиди"
+          label={t("preferredOffice")}
           kind="office"
           saved={preferredOffice}
           editing={editingSlot === "office"}
@@ -587,7 +593,7 @@ export function AccountProfileForm({
         />
 
         <SlotRow
-          label="Предпочитан автомат на Спиди"
+          label={t("preferredLocker")}
           kind="locker"
           saved={preferredLocker}
           editing={editingSlot === "locker"}
@@ -610,11 +616,10 @@ export function AccountProfileForm({
             />
             <span>
               <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-[#8f72a7]">
-                Маркетинг съгласие
+                {t("marketingTitle")}
               </span>
               <span className="mt-1 block">
-                Съгласен съм да получавам маркетингови съобщения от Brami — промоции,
-                новости и оферти.
+                {t("marketingText")}
               </span>
             </span>
           </label>
@@ -624,18 +629,18 @@ export function AccountProfileForm({
           <div className="border-b border-[#ece3f2] py-4">
             <div className="flex flex-col gap-1">
               <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8f72a7]">
-                Парола за вход
+                {t("password.title")}
               </span>
 
               {isPasswordSectionOpen ? (
                 <div className="mt-3 flex flex-col gap-3">
                   <p className="text-sm text-[#6b587f]">
-                    Запази парола, за да можеш да влизаш и с имейл/парола, а не само през Google.
+                    {t("password.intro")}
                   </p>
 
                   <label className="flex flex-col gap-1.5">
                     <span className="text-xs font-medium uppercase tracking-[0.08em] text-[#6b587f]">
-                      Нова парола
+                      {t("password.new")}
                     </span>
                     <input
                       type="password"
@@ -652,7 +657,7 @@ export function AccountProfileForm({
 
                   <label className="flex flex-col gap-1.5">
                     <span className="text-xs font-medium uppercase tracking-[0.08em] text-[#6b587f]">
-                      Повтори паролата
+                      {t("password.repeat")}
                     </span>
                     <input
                       type="password"
@@ -667,11 +672,11 @@ export function AccountProfileForm({
                   </label>
 
                   <ul className="rounded-[14px] border border-[#ece3f2] bg-[#faf7fc] px-4 py-3 text-xs text-[#6b587f]">
-                    <li>• Минимум 8 символа</li>
-                    <li>• Поне една малка буква (a-z)</li>
-                    <li>• Поне една главна буква (A-Z)</li>
-                    <li>• Поне една цифра (0-9)</li>
-                    <li>• Поне един специален символ (напр. ! @ # $ % &)</li>
+                    <li>• {t("password.ruleMin")}</li>
+                    <li>• {t("password.ruleLower")}</li>
+                    <li>• {t("password.ruleUpper")}</li>
+                    <li>• {t("password.ruleDigit")}</li>
+                    <li>• {t("password.ruleSpecial")}</li>
                   </ul>
 
                   {passwordError ? (
@@ -687,7 +692,7 @@ export function AccountProfileForm({
                       disabled={isSavingPassword}
                       className="inline-flex h-10 items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-5 text-xs font-semibold uppercase tracking-[0.08em] text-white transition disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {isSavingPassword ? "Запис..." : "Запази паролата"}
+                      {isSavingPassword ? t("saving") : t("password.save")}
                     </button>
                     <button
                       type="button"
@@ -695,14 +700,14 @@ export function AccountProfileForm({
                       disabled={isSavingPassword}
                       className="inline-flex h-10 items-center justify-center rounded-full border border-[#ddd3e4] px-5 text-xs font-semibold uppercase tracking-[0.08em] text-[#6b587f] transition hover:border-[#9f79ac] hover:text-[#432855] disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      Откажи
+                      {t("cancel")}
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="mt-1 flex items-center justify-between gap-4">
                   <span className="min-w-0 flex-1 text-sm text-[#6b587f]">
-                    Влизаш само през Google. Създай парола, за да можеш да влизаш и с имейл и парола.
+                    {t("password.googleOnly")}
                   </span>
                   <button
                     type="button"
@@ -712,7 +717,7 @@ export function AccountProfileForm({
                     }}
                     className="inline-flex shrink-0 items-center justify-center rounded-full border border-[#432855] px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#432855] transition hover:bg-[#432855] hover:text-white"
                   >
-                    Създай профил с парола
+                    {t("password.create")}
                   </button>
                 </div>
               )}

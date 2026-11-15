@@ -1,7 +1,10 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useJsonFetch } from "@/lib/use-json-fetch";
 
 import type {
   AdminCampaign,
@@ -10,17 +13,7 @@ import type {
   AdminSuggestion,
 } from "@/lib/ai/marketing-data";
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "Чернова",
-  approved: "Одобрен",
-  published: "Публикуван",
-  failed: "Грешка",
-  pending: "Чакащо",
-  applied: "Приложено",
-  rejected: "Отхвърлено",
-  completed: "Готова",
-  planning: "Планиране",
-};
+const STATUSES = new Set(["draft", "approved", "published", "failed", "pending", "applied", "rejected", "completed", "planning"]);
 
 const cardCls = "rounded-[18px] border border-[#e7dfd1] bg-white p-5";
 const btnPrimary =
@@ -31,22 +24,21 @@ const inputCls =
   "w-full rounded-[10px] border border-[#d9d4ca] bg-white px-3 py-2 text-sm text-[#25313d] outline-none";
 
 function Badge({ status }: { status: string }) {
+  const t = useTranslations("AdminAi");
   return (
     <span className="w-fit rounded-full border border-[#d2c8b8] bg-[#f8f4ec] px-2.5 py-0.5 text-xs font-semibold text-[#5f6b76]">
-      {STATUS_LABELS[status] ?? status}
+      {STATUSES.has(status) ? t(`statusLabels.${status}`) : status}
     </span>
   );
 }
 
-async function api(url: string, method: string, body?: unknown) {
-  const res = await fetch(url, {
-    method,
-    headers: { "content-type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.error || "Грешка при заявката.");
-  return json;
+function useApi() {
+  const jsonFetch = useJsonFetch();
+  return (url: string, method: string, body?: unknown) =>
+    jsonFetch<{ outcomes?: { ok: boolean }[]; count: number }>(url, {
+      method,
+      body: body ? JSON.stringify(body) : undefined,
+    });
 }
 
 export function AdminAiDashboard({
@@ -60,6 +52,8 @@ export function AdminAiDashboard({
   strategies: AdminStrategy[];
   suggestions: AdminSuggestion[];
 }) {
+  const t = useTranslations("AdminAi");
+  const api = useApi();
   const router = useRouter();
   const [goal, setGoal] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -74,7 +68,7 @@ export function AdminAiDashboard({
       setMessage(await fn());
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Грешка.");
+      setError(err instanceof Error ? err.message : t("greshka"));
     } finally {
       setBusy(null);
     }
@@ -85,17 +79,17 @@ export function AdminAiDashboard({
       {/* Manager — campaign generator */}
       <section className={cardCls}>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8a6f45]">
-          Мениджър
+          {t("menidzhar")}
         </p>
-        <h2 className="mt-1 text-lg font-semibold text-[#1d2733]">Изготви кампания</h2>
+        <h2 className="mt-1 text-lg font-semibold text-[#1d2733]">{t("izgotviKampaniya")}</h2>
         <p className="mt-1 text-sm text-[#6a7480]">
-          Опиши целта — мениджърът планира и възлага задачи на инфлуенсъра, редактора и маркетинг специалиста. Всичко се записва като чернова за одобрение.
+          {t("opishiTseltaMenidzharatPlanira")}
         </p>
         <textarea
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
           rows={3}
-          placeholder="Напр. Популяризирай шафрановите серуми за лице преди лятото и освежи блога."
+          placeholder={t("naprPopulyarizirayShafranoviteSerumi")}
           className={`mt-3 resize-none ${inputCls}`}
         />
         <div className="mt-3 flex flex-wrap gap-2">
@@ -106,12 +100,12 @@ export function AdminAiDashboard({
               run("campaign", async () => {
                 const r = await api("/api/admin/ai/campaign", "POST", { goal });
                 const ok = (r.outcomes ?? []).filter((o: { ok: boolean }) => o.ok).length;
-                return `Кампанията е готова — ${ok}/${(r.outcomes ?? []).length} задачи успешни.`;
+                return t("kampaniyataEGotovaZadachi", { ok, count: (r.outcomes ?? []).length });
               })
             }
             className={btnPrimary}
           >
-            {busy === "campaign" ? "Работя…" : "Изготви кампания"}
+            {busy === "campaign" ? t("rabotya") : t("izgotviKampaniya")}
           </button>
 
           <button
@@ -120,14 +114,14 @@ export function AdminAiDashboard({
             onClick={() =>
               run("influencer", async () => {
                 const r = await api("/api/admin/ai/influencer", "POST", {
-                  instruction: goal.trim() || "Създай постове за актуални продукти и за марката Brami.",
+                  instruction: goal.trim() || t("sazdayPostoveZaAktualni"),
                 });
-                return `Генерирани ${r.count} социални поста.`;
+                return t("generiraniSotsialniPosta", { count: r.count });
               })
             }
             className={btnGhost}
           >
-            Само инфлуенсър
+            {t("samoInfluensar")}
           </button>
 
           <button
@@ -136,14 +130,14 @@ export function AdminAiDashboard({
             onClick={() =>
               run("marketing", async () => {
                 await api("/api/admin/ai/marketing", "POST", {
-                  instruction: goal.trim() || "Изготви обща маркетинг стратегия за следващото тримесечие.",
+                  instruction: goal.trim() || t("izgotviObshtaMarketingStrategiya"),
                 });
-                return "Стратегията е готова.";
+                return t("strategiyataEGotova");
               })
             }
             className={btnGhost}
           >
-            Само стратегия
+            {t("samoStrategiya")}
           </button>
 
           <button
@@ -152,14 +146,14 @@ export function AdminAiDashboard({
             onClick={() =>
               run("editor", async () => {
                 await api("/api/admin/ai/editor", "POST", {
-                  instruction: goal.trim() || "Подобри четимостта и структурата на последната статия.",
+                  instruction: goal.trim() || t("podobriChetimosttaIStrukturata"),
                 });
-                return "Редакторско предложение е готово.";
+                return t("redaktorskoPredlozhenieEGotovo");
               })
             }
             className={btnGhost}
           >
-            Само редактор (последна статия)
+            {t("samoRedaktorPoslednaStatiya")}
           </button>
         </div>
         {message ? <p className="mt-3 text-sm font-medium text-emerald-700">{message}</p> : null}
@@ -185,13 +179,14 @@ function SocialPostsSection({
   busy: string | null;
   run: RunFn;
 }) {
+  const t = useTranslations("AdminAi");
   return (
     <section>
       <h2 className="mb-3 text-lg font-semibold text-[#1d2733]">
-        Социални постове <span className="text-sm font-normal text-[#6a7480]">({posts.length})</span>
+        {t("socialPosts")} <span className="text-sm font-normal text-[#6a7480]">({posts.length})</span>
       </h2>
       {posts.length === 0 ? (
-        <p className="py-8 text-center text-sm text-[#5f6b76]">Все още няма генерирани постове.</p>
+        <p className="py-8 text-center text-sm text-[#5f6b76]">{t("vseOshteNyamaGenerirani")}</p>
       ) : (
         <div className="space-y-4">
           {posts.map((post) => (
@@ -212,6 +207,8 @@ function SocialPostCard({
   busy: string | null;
   run: RunFn;
 }) {
+  const t = useTranslations("AdminAi");
+  const api = useApi();
   const [caption, setCaption] = useState(post.caption);
   const [hashtags, setHashtags] = useState(post.hashtags.join(" "));
   const [imageUrl, setImageUrl] = useState(post.imageUrl ?? "");
@@ -233,7 +230,7 @@ function SocialPostCard({
         </span>
         <Badge status={post.status} />
         <span className="text-xs text-[#6a7480]">
-          цел: {post.targetType}{post.targetRef ? ` · ${post.targetRef}` : ""}
+          {t("target", { type: post.targetType })}{post.targetRef ? ` · ${post.targetRef}` : ""}
         </span>
       </div>
 
@@ -248,21 +245,21 @@ function SocialPostCard({
         value={hashtags}
         onChange={(e) => setHashtags(e.target.value)}
         disabled={locked}
-        placeholder="Хаштагове (разделени с интервал)"
+        placeholder={t("hashtagoveRazdeleniSInterval")}
         className={`mt-2 ${inputCls} disabled:bg-[#f6f3ed]`}
       />
       <input
         value={imageUrl}
         onChange={(e) => setImageUrl(e.target.value)}
         disabled={locked}
-        placeholder="Публичен URL на изображение (нужен за Instagram)"
+        placeholder={t("publichenUrlNaIzobrazhenie")}
         className={`mt-2 ${inputCls} disabled:bg-[#f6f3ed]`}
       />
       {post.imagePrompt ? (
-        <p className="mt-2 text-xs text-[#6a7480]">💡 Идея за изображение: {post.imagePrompt}</p>
+        <p className="mt-2 text-xs text-[#6a7480]">💡 {t("imageIdea", { prompt: post.imagePrompt })}</p>
       ) : null}
       {post.externalPostId ? (
-        <p className="mt-2 text-xs text-emerald-700">Публикуван · id: {post.externalPostId}</p>
+        <p className="mt-2 text-xs text-emerald-700">{t("publishedId", { id: post.externalPostId })}</p>
       ) : null}
       {post.publishError ? (
         <p className="mt-2 text-xs text-red-700">{post.publishError}</p>
@@ -280,12 +277,12 @@ function SocialPostCard({
                   hashtags: hashtagArray(),
                   imageUrl,
                 });
-                return "Запазено.";
+                return t("zapazeno");
               })
             }
             className={btnGhost}
           >
-            Запази промените
+            {t("zapaziPromenite")}
           </button>
           <button
             type="button"
@@ -300,12 +297,12 @@ function SocialPostCard({
                   });
                 }
                 await api(`/api/admin/ai/social-posts/${post.id}`, "POST");
-                return "Публикувано.";
+                return t("publikuvano");
               })
             }
             className={btnPrimary}
           >
-            Публикувай
+            {t("publikuvay")}
           </button>
           <button
             type="button"
@@ -313,12 +310,12 @@ function SocialPostCard({
             onClick={() =>
               run(`del-${post.id}`, async () => {
                 await api(`/api/admin/ai/social-posts/${post.id}`, "DELETE");
-                return "Изтрито.";
+                return t("iztrito");
               })
             }
             className={btnGhost}
           >
-            Изтрий
+            {t("iztriy")}
           </button>
         </div>
       ) : null}
@@ -335,14 +332,16 @@ function SuggestionsSection({
   busy: string | null;
   run: RunFn;
 }) {
+  const t = useTranslations("AdminAi");
+  const api = useApi();
   return (
     <section>
       <h2 className="mb-3 text-lg font-semibold text-[#1d2733]">
-        Редакторски предложения{" "}
+        {t("redaktorskiPredlozheniya")}
         <span className="text-sm font-normal text-[#6a7480]">({suggestions.length})</span>
       </h2>
       {suggestions.length === 0 ? (
-        <p className="py-8 text-center text-sm text-[#5f6b76]">Няма предложения за статии.</p>
+        <p className="py-8 text-center text-sm text-[#5f6b76]">{t("nyamaPredlozheniyaZaStatii")}</p>
       ) : (
         <div className="space-y-3">
           {suggestions.map((s) => (
@@ -362,12 +361,12 @@ function SuggestionsSection({
                     onClick={() =>
                       run(`apply-${s.id}`, async () => {
                         await api(`/api/admin/ai/editor-suggestions/${s.id}/apply`, "POST");
-                        return "Приложено към статията.";
+                        return t("prilozhenoKamStatiyata");
                       })
                     }
                     className={btnPrimary}
                   >
-                    Приложи
+                    {t("prilozhi")}
                   </button>
                   <button
                     type="button"
@@ -377,12 +376,12 @@ function SuggestionsSection({
                         await api(`/api/admin/ai/editor-suggestions/${s.id}`, "PATCH", {
                           status: "rejected",
                         });
-                        return "Отхвърлено.";
+                        return t("othvarleno");
                       })
                     }
                     className={btnGhost}
                   >
-                    Отхвърли
+                    {t("othvarli")}
                   </button>
                 </div>
               ) : null}
@@ -395,14 +394,15 @@ function SuggestionsSection({
 }
 
 function StrategiesSection({ strategies }: { strategies: AdminStrategy[] }) {
+  const t = useTranslations("AdminAi");
   return (
     <section>
       <h2 className="mb-3 text-lg font-semibold text-[#1d2733]">
-        Маркетинг стратегии{" "}
+        {t("marketingStrategii")}
         <span className="text-sm font-normal text-[#6a7480]">({strategies.length})</span>
       </h2>
       {strategies.length === 0 ? (
-        <p className="py-8 text-center text-sm text-[#5f6b76]">Няма стратегии.</p>
+        <p className="py-8 text-center text-sm text-[#5f6b76]">{t("nyamaStrategii")}</p>
       ) : (
         <div className="space-y-3">
           {strategies.map((s) => (
@@ -422,18 +422,20 @@ function StrategiesSection({ strategies }: { strategies: AdminStrategy[] }) {
 }
 
 function CampaignsSection({ campaigns }: { campaigns: AdminCampaign[] }) {
+  const t = useTranslations("AdminAi");
+  const dateLocale = useLocale() === "en" ? "en-GB" : "bg-BG";
   if (campaigns.length === 0) return null;
   return (
     <section>
-      <h2 className="mb-3 text-lg font-semibold text-[#1d2733]">История на кампаниите</h2>
+      <h2 className="mb-3 text-lg font-semibold text-[#1d2733]">{t("istoriyaNaKampaniite")}</h2>
       <div className="divide-y divide-[#e7dfd1]">
         {campaigns.map((c) => (
           <div key={c.id} className="flex flex-wrap items-center gap-3 py-3">
             <Badge status={c.status} />
             <span className="min-w-0 flex-1 truncate text-sm text-[#1d2733]">{c.goal}</span>
             <span className="text-xs text-[#6a7480]">
-              {c.source === "cron" ? "авто" : "ръчно"} ·{" "}
-              {new Date(c.createdAt).toLocaleString("bg-BG")}
+              {c.source === "cron" ? t("avto") : t("rachno")} ·{" "}
+              {new Date(c.createdAt).toLocaleString(dateLocale)}
             </span>
           </div>
         ))}

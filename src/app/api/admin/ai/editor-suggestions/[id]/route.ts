@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -15,7 +16,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   const body = (await request.json().catch(() => null)) as { status?: unknown } | null;
   const status = typeof body?.status === "string" ? body.status : "";
   if (!["pending", "rejected"].includes(status)) {
-    return NextResponse.json({ error: "Невалиден статус." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Невалиден статус.") }, { status: 400 });
   }
 
   const supabase = createSupabaseAdminClient();
@@ -23,7 +24,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     .from("ai_editor_suggestions")
     .update({ status })
     .eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: await localizeApiError(error.message) }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
 
@@ -32,6 +33,6 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
   const { id } = await params;
   const supabase = createSupabaseAdminClient();
   const { error } = await supabase.from("ai_editor_suggestions").delete().eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: await localizeApiError(error.message) }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

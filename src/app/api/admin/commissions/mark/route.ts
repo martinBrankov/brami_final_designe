@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireFullAdminSession } from "@/lib/admin-auth";
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
 
   if (!orderIds.length) {
     return NextResponse.json(
-      { error: "Изпрати поне една поръчка." },
+      { error: await localizeApiError("Изпрати поне една поръчка.") },
       { status: 400 },
     );
   }
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, count: orderIds.length, paid });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Грешка при запис." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Грешка при запис.") },
       { status: 500 },
     );
   }

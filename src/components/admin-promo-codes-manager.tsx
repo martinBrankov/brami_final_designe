@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -33,6 +35,7 @@ export function AdminPromoCodesManager({
   initialCodes: PromoCodeRecord[];
   merchants: Merchant[];
 }) {
+  const t = useTranslations("AdminPromoCodes");
   const router = useRouter();
   const [codes, setCodes] = useState<PromoCodeRecord[]>(initialCodes);
   const [feedback, setFeedback] = useState<Feedback>(null);
@@ -68,7 +71,7 @@ export function AdminPromoCodesManager({
       | null;
 
     if (!response.ok || !result?.code) {
-      setFeedback({ kind: "error", message: result?.error || "Грешка при създаване." });
+      setFeedback({ kind: "error", message: result?.error || t("greshkaPriSazdavane") });
       return;
     }
 
@@ -76,7 +79,7 @@ export function AdminPromoCodesManager({
     setNewCode("");
     setNewDiscount(5);
     setNewCommission(5);
-    setFeedback({ kind: "success", message: "Кодът е създаден." });
+    setFeedback({ kind: "success", message: t("kodatESazdaden") });
     refresh();
   }
 
@@ -95,7 +98,7 @@ export function AdminPromoCodesManager({
       | null;
 
     if (!response.ok || !result?.code) {
-      return { ok: false, error: result?.error || "Грешка при запис." };
+      return { ok: false, error: result?.error || t("greshkaPriZapis") };
     }
     setCodes((current) =>
       current.map((item) => (item.id === id ? (result.code as PromoCodeRecord) : item)),
@@ -105,7 +108,7 @@ export function AdminPromoCodesManager({
   }
 
   async function deleteCode(id: string) {
-    if (!confirm("Сигурен ли си, че искаш да изтриеш този код?")) return;
+    if (!confirm(t("sigurenLiSiChe"))) return;
 
     const response = await fetch(`/api/admin/promo-codes/${id}`, { method: "DELETE" });
     const result = (await response.json().catch(() => null)) as
@@ -113,12 +116,12 @@ export function AdminPromoCodesManager({
       | null;
 
     if (!response.ok || !result?.ok) {
-      setFeedback({ kind: "error", message: result?.error || "Грешка при изтриване." });
+      setFeedback({ kind: "error", message: result?.error || t("greshkaPriIztrivane") });
       return;
     }
 
     setCodes((current) => current.filter((item) => item.id !== id));
-    setFeedback({ kind: "success", message: "Кодът е изтрит." });
+    setFeedback({ kind: "success", message: t("kodatEIztrit") });
     refresh();
   }
 
@@ -129,20 +132,20 @@ export function AdminPromoCodesManager({
         className="rounded-[18px] border border-[#e7dfd1] bg-white p-5"
       >
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8a6f45]">
-          Нов промо код
+          {t("novPromoKod")}
         </p>
         <p className="mt-1 text-sm text-[#5f6b76]">
-          Кодът се прилага от клиента в количката; той получава отстъпка, а търговецът — комисиона.
+          {t("howItWorks")}
         </p>
 
         {merchants.length === 0 ? (
           <p className="mt-4 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Няма маркирани търговци. Маркирай поне един потребител като търговец от &quot;Потребители&quot;.
+            {t("noMerchants")}
           </p>
         ) : (
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <label className="block">
-              <span className="mb-2 block text-sm font-medium text-[#25313d]">Код</span>
+              <span className="mb-2 block text-sm font-medium text-[#25313d]">{t("kod")}</span>
               <div className="flex gap-2">
                 <input
                   value={newCode}
@@ -160,7 +163,7 @@ export function AdminPromoCodesManager({
                   minLength={5}
                   maxLength={5}
                   pattern="[A-Z0-9%]{5}"
-                  title="5 символа: A-Z, 0-9, %"
+                  title={t("t5SimvolaAZ")}
                 />
                 <button
                   type="button"
@@ -173,23 +176,23 @@ export function AdminPromoCodesManager({
                     } else {
                       setFeedback({
                         kind: "error",
-                        message: "Не успях да генерирам уникален код, опитай ръчно.",
+                        message: t("neUspyahDaGeneriram"),
                       });
                     }
                   }}
-                  title="Генерирай случаен код"
+                  title={t("generiraySluchaenKod")}
                   className="inline-flex h-11 shrink-0 items-center justify-center rounded-[16px] border border-[#d9d4ca] bg-white px-4 text-xs font-semibold uppercase tracking-[0.08em] text-[#1d2733] transition hover:bg-[#f8f4ec]"
                 >
-                  Генерирай
+                  {t("generiray")}
                 </button>
               </div>
               <span className="mt-1 block text-xs text-[#6a7480]">
-                Точно 5 символа (A–Z, 0–9, %).
+                {t("tochno5SimvolaA")}
               </span>
             </label>
 
             <label className="block xl:col-span-2">
-              <span className="mb-2 block text-sm font-medium text-[#25313d]">Търговец</span>
+              <span className="mb-2 block text-sm font-medium text-[#25313d]">{t("targovets")}</span>
               <select
                 value={newMerchantId}
                 onChange={(event) => setNewMerchantId(event.target.value)}
@@ -206,7 +209,7 @@ export function AdminPromoCodesManager({
 
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-[#25313d]">
-                Отстъпка на купувача (%)
+                {t("otstapkaNaKupuvacha")}
               </span>
               <input
                 type="number"
@@ -221,7 +224,7 @@ export function AdminPromoCodesManager({
 
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-[#25313d]">
-                Комисиона за търговеца (%)
+                {t("komisionaZaTargovetsa")}
               </span>
               <input
                 type="number"
@@ -252,7 +255,7 @@ export function AdminPromoCodesManager({
             disabled={isPending || merchants.length === 0}
             className="inline-flex h-10 items-center justify-center rounded-full bg-[#1d2733] px-5 text-sm font-semibold text-white transition hover:bg-[#2b3847] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Създай
+            {t("sazday")}
           </button>
         </div>
       </form>
@@ -260,13 +263,13 @@ export function AdminPromoCodesManager({
       <div className="rounded-[18px] border border-[#e7dfd1] bg-white">
         <div className="border-b border-[#e7dfd1] px-5 py-4">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8a6f45]">
-            Списък промо кодове
+            {t("spisakPromoKodove")}
           </p>
         </div>
 
         {codes.length === 0 ? (
           <p className="px-5 py-12 text-center text-sm text-[#5f6b76]">
-            Все още няма създадени промо кодове.
+            {t("vseOshteNyamaSazdadeni")}
           </p>
         ) : (
           <ul className="divide-y divide-[#e7dfd1]">
@@ -297,6 +300,7 @@ function AdminPromoCodeRow({
   ) => Promise<{ ok: boolean; error?: string }>;
   onDelete: (id: string) => void;
 }) {
+  const t = useTranslations("AdminPromoCodes");
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -324,7 +328,7 @@ function AdminPromoCodeRow({
     if (result.ok) {
       setEditing(false);
     } else {
-      setError(result.error || "Грешка при запис.");
+      setError(result.error || t("greshkaPriZapis"));
     }
   }
 
@@ -339,7 +343,7 @@ function AdminPromoCodeRow({
         </span>
         <div>
           <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-            Отстъпка
+            {t("otstapka")}
           </span>
           <p className="mt-0.5 text-sm font-semibold text-[#1d2733]">
             {item.discountPercent}%
@@ -347,7 +351,7 @@ function AdminPromoCodeRow({
         </div>
         <div>
           <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-            Комисиона
+            {t("komisiona")}
           </span>
           <p className="mt-0.5 text-sm font-semibold text-[#1d2733]">
             {item.commissionPercent}%
@@ -361,7 +365,7 @@ function AdminPromoCodeRow({
                 : "bg-red-50 text-red-700"
             }`}
           >
-            {item.isActive ? "Активен" : "Неактивен"}
+            {item.isActive ? t("aktiven") : t("neaktiven")}
           </span>
         </div>
         <div className="flex items-center gap-2 lg:justify-end">
@@ -370,14 +374,14 @@ function AdminPromoCodeRow({
             onClick={startEdit}
             className="inline-flex h-9 items-center justify-center rounded-full border border-[#d9d4ca] px-3 text-xs font-semibold text-[#1d2733] transition hover:bg-[#f8f4ec]"
           >
-            Редактирай
+            {t("redaktiray")}
           </button>
           <button
             type="button"
             onClick={() => onDelete(item.id)}
             className="inline-flex h-9 items-center justify-center rounded-full border border-red-200 px-3 text-xs font-semibold text-red-700 transition hover:bg-red-50"
           >
-            Изтрий
+            {t("iztriy")}
           </button>
         </div>
       </li>
@@ -394,7 +398,7 @@ function AdminPromoCodeRow({
       </span>
       <label className="block">
         <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-          Отстъпка %
+          {t("otstapka2")}
         </span>
         <input
           type="number"
@@ -408,7 +412,7 @@ function AdminPromoCodeRow({
       </label>
       <label className="block">
         <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a6f45]">
-          Комисиона %
+          {t("komisiona2")}
         </span>
         <input
           type="number"
@@ -427,7 +431,7 @@ function AdminPromoCodeRow({
           onChange={(event) => setActive(event.target.checked)}
           className="h-4 w-4 rounded border-[#bca5cc] accent-[#1d2733]"
         />
-        Активен
+        {t("aktiven")}
       </label>
       <div className="flex items-center gap-2 lg:justify-end">
         <button
@@ -436,7 +440,7 @@ function AdminPromoCodeRow({
           disabled={saving}
           className="inline-flex h-9 items-center justify-center rounded-full bg-[#1d2733] px-4 text-xs font-semibold text-white transition hover:bg-[#2b3847] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {saving ? "Запазване…" : "Запази"}
+          {saving ? t("zapazvane") : t("zapazi")}
         </button>
         <button
           type="button"
@@ -444,7 +448,7 @@ function AdminPromoCodeRow({
           disabled={saving}
           className="inline-flex h-9 items-center justify-center rounded-full border border-[#d9d4ca] px-4 text-xs font-semibold text-[#5f6b76] transition hover:bg-white disabled:opacity-60"
         >
-          Откажи
+          {t("otkazhi")}
         </button>
       </div>
       {error ? (

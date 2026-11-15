@@ -8,6 +8,7 @@ import {
   setMerchantConsent,
   validateBankDetails,
 } from "@/lib/user-auth";
+import { localizeApiError } from "@/lib/api-i18n";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const merchant = await requireMerchantSession();
   if (!merchant) {
-    return NextResponse.json({ error: "Само за търговци." }, { status: 401 });
+    return NextResponse.json({ error: await localizeApiError("Само за търговци.") }, { status: 401 });
   }
 
   const body = (await request.json().catch(() => null)) as
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
         bankBic: body?.bankBic,
       });
       if (!bank.ok) {
-        return NextResponse.json({ error: bank.message }, { status: 400 });
+        return NextResponse.json({ error: await localizeApiError(bank.message) }, { status: 400 });
       }
       await setMerchantBankDetails(merchant.session.id, bank.value);
       await setMerchantConsent(merchant.session.id, true);
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, accepted });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Грешка при запис." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Грешка при запис.") },
       { status: 400 },
     );
   }

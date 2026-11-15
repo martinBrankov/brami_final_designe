@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 import { MERCHANT_TIERS } from "@/lib/merchant-tier";
 
 function formatEur(value: number) {
@@ -27,6 +29,7 @@ export function AccountMerchantTierProgress({
 }: {
   data: MerchantTierProgressData;
 }) {
+  const t = useTranslations("MerchantTier");
   const {
     turnoverEur,
     currentPercent,
@@ -52,20 +55,16 @@ export function AccountMerchantTierProgress({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8f72a7]">
-            Ниво на отстъпка за търговец
+            {t("title")}
           </p>
           <p className="mt-1 text-3xl font-semibold tracking-[-0.02em] text-[#432855]">
             {currentPercent}%
           </p>
           <p className="mt-1 text-xs text-[#6b587f]">
-            Общ оборот:{" "}
-            <span className="font-semibold text-[#432855]">
-              {formatEur(turnoverEur)}
-            </span>
+            {t.rich("turnover", { amount: formatEur(turnoverEur), strong: (chunks) => <span className="font-semibold text-[#432855]">{chunks}</span> })}
           </p>
           <p className="mt-0.5 text-xs text-[#6b587f]">
-            Натрупва се само от доставени поръчки — твои собствени и направени с
-            твоите промо кодове.
+            {t("turnoverNote")}
           </p>
         </div>
       </div>
@@ -127,7 +126,7 @@ export function AccountMerchantTierProgress({
                     reached ? "text-[#6b587f]" : "text-[#b3a4c0]"
                   }`}
                 >
-                  {tier.thresholdEur === 0 ? "старт" : formatThreshold(tier.thresholdEur)}
+                  {tier.thresholdEur === 0 ? t("start") : formatThreshold(tier.thresholdEur)}
                 </p>
               </div>
             );
@@ -137,23 +136,18 @@ export function AccountMerchantTierProgress({
 
       {nextTierThresholdEur !== null && nextTierPercent !== null ? (
         <p className="mt-4 text-sm text-[#6b587f]">
-          Остават{" "}
-          <span className="font-semibold text-[#432855]">
-            {formatEur(amountToNextTierEur)}
-          </span>{" "}
-          оборот до ниво{" "}
-          <span className="font-semibold text-[#432855]">{nextTierPercent}%</span>.
+          {t.rich("remaining", { amount: formatEur(amountToNextTierEur), percent: nextTierPercent, strong: (chunks) => <span className="font-semibold text-[#432855]">{chunks}</span> })}
         </p>
       ) : (
         <p className="mt-4 text-sm text-[#2e6b3a]">
-          Достигна максималното ниво на отстъпка.
+          {t("maxReached")}
         </p>
       )}
 
       {/* How the discount is formed — full ladder incl. levels below the start */}
       <details className="group mt-6 rounded-[16px] border border-[#e6dcef] bg-white/70 p-4 sm:p-5">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#8f72a7] [&::-webkit-details-marker]:hidden">
-          Как се формира отстъпката ти
+          {t("howTitle")}
           <svg
             aria-hidden="true"
             viewBox="0 0 20 20"
@@ -169,20 +163,9 @@ export function AccountMerchantTierProgress({
         </summary>
         <p className="mt-3 text-sm text-[#6b587f]">
           {startPercent > 0 ? (
-            <>
-              Администраторът ти е дал{" "}
-              <span className="font-semibold text-[#432855]">
-                стартова отстъпка {startPercent}%
-              </span>
-              , която важи веднага. Нивата под нея вече са включени в старта, а
-              по-високите се отключват с нарастване на общия ти оборот.
-            </>
+            <>{t.rich("withStart", { percent: startPercent, strong: (chunks) => <span className="font-semibold text-[#432855]">{chunks}</span> })}</>
           ) : (
-            <>
-              Нямаш стартова отстъпка от администратор — започваш от 0% и
-              отключваш нивата с нарастване на общия ти оборот от доставени
-              поръчки.
-            </>
+            <>{t("withoutStart")}</>
           )}
         </p>
 
@@ -195,16 +178,16 @@ export function AccountMerchantTierProgress({
             let badgeLabel: string;
             let badgeClass: string;
             if (includedInStart) {
-              badgeLabel = "включено в стартовата отстъпка";
+              badgeLabel = t("badges.included");
               badgeClass = "bg-[#d5dae1] text-[#4b5562]";
             } else if (isCurrent) {
-              badgeLabel = "текущо ниво";
+              badgeLabel = t("badges.current");
               badgeClass = "bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] text-white";
             } else if (reached) {
-              badgeLabel = "достигнато";
+              badgeLabel = t("badges.reached");
               badgeClass = "bg-[#bfe6c9] text-[#1f5e32]";
             } else {
-              badgeLabel = `при оборот ${formatThreshold(tier.thresholdEur)}`;
+              badgeLabel = t("badges.at", { amount: formatThreshold(tier.thresholdEur) });
               badgeClass = "bg-[#e0cef0] text-[#553079]";
             }
 
@@ -218,7 +201,7 @@ export function AccountMerchantTierProgress({
                 <span className="flex items-baseline gap-2 font-semibold text-[#432855]">
                   <span className="inline-block w-10 shrink-0">{tier.percent}%</span>
                   <span className="whitespace-nowrap text-xs font-normal text-[#8f72a7]">
-                    оборот {formatThreshold(tier.thresholdEur)}
+                    {t("tierTurnover", { amount: formatThreshold(tier.thresholdEur) })}
                   </span>
                 </span>
                 <span

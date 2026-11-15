@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -17,10 +18,10 @@ export async function POST(request: Request, { params }: RouteContext) {
   const content = typeof body?.content === "string" ? body.content.trim() : "";
 
   if (!content) {
-    return NextResponse.json({ error: "Съобщението е празно." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Съобщението е празно.") }, { status: 400 });
   }
   if (content.length > 4000) {
-    return NextResponse.json({ error: "Съобщението е твърде дълго (макс 4000)." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Съобщението е твърде дълго (макс 4000).") }, { status: 400 });
   }
 
   try {
@@ -34,6 +35,6 @@ export async function POST(request: Request, { params }: RouteContext) {
     return NextResponse.json({ message }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Неуспешно изпращане.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: await localizeApiError(message) }, { status: 500 });
   }
 }

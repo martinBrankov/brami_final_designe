@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useUser } from "@/components/user-provider";
 
 function formatEur(value: number) {
@@ -7,6 +9,7 @@ function formatEur(value: number) {
 }
 
 export function AccountDiscountProgress() {
+  const t = useTranslations("DiscountProgress");
   const { discount, user, profile } = useUser();
 
   // Only active merchants (consented) are on the merchant programme; until then
@@ -37,17 +40,17 @@ export function AccountDiscountProgress() {
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8f72a7]">
-              Лоялност и отстъпка
+              {t("title")}
             </span>
             <p className="mt-1 text-base font-medium text-[#432855]">
-              Текуща отстъпка: {currentPercent}%
+              {t("current", { percent: currentPercent })}
             </p>
             <p className="mt-0.5 text-sm text-[#6b587f]">
-              Оборот до момента: {formatEur(totalSpentEur)}
+              {t("turnover", { amount: formatEur(totalSpentEur) })}
             </p>
           </div>
           <span className="inline-flex shrink-0 items-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-white">
-            {currentPercent}% отстъпка
+            {t("badge", { percent: currentPercent })}
           </span>
         </div>
 
@@ -63,26 +66,25 @@ export function AccountDiscountProgress() {
             <span className="font-medium text-[#432855]">{formatEur(totalSpentEur)}</span>
             {nextTierThresholdEur !== null ? (
               <span className="text-[#6b587f]">
-                {formatEur(nextTierThresholdEur)} за {nextTierPercent}%
+                {t("nextTier", { amount: formatEur(nextTierThresholdEur), percent: nextTierPercent ?? 0 })}
               </span>
             ) : (
-              <span className="text-[#6b587f]">Достигнат максимален таргет</span>
+              <span className="text-[#6b587f]">{t("maxReached")}</span>
             )}
           </div>
         </div>
 
         {nextTierThresholdEur !== null && amountToNextTierEur > 0 ? (
           <p className="text-sm text-[#6b587f]">
-            Остават{" "}
-            <span className="font-semibold text-[#432855]">
-              {formatEur(amountToNextTierEur)}
-            </span>{" "}
-            оборот до отстъпка от{" "}
-            <span className="font-semibold text-[#432855]">{nextTierPercent}%</span>.
+            {t.rich("remaining", {
+              amount: formatEur(amountToNextTierEur),
+              percent: nextTierPercent ?? 0,
+              strong: (chunks) => <span className="font-semibold text-[#432855]">{chunks}</span>,
+            })}
           </p>
         ) : (
           <p className="text-sm text-[#2e6b3a]">
-            Имаш максималната отстъпка.
+            {t("maxDiscount")}
           </p>
         )}
       </div>

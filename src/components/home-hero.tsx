@@ -1,8 +1,10 @@
 import Image from "next/image";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 
-import homeScreenImgDesktop from "@/assets/images/homeScreenImgDesktop.jpg";
-import homeScreenImgMobile from "@/assets/images/homeScreenImgMobile.png";
+import { Link } from "@/i18n/navigation";
+
+import homeScreenImgDesktop from "@/assets/images/brami-naturalna-balgarska-kozmetika-s-shafran-desktop.jpg";
+import homeScreenImgMobile from "@/assets/images/brami-naturalna-balgarska-kozmetika-s-shafran-mobile.png";
 import {
   SectionIntro,
   sectionActionClassName,
@@ -10,27 +12,31 @@ import {
 } from "@/components/section-intro";
 
 export function HomeHero() {
+  const t = useTranslations("Home");
+
   return (
     <section className="w-full">
       <div className="grid w-full overflow-hidden border-y border-y-[#d8d0de] bg-[#f5f7fb] [@media(orientation:portrait)]:min-h-[100dvh] lg:grid-cols-[1.05fr_0.95fr] lg:[@media(orientation:portrait)]:min-h-0">
         <div className="flex flex-col justify-center px-6 py-10 sm:px-10 sm:py-14 lg:px-14">
           <SectionIntro
-            title={<>Естествена грижа с Brami<sup className="text-[0.45em] align-super">®</sup> Cosmetics</>}
+            title={t.rich("heroTitle", {
+              sup: (chunks) => <sup className="text-[0.45em] align-super">{chunks}</sup>,
+            })}
             titleAs="h1"
             size="hero"
             contentClassName="max-w-[36rem]"
             titleClassName="max-w-[12ch] max-lg:max-w-full max-lg:w-full"
-            description="Грижа - вдъхновена от силата на шафрана, която започва отвън, превръща се в здраве за клетките навътре и накрая се проявява като естествено сияние и увереност отново навън."
+            description={t("heroDescription")}
           >
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <Link href="/products" className={sectionPrimaryButtonClassName}>
-                Виж продуктите
+                {t("viewProducts")}
               </Link>
               <Link
                 href="/about"
                 className={`${sectionActionClassName} bg-white/90`}
               >
-                НАУЧИ ПОВЕЧЕ
+                {t("learnMore")}
               </Link>
             </div>
           </SectionIntro>
@@ -39,13 +45,13 @@ export function HomeHero() {
         <div className="relative bg-[#f5f7fb] lg:min-h-[560px]">
           <Image
             src={homeScreenImgMobile}
-            alt="Козметика с шафран"
+            alt={t("heroImageAlt")}
             priority
             className="block w-full h-auto object-contain object-left-bottom lg:hidden"
           />
           <Image
             src={homeScreenImgDesktop}
-            alt="Козметика с шафран"
+            alt={t("heroImageAlt")}
             priority
             className="absolute inset-0 hidden h-full w-full object-contain object-right-bottom lg:block"
           />

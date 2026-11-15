@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -18,7 +19,7 @@ export async function POST() {
     .from(BUCKET)
     .list("", { limit: 1000 });
 
-  if (listErr) return NextResponse.json({ error: listErr.message }, { status: 500 });
+  if (listErr) return NextResponse.json({ error: await localizeApiError(listErr.message) }, { status: 500 });
 
   const allFiles = (storageFiles ?? []).map((f) => f.name).filter(Boolean);
   if (allFiles.length === 0) return NextResponse.json({ deleted: 0 });
@@ -59,7 +60,7 @@ export async function POST() {
   if (toDelete.length === 0) return NextResponse.json({ deleted: 0 });
 
   const { error: delErr } = await supabase.storage.from(BUCKET).remove(toDelete);
-  if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 });
+  if (delErr) return NextResponse.json({ error: await localizeApiError(delErr.message) }, { status: 500 });
 
   return NextResponse.json({ deleted: toDelete.length });
 }

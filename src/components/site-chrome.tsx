@@ -10,7 +10,8 @@ import { VisitTracker } from "@/components/visit-tracker";
 
 export function SiteChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const isAdminRoute = pathname.startsWith("/admin-panel");
+  // pathname keeps the locale prefix (/en/admin-panel).
+  const isAdminRoute = /^(\/[a-z]{2})?\/admin-panel(\/|$)/.test(pathname);
 
   if (isAdminRoute) {
     return <>{children}</>;

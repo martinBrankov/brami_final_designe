@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState, useTransition, type FormEvent } from "react";
 
 export function MarketingUnsubscribeForm({
@@ -11,6 +12,7 @@ export function MarketingUnsubscribeForm({
   token?: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("Unsubscribe");
   const [email, setEmail] = useState(initialEmail);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -33,11 +35,11 @@ export function MarketingUnsubscribeForm({
         | null;
 
       if (!response.ok || !result?.ok) {
-        setError(result?.error || "Отписването не беше успешно.");
+        setError(result?.error || t("error"));
         return;
       }
 
-      setMessage("Имейлът е отписан от маркетинг съобщения.");
+      setMessage(t("success"));
       router.refresh();
     });
   }
@@ -45,7 +47,7 @@ export function MarketingUnsubscribeForm({
   return (
     <form onSubmit={handleSubmit} className="mx-auto flex max-w-xl flex-col gap-4">
       <label className="flex flex-col gap-2 text-sm font-medium text-[#432855]">
-        Имейл адрес
+        {t("emailLabel")}
         <input
           type="email"
           value={email}
@@ -61,7 +63,7 @@ export function MarketingUnsubscribeForm({
         disabled={isPending}
         className="inline-flex h-12 items-center justify-center rounded-full bg-[#432855] px-6 text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[#5a3274] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isPending ? "Запис..." : "Отпиши ме"}
+        {isPending ? t("saving") : t("submit")}
       </button>
 
       {message ? (

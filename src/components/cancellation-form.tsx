@@ -1,13 +1,16 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { sectionPrimaryButtonClassName } from "@/components/section-intro";
 
 type CancellationFormStatus = "idle" | "sending" | "sent" | "failed";
 
-function getTodayDate() {
-  return new Date().toLocaleDateString("bg-BG", {
+type Translate = (key: string) => string;
+
+function getTodayDate(locale: string) {
+  return new Date().toLocaleDateString(locale === "en" ? "en-GB" : "bg-BG", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -25,44 +28,45 @@ const initialValues = {
 
 type FormErrors = Partial<Record<keyof typeof initialValues, string>>;
 
-function validateForm(values: typeof initialValues): FormErrors {
+/** `t` is bound to the "CancellationForm.errors" namespace. */
+function validateForm(values: typeof initialValues, t: Translate): FormErrors {
   const errors: FormErrors = {};
 
   if (!values.products.trim()) {
-    errors.products = "Полето е задължително.";
+    errors.products = t("required");
   }
 
   if (!values.orderInfo.trim()) {
-    errors.orderInfo = "Полето е задължително.";
+    errors.orderInfo = t("required");
   }
 
   const name = values.customerName.trim();
   if (!name) {
-    errors.customerName = "Полето е задължително.";
+    errors.customerName = t("required");
   } else if (name.length < 3) {
-    errors.customerName = "Моля въведи поне 3 символа.";
+    errors.customerName = t("nameTooShort");
   } else if (!/^[\p{L}\s'-]+$/u.test(name)) {
-    errors.customerName = "Въведи валидно пълно име.";
+    errors.customerName = t("nameInvalid");
   }
 
   if (!values.customerAddress.trim()) {
-    errors.customerAddress = "Полето е задължително.";
+    errors.customerAddress = t("required");
   } else if (values.customerAddress.trim().length < 5) {
-    errors.customerAddress = "Моля въведи пълен адрес.";
+    errors.customerAddress = t("addressTooShort");
   }
 
   const phone = values.phone.trim();
   if (!phone) {
-    errors.phone = "Полето е задължително.";
+    errors.phone = t("required");
   } else if (!/^\+?[\d\s\-().]{7,20}$/.test(phone)) {
-    errors.phone = "Въведи валиден телефонен номер.";
+    errors.phone = t("phoneInvalid");
   }
 
   const email = values.email.trim();
   if (!email) {
-    errors.email = "Полето е задължително.";
+    errors.email = t("required");
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    errors.email = "Въведи валиден имейл адрес.";
+    errors.email = t("emailInvalid");
   }
 
   return errors;
@@ -73,6 +77,8 @@ function Required() {
 }
 
 function SuccessScreen() {
+  const t = useTranslations("CancellationForm");
+
   return (
     <div className="flex flex-col items-center py-10 text-center">
       <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[linear-gradient(100deg,#2e7d65_0%,#1a5540_100%)] shadow-[0_12px_32px_rgba(46,125,101,0.28)]">
@@ -81,32 +87,35 @@ function SuccessScreen() {
         </svg>
       </div>
       <h2 className="mt-5 font-serif text-2xl text-[#432855] sm:text-3xl">
-        Формулярът е изпратен
+        {t("sentTitle")}
       </h2>
       <p className="mt-3 max-w-sm text-sm leading-6 text-[#6b587f]">
-        Получихме вашето заявление за отказ. Ще се свържем с вас на посочените контакти в рамките на работния ден.
+        {t("sentText")}
       </p>
       <p className="mt-2 text-xs text-[#8f72a7]">
-        Изпратено до sales@brami.shop
+        {t("sentTo")}
       </p>
     </div>
   );
 }
 
 export function CancellationForm() {
+  const t = useTranslations("CancellationForm");
+  const tErrors = useTranslations("CancellationForm.errors");
+  const locale = useLocale();
   const [values, setValues] = useState(initialValues);
   const [status, setStatus] = useState<CancellationFormStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [hasAttempted, setHasAttempted] = useState(false);
-  const todayDate = getTodayDate();
+  const todayDate = getTodayDate(locale);
 
   function set(field: keyof typeof initialValues) {
     return (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const updated = { ...values, [field]: event.target.value };
       setValues(updated);
       if (hasAttempted) {
-        setErrors(validateForm(updated));
+        setErrors(validateForm(updated, tErrors));
       }
     };
   }
@@ -123,7 +132,7 @@ export function CancellationForm() {
     event.preventDefault();
     setHasAttempted(true);
 
-    const formErrors = validateForm(values);
+    const formErrors = validateForm(values, tErrors);
     setErrors(formErrors);
 
     if (Object.keys(formErrors).length > 0) return;
@@ -145,7 +154,7 @@ export function CancellationForm() {
       setStatus("sent");
     } catch {
       setStatus("failed");
-      setErrorMessage("Не успяхме да изпратим формуляра. Опитай отново след малко.");
+      setErrorMessage(t("error"));
     }
   }
 
@@ -157,19 +166,19 @@ export function CancellationForm() {
     <div>
       <form onSubmit={handleSubmit} noValidate className="grid gap-5 sm:grid-cols-2">
         <div className="sm:col-span-2 rounded-[20px] border border-[#ddd3e4] bg-[#faf7fc] px-5 py-4 text-sm leading-6 text-[#5f4b74]">
-          <p className="font-medium text-[#432855]">До:</p>
-          <p>Брами Трейд ЕООД</p>
-          <p>Адрес: България, гр. София 1588, Кривина, ул. Демокрация № 13</p>
-          <p>Имейл: sales@brami.shop</p>
+          <p className="font-medium text-[#432855]">{t("to")}</p>
+          <p>{t("company")}</p>
+          <p>{t("address")}</p>
+          <p>{t("emailLine")}</p>
         </div>
 
         <label className="flex flex-col gap-2 text-sm font-medium text-[#432855] sm:col-span-2">
-          <span>Стоки, от чиято покупка се отказвам<Required /></span>
+          <span>{t("products")}<Required /></span>
           <textarea
             rows={4}
             value={values.products}
             onChange={set("products")}
-            placeholder="Опиши стоките — наименование, количество и др."
+            placeholder={t("productsPlaceholder")}
             className={fieldClass("products")}
           />
           {errors.products && (
@@ -178,12 +187,12 @@ export function CancellationForm() {
         </label>
 
         <label className="flex flex-col gap-2 text-sm font-medium text-[#432855] sm:col-span-2">
-          <span>Поръчано на / Номер на поръчката / Получено на<Required /></span>
+          <span>{t("orderInfo")}<Required /></span>
           <textarea
             rows={2}
             value={values.orderInfo}
             onChange={set("orderInfo")}
-            placeholder="Напр. 15.04.2026 / BR-20260420-332268 / 17.04.2026"
+            placeholder={t("orderInfoPlaceholder")}
             className={fieldClass("orderInfo")}
           />
           {errors.orderInfo && (
@@ -192,13 +201,13 @@ export function CancellationForm() {
         </label>
 
         <label className="flex flex-col gap-2 text-sm font-medium text-[#432855] sm:col-span-2">
-          <span>Име на потребителя<Required /></span>
+          <span>{t("customerName")}<Required /></span>
           <input
             type="text"
             autoComplete="name"
             value={values.customerName}
             onChange={set("customerName")}
-            placeholder="Въведи пълно име"
+            placeholder={t("customerNamePlaceholder")}
             className={fieldClass("customerName", "h-12")}
           />
           {errors.customerName && (
@@ -207,13 +216,13 @@ export function CancellationForm() {
         </label>
 
         <label className="flex flex-col gap-2 text-sm font-medium text-[#432855] sm:col-span-2">
-          <span>Адрес на потребителя<Required /></span>
+          <span>{t("customerAddress")}<Required /></span>
           <textarea
             rows={2}
             autoComplete="street-address"
             value={values.customerAddress}
             onChange={set("customerAddress")}
-            placeholder="Град, улица, номер, пощенски код"
+            placeholder={t("customerAddressPlaceholder")}
             className={fieldClass("customerAddress")}
           />
           {errors.customerAddress && (
@@ -222,7 +231,7 @@ export function CancellationForm() {
         </label>
 
         <label className="flex flex-col gap-2 text-sm font-medium text-[#432855]">
-          <span>Телефон<Required /></span>
+          <span>{t("phone")}<Required /></span>
           <input
             type="tel"
             autoComplete="tel"
@@ -237,7 +246,7 @@ export function CancellationForm() {
         </label>
 
         <label className="flex flex-col gap-2 text-sm font-medium text-[#432855]">
-          <span>Имейл<Required /></span>
+          <span>{t("email")}<Required /></span>
           <input
             type="email"
             autoComplete="email"
@@ -252,14 +261,14 @@ export function CancellationForm() {
         </label>
 
         <div className="flex flex-col gap-1 text-sm font-medium text-[#432855]">
-          <span>Дата</span>
+          <span>{t("date")}</span>
           <p className="flex h-12 items-center rounded-[18px] border border-[#ddd3e4] bg-[#faf7fc] px-4 text-[#6b587f]">
             {todayDate}
           </p>
         </div>
 
         <p className="sm:col-span-2 text-xs leading-5 text-[#8f72a7]">
-          Брами Трейд ЕООД си запазва правото да откаже връщането на стоката при неправилно или непълно попълнени данни във формуляра.
+          {t("disclaimer")}
         </p>
 
         <div className="sm:col-span-2">
@@ -268,7 +277,7 @@ export function CancellationForm() {
             disabled={status === "sending"}
             className={`${sectionPrimaryButtonClassName} disabled:cursor-not-allowed disabled:opacity-60`}
           >
-            {status === "sending" ? "Изпращане..." : "Изпрати формуляра"}
+            {status === "sending" ? t("sending") : t("submit")}
           </button>
         </div>
 
@@ -279,14 +288,14 @@ export function CancellationForm() {
 
       <div className="mt-8 border-t border-[#e4d9ed] pt-6 text-sm leading-6 text-[#6b587f]">
         <p>
-          Предпочитате да се откажете по телефон? Обадете се на{" "}
+          {t("byPhone")}{" "}
           <a
             href="tel:+359889342781"
             className="font-medium text-[#432855] transition hover:text-[#6c3f8d]"
           >
             +359 889 342 781
           </a>{" "}
-          в работни дни от 09:00 до 18:00.
+          {t("byPhoneHours")}
         </p>
       </div>
     </div>

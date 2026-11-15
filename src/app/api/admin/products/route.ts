@@ -1,4 +1,6 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
+import { getProductUrls, notifyIndexNow } from "@/lib/indexnow";
 
 import { requireAdminSession } from "@/lib/admin-auth";
 import { saveAdminProduct } from "@/lib/admin-data";
@@ -12,10 +14,11 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     await saveAdminProduct(body);
+    notifyIndexNow(() => getProductUrls(Number(body.id)));
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to save product." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Failed to save product.") },
       { status: 400 },
     );
   }

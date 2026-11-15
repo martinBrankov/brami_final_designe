@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -22,6 +23,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ conversation }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Неуспешно създаване на чат.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: await localizeApiError(message) }, { status: 500 });
   }
 }

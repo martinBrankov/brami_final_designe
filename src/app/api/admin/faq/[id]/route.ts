@@ -1,4 +1,7 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
+import { getFaqEntryUrls, notifyIndexNow } from "@/lib/indexnow";
+import { assertUniqueEnglishSlug, toEnglishSlug, withEnglish } from "@/lib/admin-translations";
 
 import { requireAdminSession } from "@/lib/admin-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -21,8 +24,8 @@ export async function GET(_req: Request, { params }: RouteContext) {
     .eq("id", id)
     .maybeSingle();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (error) return NextResponse.json({ error: await localizeApiError(error.message) }, { status: 500 });
+  if (!data) return NextResponse.json({ error: await localizeApiError("Not found") }, { status: 404 });
 
   return NextResponse.json({ entry: mapFaqEntry(data) });
 }
@@ -31,10 +34,13 @@ export async function PUT(request: Request, { params }: RouteContext) {
   await requireAdminSession();
 
   const { id } = await params;
+  const urlsBefore = await getFaqEntryUrls(id);
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
-  if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  if (!body) return NextResponse.json({ error: await localizeApiError("Invalid body") }, { status: 400 });
 
-  const { question, answer, slug, category, status, position } = body as {
+  const { question, answer, slug, category, status, position, english } = body as {
+    /** English version (translations.en); omitted = unchanged. */
+    english?: { question?: string; answer?: string; category?: string; slug?: string };
     question?: string;
     answer?: string;
     slug?: string;
@@ -45,18 +51,18 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
   const trimmedQuestion = question?.trim() ?? "";
   if (!trimmedQuestion) {
-    return NextResponse.json({ error: "Въпросът е задължителен." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Въпросът е задължителен.") }, { status: 400 });
   }
 
   const supabase = createSupabaseAdminClient();
   const { data: current, error: loadErr } = await supabase
     .from("faq_entries")
-    .select("status, published_at")
+    .select("status, published_at, translations")
     .eq("id", id)
     .maybeSingle();
 
-  if (loadErr) return NextResponse.json({ error: loadErr.message }, { status: 500 });
-  if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (loadErr) return NextResponse.json({ error: await localizeApiError(loadErr.message) }, { status: 500 });
+  if (!current) return NextResponse.json({ error: await localizeApiError("Not found") }, { status: 404 });
 
   const nextStatus =
     status === "published" || status === "pending" || status === "draft" ? status : "draft";
@@ -64,12 +70,28 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
   if (nextStatus === "published" && !trimmedAnswer) {
     return NextResponse.json(
-      { error: "Не можеш да публикуваш въпрос без отговор." },
+      { error: await localizeApiError("Не можеш да публикуваш въпрос без отговор.") },
       { status: 400 },
     );
   }
 
   const finalSlug = await buildUniqueFaqSlug(slug?.trim() || trimmedQuestion, id);
+
+  let translations: ReturnType<typeof withEnglish> | undefined;
+  if (english) {
+    const enSlug = toEnglishSlug(english.slug?.trim() || english.question?.trim() || "");
+    try {
+      await assertUniqueEnglishSlug("faq_entries", enSlug, id);
+    } catch (error) {
+      return NextResponse.json({ error: await localizeApiError(error instanceof Error ? error.message : "Invalid body") }, { status: 400 });
+    }
+    translations = withEnglish(current.translations, {
+      question: english.question?.trim(),
+      answer: english.answer?.trim(),
+      category: english.category?.trim(),
+      slug: enSlug,
+    });
+  }
 
   const { error } = await supabase
     .from("faq_entries")
@@ -85,14 +107,16 @@ export async function PUT(request: Request, { params }: RouteContext) {
           ? (current.published_at ?? new Date().toISOString())
           : null,
       updated_at: new Date().toISOString(),
+      ...(translations ? { translations } : {}),
     })
     .eq("id", id);
 
   if (error) {
     console.error("[faq PUT] update error:", error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: await localizeApiError(error.message) }, { status: 500 });
   }
 
+  notifyIndexNow(async () => [...urlsBefore, ...(await getFaqEntryUrls(id))]);
   return NextResponse.json({ ok: true });
 }
 
@@ -101,8 +125,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   await requireAdminSession();
 
   const { id } = await params;
+  const urlsBefore = await getFaqEntryUrls(id);
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
-  if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  if (!body) return NextResponse.json({ error: await localizeApiError("Invalid body") }, { status: 400 });
 
   const supabase = createSupabaseAdminClient();
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -110,7 +135,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   if ("status" in body) {
     const nextStatus = body.status;
     if (nextStatus !== "pending" && nextStatus !== "draft" && nextStatus !== "published") {
-      return NextResponse.json({ error: "Невалиден статус." }, { status: 400 });
+      return NextResponse.json({ error: await localizeApiError("Невалиден статус.") }, { status: 400 });
     }
 
     const { data: current, error: loadErr } = await supabase
@@ -119,13 +144,13 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       .eq("id", id)
       .maybeSingle();
 
-    if (loadErr) return NextResponse.json({ error: loadErr.message }, { status: 500 });
-    if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (loadErr) return NextResponse.json({ error: await localizeApiError(loadErr.message) }, { status: 500 });
+    if (!current) return NextResponse.json({ error: await localizeApiError("Not found") }, { status: 404 });
 
     if (nextStatus === "published") {
       if (!current.answer?.trim()) {
         return NextResponse.json(
-          { error: "Добави отговор преди да публикуваш въпроса." },
+          { error: await localizeApiError("Добави отговор преди да публикуваш въпроса.") },
           { status: 400 },
         );
       }
@@ -143,8 +168,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   const { error } = await supabase.from("faq_entries").update(updates).eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: await localizeApiError(error.message) }, { status: 500 });
 
+  notifyIndexNow(async () => [...urlsBefore, ...(await getFaqEntryUrls(id))]);
   return NextResponse.json({ ok: true });
 }
 
@@ -152,10 +178,12 @@ export async function DELETE(_req: Request, { params }: RouteContext) {
   await requireAdminSession();
 
   const { id } = await params;
+  const urlsBefore = await getFaqEntryUrls(id);
   const supabase = createSupabaseAdminClient();
 
   const { error } = await supabase.from("faq_entries").delete().eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: await localizeApiError(error.message) }, { status: 500 });
 
+  notifyIndexNow(() => urlsBefore);
   return NextResponse.json({ ok: true });
 }

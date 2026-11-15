@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -21,7 +22,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     typeof body?.modelConfigId === "string" && body.modelConfigId ? body.modelConfigId : null;
 
   if (!agentId) {
-    return NextResponse.json({ error: "Липсва agentId." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Липсва agentId.") }, { status: 400 });
   }
 
   try {
@@ -29,6 +30,6 @@ export async function POST(request: Request, { params }: RouteContext) {
     return NextResponse.json({ member }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Неуспешно добавяне на агент.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError(message) }, { status: 400 });
   }
 }

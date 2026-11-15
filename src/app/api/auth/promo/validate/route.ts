@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { validatePromoCode } from "@/lib/promo-codes";
+import { localizeApiError } from "@/lib/api-i18n";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ export async function POST(request: Request) {
   const code = typeof body?.code === "string" ? body.code : "";
 
   if (!code.trim()) {
-    return NextResponse.json({ error: "Въведете промо код." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Въведете промо код.") }, { status: 400 });
   }
 
   try {
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
 
     if (!result) {
       return NextResponse.json(
-        { error: "Невалиден или неактивен промо код." },
+        { error: await localizeApiError("Невалиден или неактивен промо код.") },
         { status: 404 },
       );
     }
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Грешка при проверка." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Грешка при проверка.") },
       { status: 500 },
     );
   }

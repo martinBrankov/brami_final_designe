@@ -8,6 +8,7 @@ import {
   recordMarketingAttempt,
   subscribeMarketingEmail,
 } from "@/lib/marketing-subscribers";
+import { localizeApiError } from "@/lib/api-i18n";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as SubscribeBody | null;
 
   if (!body) {
-    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Invalid request.") }, { status: 400 });
   }
 
   if (typeof body.website === "string" && body.website.trim()) {
@@ -42,13 +43,13 @@ export async function POST(request: Request) {
   const elapsedMs = issuedAt ? Date.now() - issuedAt : null;
 
   if (elapsedMs === null || elapsedMs < 1800 || elapsedMs > 60 * 60 * 1000) {
-    return NextResponse.json({ error: "Please try again." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Please try again.") }, { status: 400 });
   }
 
   const email = normalizeMarketingEmail(typeof body.email === "string" ? body.email : "");
 
   if (!isValidMarketingEmail(email)) {
-    return NextResponse.json({ error: "Invalid email address." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Invalid email address.") }, { status: 400 });
   }
 
   try {
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
 
     if (!rateLimit.ok) {
       return NextResponse.json(
-        { error: "Too many attempts. Please try again later." },
+        { error: await localizeApiError("Too many attempts. Please try again later.") },
         { status: 429 },
       );
     }
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Subscription failed." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Subscription failed.") },
       { status: 500 },
     );
   }

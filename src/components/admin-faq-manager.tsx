@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
+
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -19,6 +21,7 @@ export type AdminFaqEntry = {
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  english: { question: string; answer: string; category: string; slug: string };
 };
 
 type StatusFilter = "all" | AdminFaqEntry["status"];
@@ -31,13 +34,9 @@ type Draft = {
   category: string;
   status: AdminFaqEntry["status"];
   position: number;
+  en: AdminFaqEntry["english"];
 };
 
-const STATUS_LABELS: Record<AdminFaqEntry["status"], string> = {
-  pending: "Нов въпрос",
-  draft: "Чернова",
-  published: "Публикуван",
-};
 
 const STATUS_BADGE: Record<AdminFaqEntry["status"], string> = {
   pending: "bg-[#d8b36b]/20 text-[#8a6f45]",
@@ -45,12 +44,8 @@ const STATUS_BADGE: Record<AdminFaqEntry["status"], string> = {
   published: "bg-emerald-100 text-emerald-700",
 };
 
-const FILTERS: { key: StatusFilter; label: string }[] = [
-  { key: "pending", label: "Нови въпроси" },
-  { key: "draft", label: "Чернови" },
-  { key: "published", label: "Публикувани" },
-  { key: "all", label: "Всички" },
-];
+// Label: AdminFaq.filters.<key>
+const FILTERS: StatusFilter[] = ["pending", "draft", "published", "all"];
 
 const inputClassName =
   "w-full rounded-[8px] border border-[#e0dbd2] px-3 py-2 text-sm text-[#1d2733] outline-none focus:border-[#d8b36b] focus:ring-1 focus:ring-[#d8b36b]/40";
@@ -64,6 +59,7 @@ function emptyDraft(): Draft {
     category: "",
     status: "draft",
     position: 0,
+    en: { question: "", answer: "", category: "", slug: "" },
   };
 }
 
@@ -76,12 +72,13 @@ function toDraft(entry: AdminFaqEntry): Draft {
     category: entry.category ?? "",
     status: entry.status,
     position: entry.position,
+    en: { ...entry.english },
   };
 }
 
-function formatDate(iso: string | null) {
+function formatDate(iso: string | null, locale: string) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("bg-BG", {
+  return new Date(iso).toLocaleDateString(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -89,6 +86,8 @@ function formatDate(iso: string | null) {
 }
 
 export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaqEntry[] }) {
+  const t = useTranslations("AdminFaq");
+  const dateLocale = useLocale() === "en" ? "en-GB" : "bg-BG";
   const router = useRouter();
   const [entries, setEntries] = useState(initialEntries);
   const [filter, setFilter] = useState<StatusFilter>("pending");
@@ -125,11 +124,11 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
     if (!draft) return;
 
     if (!draft.question.trim()) {
-      setSaveError("Въпросът е задължителен.");
+      setSaveError(t("vaprosatEZadalzhitelen"));
       return;
     }
     if (draft.status === "published" && !draft.answer.trim()) {
-      setSaveError("Не можеш да публикуваш въпрос без отговор.");
+      setSaveError(t("neMozheshDaPublikuvash"));
       return;
     }
 
@@ -144,6 +143,8 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
         category: draft.category,
         status: draft.status,
         position: draft.position,
+        // English is saved for existing entries (it needs the entry id).
+        ...(draft.id ? { english: draft.en } : {}),
       };
 
       const res = await fetch(draft.id ? `/api/admin/faq/${draft.id}` : "/api/admin/faq", {
@@ -154,14 +155,14 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
 
       const body = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        setSaveError(body.error ?? "Грешка при запис.");
+        setSaveError(body.error ?? t("greshkaPriZapis"));
         return;
       }
 
       setDraft(null);
       await refresh();
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Грешка при запис.");
+      setSaveError(err instanceof Error ? err.message : t("greshkaPriZapis"));
     } finally {
       setSaving(false);
     }
@@ -172,7 +173,7 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
 
     // Publishing needs an answer — open the editor instead of failing silently.
     if (nextStatus === "published" && !entry.answer?.trim()) {
-      setSaveError("Добави отговор преди да публикуваш въпроса.");
+      setSaveError(t("dobaviOtgovorPrediDa"));
       setDraft({ ...toDraft(entry), status: "published" });
       return;
     }
@@ -186,7 +187,7 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
       });
       const body = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        alert(body.error ?? "Грешка.");
+        alert(body.error ?? t("greshka"));
         return;
       }
       await refresh();
@@ -201,7 +202,7 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
       const res = await fetch(`/api/admin/faq/${id}`, { method: "DELETE" });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
-        alert(body.error ?? "Грешка при изтриване.");
+        alert(body.error ?? t("greshkaPriIztrivane"));
         return;
       }
       setEntries((prev) => prev.filter((entry) => entry.id !== id));
@@ -217,24 +218,24 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
       <div>
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2">
-            {FILTERS.map((item) => (
+            {FILTERS.map((key) => (
               <button
-                key={item.key}
+                key={key}
                 type="button"
-                onClick={() => setFilter(item.key)}
+                onClick={() => setFilter(key)}
                 className={`inline-flex h-10 items-center gap-2 rounded-[10px] border px-4 text-sm font-medium transition ${
-                  filter === item.key
+                  filter === key
                     ? "border-[#1d2733] bg-[#1d2733] text-white"
                     : "border-[#d2c8b8] bg-white text-[#5f6b76] hover:bg-[#f8f4ec]"
                 }`}
               >
-                {item.label}
+                {t(`filters.${key}`)}
                 <span
                   className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                    filter === item.key ? "bg-white/15 text-white" : "bg-[#f0ebe3] text-[#8a6f45]"
+                    filter === key ? "bg-white/15 text-white" : "bg-[#f0ebe3] text-[#8a6f45]"
                   }`}
                 >
-                  {counts[item.key]}
+                  {counts[key]}
                 </span>
               </button>
             ))}
@@ -248,13 +249,13 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
             }}
             className="inline-flex h-10 items-center gap-2 rounded-[10px] bg-[#1d2733] px-5 text-sm font-semibold text-white transition hover:bg-[#2d3a47]"
           >
-            + Нов въпрос
+            {t("novVapros")}
           </button>
         </div>
 
         {visible.length === 0 ? (
           <p className="py-12 text-center text-sm text-[#5f6b76]">
-            Няма въпроси в тази секция.
+            {t("nyamaVaprosiVTazi")}
           </p>
         ) : (
           <div className="divide-y divide-[#e7dfd1]">
@@ -269,11 +270,11 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_BADGE[entry.status]}`}
                     >
-                      {STATUS_LABELS[entry.status]}
+                      {t(`statusLabels.${entry.status}`)}
                     </span>
                     {entry.source === "user" && (
                       <span className="rounded-full bg-[#e8eef5] px-2 py-0.5 text-xs font-semibold text-[#41648a]">
-                        От клиент
+                        {t("otKlient")}
                       </span>
                     )}
                   </div>
@@ -283,7 +284,7 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
                     {entry.category && <span>{entry.category}</span>}
                     {entry.askerName && <span>{entry.askerName}</span>}
                     {entry.askerEmail && <span>{entry.askerEmail}</span>}
-                    <span>{formatDate(entry.publishedAt ?? entry.createdAt)}</span>
+                    <span>{formatDate(entry.publishedAt ?? entry.createdAt, dateLocale)}</span>
                   </div>
 
                   {entry.answer ? (
@@ -291,7 +292,7 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
                       {entry.answer.replace(/<[^>]*>/g, " ")}
                     </p>
                   ) : (
-                    <p className="mt-2 text-sm font-medium text-[#a8792f]">Няма отговор</p>
+                    <p className="mt-2 text-sm font-medium text-[#a8792f]">{t("nyamaOtgovor")}</p>
                   )}
                 </div>
 
@@ -299,7 +300,7 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
                   <button
                     onClick={() => handleTogglePublished(entry)}
                     disabled={publishing === entry.id}
-                    title={entry.status === "published" ? "Скрий от сайта" : "Публикувай"}
+                    title={entry.status === "published" ? t("skriyOtSayta") : t("publikuvay")}
                     className={`flex h-8 w-8 items-center justify-center rounded-[8px] border transition disabled:opacity-50 ${
                       entry.status === "published"
                         ? "border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
@@ -320,7 +321,7 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
                       setDraft(toDraft(entry));
                       setSaveError(null);
                     }}
-                    title="Редактирай"
+                    title={t("redaktiray")}
                     className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#d2c8b8] text-[#1d2733] transition hover:bg-[#f8f4ec]"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -333,7 +334,7 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
                         disabled={deleting === entry.id}
                         className="inline-flex h-8 items-center rounded-[8px] bg-red-600 px-3 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
                       >
-                        {deleting === entry.id ? "…" : "Потвърди"}
+                        {deleting === entry.id ? "…" : t("potvardi")}
                       </button>
                       <button
                         onClick={() => setConfirmId(null)}
@@ -345,7 +346,7 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
                   ) : (
                     <button
                       onClick={() => setConfirmId(entry.id)}
-                      title="Изтрий"
+                      title={t("iztriy")}
                       className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-red-200 text-red-500 transition hover:bg-red-50"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
@@ -372,10 +373,10 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
             <div className="mb-5 flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold text-[#1d2733]">
-                  {draft.id ? "Редакция на въпрос" : "Нов въпрос"}
+                  {draft.id ? t("redaktsiyaNaVapros") : t("novVapros2")}
                 </h2>
                 <p className="mt-1 text-xs text-[#7c8a96]">
-                  Въпросът се вижда на сайта само със статус <strong>Публикуван</strong>.
+                  {t.rich("visibleOnlyPublished", { strong: (chunks) => <strong>{chunks}</strong> })}
                 </p>
               </div>
               <button
@@ -390,7 +391,7 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">Въпрос</label>
+                <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">{t("vapros")}</label>
                 <textarea
                   value={draft.question}
                   rows={2}
@@ -404,11 +405,11 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
               </div>
 
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">Отговор</label>
+                <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">{t("otgovor")}</label>
                 <textarea
                   value={draft.answer}
                   rows={9}
-                  placeholder="Раздели абзаците с празен ред. Позволен е и прост HTML (p, ul, strong, a)."
+                  placeholder={t("razdeliAbzatsiteSPrazen")}
                   onChange={(event) =>
                     setDraft((current) =>
                       current ? { ...current, answer: event.target.value } : current,
@@ -420,12 +421,12 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
 
               <div>
                 <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">
-                  Категория (по желание)
+                  {t("kategoriyaPoZhelanie")}
                 </label>
                 <input
                   type="text"
                   value={draft.category}
-                  placeholder="Доставка, Поръчки, Продукти…"
+                  placeholder={t("dostavkaPorachkiProdukti")}
                   onChange={(event) =>
                     setDraft((current) =>
                       current ? { ...current, category: event.target.value } : current,
@@ -451,7 +452,7 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">Статус</label>
+                <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">{t("status")}</label>
                 <select
                   value={draft.status}
                   onChange={(event) =>
@@ -463,15 +464,15 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
                   }
                   className={inputClassName}
                 >
-                  <option value="pending">Нов въпрос (без отговор)</option>
-                  <option value="draft">Чернова</option>
-                  <option value="published">Публикуван</option>
+                  <option value="pending">{t("novVaprosBezOtgovor")}</option>
+                  <option value="draft">{t("chernova")}</option>
+                  <option value="published">{t("publikuvan")}</option>
                 </select>
               </div>
 
               <div>
                 <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">
-                  Подредба (по-малко = по-нагоре)
+                  {t("orderHint")}
                 </label>
                 <input
                   type="number"
@@ -486,6 +487,44 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
               </div>
             </div>
 
+            <div className="mt-6 border-t border-[#efe9df] pt-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#8a6f45]">{t("english.title")}</p>
+              {draft.id ? (
+                <div className="mt-3 grid gap-3">
+                  <p className="text-xs text-[#8a9099]">{t("english.intro")}</p>
+                  {(["question", "category", "slug"] as const).map((field) => (
+                    <div key={field}>
+                      <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">{t(`english.${field}`)}</label>
+                      <input
+                        value={draft.en[field]}
+                        onChange={(event) =>
+                          setDraft((current) =>
+                            current ? { ...current, en: { ...current.en, [field]: event.target.value } } : current,
+                          )
+                        }
+                        className={inputClassName}
+                      />
+                    </div>
+                  ))}
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-[#5f6b76]">{t("english.answer")}</label>
+                    <textarea
+                      value={draft.en.answer}
+                      onChange={(event) =>
+                        setDraft((current) =>
+                          current ? { ...current, en: { ...current.en, answer: event.target.value } } : current,
+                        )
+                      }
+                      rows={6}
+                      className={inputClassName}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-[#8a9099]">{t("english.afterSave")}</p>
+              )}
+            </div>
+
             {saveError && <p className="mt-4 text-xs font-medium text-red-600">{saveError}</p>}
 
             <div className="mt-6 flex items-center justify-end gap-2">
@@ -495,7 +534,7 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
                 disabled={saving}
                 className="inline-flex h-9 items-center rounded-[8px] border border-[#d2c8b8] bg-white px-4 text-sm font-medium text-[#5f6b76] transition hover:bg-[#f8f4ec] disabled:opacity-60"
               >
-                Отказ
+                {t("otkaz")}
               </button>
               <button
                 type="button"
@@ -503,7 +542,7 @@ export function AdminFaqManager({ entries: initialEntries }: { entries: AdminFaq
                 disabled={saving}
                 className="inline-flex h-9 items-center rounded-[8px] bg-[#1d2733] px-5 text-sm font-semibold text-white transition hover:bg-[#2d3a47] disabled:opacity-60"
               >
-                {saving ? "Запис…" : "Запази"}
+                {saving ? t("zapis") : t("zapazi")}
               </button>
             </div>
           </div>

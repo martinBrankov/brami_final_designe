@@ -4,7 +4,10 @@ import { saveCustomerOrder } from "@/lib/admin-data";
 import { createOrderEmail } from "@/lib/order-mail/email-template";
 import { createMailer, getMailRecipient, getSender } from "@/lib/order-mail/mailer";
 import { validatePromoCode } from "@/lib/promo-codes";
-import { getProducts, getProductById } from "@/data/products";
+import { getProducts, getProductById, getProductHref } from "@/data/products";
+import { defaultLocale, isAppLocale } from "@/i18n/routing";
+import { getEmailTranslator } from "@/lib/order-mail/i18n";
+import { localizedUrl } from "@/lib/seo";
 
 export const runtime = "nodejs";
 
@@ -159,7 +162,16 @@ export async function POST(request: Request) {
   try {
     const siteUrl = resolveSiteUrl(request);
     const transporter = createMailer();
-    const allProducts = await getProducts();
+    // The cart sends the language the order was placed in.
+    const orderLocale = isAppLocale((body as { locale?: unknown }).locale)
+      ? ((body as { locale?: unknown }).locale as typeof defaultLocale)
+      : defaultLocale;
+    const allProducts = await getProducts(orderLocale);
+    const [customerT, salesT] = await Promise.all([
+      getEmailTranslator(orderLocale),
+      // The sales team always gets the Bulgarian version.
+      getEmailTranslator(defaultLocale),
+    ]);
     const normalizedStatus = body.status || "Потвърдена";
     const normalizedCreatedAt = body.createdAt || new Date().toLocaleString("bg-BG");
     const normalizedOrder = {
@@ -180,7 +192,13 @@ export async function POST(request: Request) {
           name: item.name!,
           packaging: item.packaging!,
           imageUrl: await resolveProductImageUrl(siteUrl, item, allProducts),
-          productUrl: item.id != null ? `${siteUrl}/products/${item.id}` : undefined,
+          productUrl: (() => {
+            if (item.id == null) return undefined;
+            const product = getProductById(allProducts, Number(item.id));
+            return product
+              ? localizedUrl(orderLocale, getProductHref(product))
+              : `${siteUrl}/products/${item.id}`;
+          })(),
           quantity: item.quantity!,
           unitPrice: item.unitPrice!,
           totalPrice: item.totalPrice!,
@@ -202,6 +220,7 @@ export async function POST(request: Request) {
       status: normalizedStatus,
       createdAt: normalizedCreatedAt,
       recipient: "customer",
+      t: customerT,
     });
 
     const salesMessage = createOrderEmail({
@@ -213,6 +232,7 @@ export async function POST(request: Request) {
       status: normalizedStatus,
       createdAt: normalizedCreatedAt,
       recipient: "sales",
+      t: salesT,
     });
 
     let resolvedPromo: {

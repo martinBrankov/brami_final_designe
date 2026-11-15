@@ -1,0 +1,62 @@
+{
+  "Email": {
+    "withdrawal": {
+      "subject": "Brami withdrawal form – {name}",
+      "eyebrow": "Withdrawal form",
+      "title": "Withdrawal from contract",
+      "recipient": "To: Brami Trade EOOD",
+      "address": "Address: 13 Demokratsiya St., Krivina, Sofia 1588, Bulgaria",
+      "contact": "Email: sales@brami.shop",
+      "intro": "I hereby give notice that I withdraw from my contract for the purchase of the following goods:",
+      "orderInfo": "Ordered on / Order number / Received on:",
+      "name": "Consumer name:",
+      "customerAddress": "Consumer address:"
+    },
+    "statusLabels": {
+      "confirmed": "Confirmed",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "statusMessages": {
+      "confirmed": "Your order has been confirmed and will be processed shortly.",
+      "processing": "Your order is being processed.",
+      "shipped": "Your order has been shipped and is on its way to you.",
+      "delivered": "Your order has been delivered. Thank you for choosing Brami!",
+      "cancelled": "Your order has been cancelled. If you think this is a mistake, please contact us."
+    },
+    "statusChanged": "The status of your order has changed to “{status}”.",
+    "statusSubject": "Brami order {order} - {status}",
+    "statusEyebrow": "Status update",
+    "newStatus": "New status:",
+    "greeting": "Hello {name},",
+    "order": "Order {order}",
+    "newOrder": "New order {order}",
+    "salesSubject": "Brami new order {order} - {status}",
+    "customerSubject": "Brami order {order} - {status}",
+    "salesEyebrow": "New order",
+    "customerEyebrow": "Order confirmation",
+    "salesIntro": "A new order has been received from the online shop. All the details for processing are below.",
+    "customerIntro": "Hello {name}, we have received your order and are preparing to process it.",
+    "status": "Status:",
+    "orderDetails": "Order details",
+    "number": "Number:",
+    "date": "Date:",
+    "customer": "Customer:",
+    "email": "Email:",
+    "phone": "Phone:",
+    "delivery": "Delivery",
+    "method": "Method:",
+    "destination": "Address/office:",
+    "notes": "Notes:",
+    "products": "Products",
+    "colImage": "Image",
+    "colProduct": "Product",
+    "colPackaging": "Size",
+    "colQuantity": "Qty",
+    "colUnitPrice": "Unit price",
+    "colTotal": "Total",
+    "total": "Total"
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 
 import { useUser } from "@/components/user-provider";
@@ -48,6 +49,9 @@ function FacebookGlyph() {
 }
 
 function SocialButtons({ providers }: { providers: SocialProvider[] }) {
+  const t = useTranslations("Auth");
+  const locale = useLocale();
+
   if (providers.length === 0) {
     return null;
   }
@@ -56,18 +60,18 @@ function SocialButtons({ providers }: { providers: SocialProvider[] }) {
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-3 text-xs uppercase tracking-[0.16em] text-[#8f72a7]">
         <span className="h-px flex-1 bg-[#e6dcef]" />
-        <span>или продължи с</span>
+        <span>{t("orContinueWith")}</span>
         <span className="h-px flex-1 bg-[#e6dcef]" />
       </div>
       <div className="flex flex-col gap-2">
         {providers.map((provider) => (
           <a
             key={provider}
-            href={`/api/auth/oauth/${provider}`}
+            href={`/api/auth/oauth/${provider}?redirect=${encodeURIComponent(locale === "en" ? "/en/account" : "/profil")}`}
             className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-full border border-[#ddd3e4] bg-white px-5 text-sm font-semibold text-[#432855] transition hover:border-[#9f79ac] hover:bg-[#faf7fc]"
           >
             {provider === "google" ? <GoogleGlyph /> : <FacebookGlyph />}
-            <span>Продължи с {PROVIDER_LABELS[provider]}</span>
+            <span>{t("continueWith", { provider: PROVIDER_LABELS[provider] })}</span>
           </a>
         ))}
       </div>
@@ -123,11 +127,12 @@ function PasswordField({
   minLength?: number;
   hint?: string;
 }) {
+  const t = useTranslations("Auth");
   const [visible, setVisible] = useState(false);
 
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-medium text-[#432855]">Парола</span>
+      <span className="mb-2 block text-sm font-medium text-[#432855]">{t("password")}</span>
       <div className="relative">
         <input
           type={visible ? "text" : "password"}
@@ -141,7 +146,7 @@ function PasswordField({
         <button
           type="button"
           onClick={() => setVisible((v) => !v)}
-          aria-label={visible ? "Скрий паролата" : "Покажи паролата"}
+          aria-label={visible ? t("hidePassword") : t("showPassword")}
           className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8f72a7] transition hover:text-[#432855]"
         >
           <EyeIcon visible={visible} />
@@ -164,6 +169,7 @@ export function AccountAuthForms({
   oauthError = null,
 }: AccountAuthFormsProps) {
   const router = useRouter();
+  const t = useTranslations("Auth");
   const { setUser } = useUser();
   const [mode, setMode] = useState<Mode>("login");
   const [identifier, setIdentifier] = useState("");
@@ -196,7 +202,7 @@ export function AccountAuthForms({
       | null;
 
     if (!response.ok || !result?.ok || !result.user) {
-      setErrorMessage(result?.error || "Неуспешен вход.");
+      setErrorMessage(result?.error || t("loginFailed"));
       return;
     }
 
@@ -222,7 +228,7 @@ export function AccountAuthForms({
       | null;
 
     if (!response.ok || !result?.ok || !result.user) {
-      setErrorMessage(result?.error || "Неуспешна регистрация.");
+      setErrorMessage(result?.error || t("registerFailed"));
       return;
     }
 
@@ -249,7 +255,7 @@ export function AccountAuthForms({
           }}
           className={`${tabBase} ${mode === "login" ? activeTab : inactiveTab}`}
         >
-          Вход
+          {t("login")}
         </button>
         <button
           type="button"
@@ -259,7 +265,7 @@ export function AccountAuthForms({
           }}
           className={`${tabBase} ${mode === "register" ? activeTab : inactiveTab}`}
         >
-          Регистрация
+          {t("register")}
         </button>
       </div>
 
@@ -271,16 +277,16 @@ export function AccountAuthForms({
 
       {mode === "login" ? (
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
-          <h1 className="font-serif text-3xl text-[#432855]">Добре дошъл отново</h1>
+          <h1 className="font-serif text-3xl text-[#432855]">{t("welcomeBack")}</h1>
           <p className="text-sm text-[#6b587f]">
-            Влез с потребителско име или имейл.
+            {t("loginHint")}
           </p>
 
           <SocialButtons providers={providers} />
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-[#432855]">
-              Потребителско име или имейл
+              {t("identifier")}
             </span>
             <input
               value={identifier}
@@ -308,7 +314,7 @@ export function AccountAuthForms({
             disabled={isPending}
             className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-5 text-sm font-semibold uppercase tracking-[0.08em] text-white transition disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isPending ? "Влизане..." : "Вход"}
+            {isPending ? t("loggingIn") : t("login")}
           </button>
 
           <button
@@ -319,21 +325,21 @@ export function AccountAuthForms({
             }}
             className="text-center text-sm text-[#6b587f] underline-offset-2 transition hover:text-[#432855] hover:underline"
           >
-            Нямаш профил? Регистрирай се
+            {t("noAccount")}
           </button>
         </form>
       ) : (
         <form onSubmit={handleRegister} className="flex flex-col gap-4">
-          <h1 className="font-serif text-3xl text-[#432855]">Създай профил</h1>
+          <h1 className="font-serif text-3xl text-[#432855]">{t("createAccount")}</h1>
           <p className="text-sm text-[#6b587f]">
-            Регистрирай се за по-бърза поръчка и история на покупките.
+            {t("registerHint")}
           </p>
 
           <SocialButtons providers={providers} />
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-[#432855]">
-              Потребителско име
+              {t("username")}
             </span>
             <input
               value={username}
@@ -348,7 +354,7 @@ export function AccountAuthForms({
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-[#432855]">
-              Имейл
+              {t("email")}
             </span>
             <input
               type="email"
@@ -365,7 +371,7 @@ export function AccountAuthForms({
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="new-password"
             minLength={8}
-            hint="Минимум 8 символа."
+            hint={t("passwordHint")}
           />
 
           {errorMessage ? (
@@ -379,7 +385,7 @@ export function AccountAuthForms({
             disabled={isPending}
             className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[linear-gradient(100deg,#9f79ac_0%,#432855_100%)] px-5 text-sm font-semibold uppercase tracking-[0.08em] text-white transition disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isPending ? "Създаване..." : "Регистрирай се"}
+            {isPending ? t("creating") : t("registerSubmit")}
           </button>
 
           <button
@@ -390,7 +396,7 @@ export function AccountAuthForms({
             }}
             className="text-center text-sm text-[#6b587f] underline-offset-2 transition hover:text-[#432855] hover:underline"
           >
-            Вече имаш профил? Влез
+            {t("haveAccount")}
           </button>
         </form>
       )}

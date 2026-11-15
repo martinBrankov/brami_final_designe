@@ -1,0 +1,62 @@
+{
+  "Email": {
+    "withdrawal": {
+      "subject": "Brami формуляр за отказ – {name}",
+      "eyebrow": "Формуляр за отказ",
+      "title": "Отказ от договор",
+      "recipient": "До: Брами Трейд ЕООД",
+      "address": "Адрес: България, гр. София 1588, Кривина, ул. Демокрация № 13",
+      "contact": "Имейл: sales@brami.shop",
+      "intro": "С настоящото уведомявам, че се отказвам от договора за покупка на следните стоки:",
+      "orderInfo": "Поръчано на / Номер на поръчката / Получено на:",
+      "name": "Име на потребителя:",
+      "customerAddress": "Адрес на потребителя:"
+    },
+    "statusLabels": {
+      "confirmed": "Потвърдена",
+      "processing": "В обработка",
+      "shipped": "Изпратена",
+      "delivered": "Доставена",
+      "cancelled": "Отказана"
+    },
+    "statusMessages": {
+      "confirmed": "Поръчката ви е потвърдена и предстои обработка.",
+      "processing": "Поръчката ви се обработва в момента.",
+      "shipped": "Поръчката ви е изпратена и вече пътува към вас.",
+      "delivered": "Поръчката ви е доставена. Благодарим ви, че избрахте Brami!",
+      "cancelled": "Поръчката ви беше отказана. Ако смятате, че това е грешка, моля свържете се с нас."
+    },
+    "statusChanged": "Статусът на поръчката ви беше променен на „{status}“.",
+    "statusSubject": "Brami поръчка {order} - {status}",
+    "statusEyebrow": "Промяна на статус",
+    "newStatus": "Нов статус:",
+    "greeting": "Здравейте, {name}.",
+    "order": "Поръчка {order}",
+    "newOrder": "Нова поръчка {order}",
+    "salesSubject": "Brami нова поръчка {order} - {status}",
+    "customerSubject": "Brami поръчка {order} - {status}",
+    "salesEyebrow": "Нова поръчка",
+    "customerEyebrow": "Потвърждение на поръчка",
+    "salesIntro": "Получена е нова поръчка от онлайн магазина. По-долу са всички детайли за обработка.",
+    "customerIntro": "Здравейте, {name}. Получихме поръчката ви и подготвяме обработката ѝ.",
+    "status": "Статус:",
+    "orderDetails": "Данни за поръчката",
+    "number": "Номер:",
+    "date": "Дата:",
+    "customer": "Клиент:",
+    "email": "Имейл:",
+    "phone": "Телефон:",
+    "delivery": "Доставка",
+    "method": "Метод:",
+    "destination": "Адрес/офис:",
+    "notes": "Бележки:",
+    "products": "Продукти",
+    "colImage": "Снимка",
+    "colProduct": "Продукт",
+    "colPackaging": "Разфасовка",
+    "colQuantity": "Брой",
+    "colUnitPrice": "Ед. цена",
+    "colTotal": "Общо",
+    "total": "Общо"
+  }
+}

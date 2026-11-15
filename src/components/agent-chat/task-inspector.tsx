@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useState } from "react";
 
 import type { TaskDetail, TaskStatus } from "@/lib/agent-chat/types";
@@ -10,24 +12,6 @@ export type TaskControlAction = "pause" | "resume" | "stop" | "redirect" | "retr
 // retry), the plan (DAG), runs with token usage, and a compact event timeline. The
 // parent polls task data and handles control actions.
 
-const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
-  draft: "Чернова",
-  queued: "На опашка",
-  planning: "Планира",
-  ready: "Готова",
-  running: "Работи",
-  waiting_for_dependency: "Чака зависимост",
-  waiting_for_user: "Чака потребител",
-  paused: "Пауза",
-  reviewing: "Проверка",
-  needs_changes: "Нужни промени",
-  ready_for_approval: "За одобрение",
-  approved: "Одобрена",
-  publishing: "Публикува",
-  published: "Публикувана",
-  failed: "Провалена",
-  cancelled: "Отказана",
-};
 
 const ACTIVE_STATUSES: TaskStatus[] = ["queued", "planning", "running"];
 
@@ -50,14 +34,15 @@ export function TaskInspector({
   onControl?: (action: TaskControlAction, instruction?: string) => void;
   busy?: boolean;
 }) {
+  const t = useTranslations("AgentChatTasks");
   return (
     <aside className="flex w-[320px] shrink-0 flex-col overflow-hidden rounded-2xl border border-[#e3ddd1] bg-white">
       <div className="border-b border-[#eee7da] px-4 py-3">
-        <h2 className="text-sm font-semibold text-[#1d2733]">Инспектор на задача</h2>
+        <h2 className="text-sm font-semibold text-[#1d2733]">{t("inspektorNaZadacha")}</h2>
       </div>
       {!task ? (
         <div className="flex flex-1 items-center justify-center px-4 text-center text-sm text-[#8a94a0]">
-          Стартирай задача, за да видиш плана и работата на агентите тук.
+          {t("startirayZadachaZaDa")}
         </div>
       ) : (
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
@@ -67,7 +52,7 @@ export function TaskInspector({
               <span
                 className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${statusStyle(task.status)}`}
               >
-                {TASK_STATUS_LABELS[task.status]}
+                {t(`status.${task.status}`)}
               </span>
             </div>
           </div>
@@ -77,7 +62,7 @@ export function TaskInspector({
           {task.plan && (
             <section>
               <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[#8a6f45]">
-                План
+                {t("plan")}
               </h3>
               {task.planSummary && (
                 <p className="mb-2 text-xs text-[#5f6b76]">{task.planSummary}</p>
@@ -134,7 +119,7 @@ export function TaskInspector({
           {task.events.filter((e) => e.visibility === "user_summary").length > 0 && (
             <section>
               <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[#8a6f45]">
-                Събития
+                {t("sabitiya")}
               </h3>
               <ul className="space-y-1">
                 {task.events
@@ -162,6 +147,7 @@ function ControlBar({
   onControl: (action: TaskControlAction, instruction?: string) => void;
   busy: boolean;
 }) {
+  const t = useTranslations("AgentChatTasks");
   const [redirectOpen, setRedirectOpen] = useState(false);
   const [redirectText, setRedirectText] = useState("");
 
@@ -186,7 +172,7 @@ function ControlBar({
             disabled={busy}
             className={`${btn} border-[#d9d4ca] text-[#1d2733] hover:bg-white`}
           >
-            ⏸ Пауза
+            {t("pauza")}
           </button>
         )}
         {canResume && (
@@ -195,7 +181,7 @@ function ControlBar({
             disabled={busy}
             className={`${btn} border-[#2f7d55] bg-[#dcefe4] text-[#2f7d55] hover:brightness-95`}
           >
-            ▶ Продължи
+            {t("prodalzhi")}
           </button>
         )}
         {canStop && (
@@ -204,7 +190,7 @@ function ControlBar({
             disabled={busy}
             className={`${btn} border-[#e0b4b4] text-[#a23b3b] hover:bg-white`}
           >
-            ⏹ Стоп
+            {t("stop")}
           </button>
         )}
         {canRetry && (
@@ -213,7 +199,7 @@ function ControlBar({
             disabled={busy}
             className={`${btn} border-[#d9d4ca] text-[#1d2733] hover:bg-white`}
           >
-            ↻ Опитай пак
+            {t("opitayPak")}
           </button>
         )}
         {canRedirect && (
@@ -222,7 +208,7 @@ function ControlBar({
             disabled={busy}
             className={`${btn} border-[#d9d4ca] text-[#1d2733] hover:bg-white`}
           >
-            ➦ Пренасочи
+            {t("prenasochi")}
           </button>
         )}
       </div>
@@ -233,7 +219,7 @@ function ControlBar({
             value={redirectText}
             onChange={(e) => setRedirectText(e.target.value)}
             rows={2}
-            placeholder="Напр. „Направи текста по-професионален и без прекалено рекламни твърдения.“"
+            placeholder={t("naprNapraviTekstaPo")}
             className="w-full resize-none rounded-lg border border-[#d9d4ca] px-2 py-1 text-xs text-[#1d2733] focus:border-[#8a6f45] focus:outline-none"
           />
           <div className="mt-1 flex justify-end gap-1.5">
@@ -244,7 +230,7 @@ function ControlBar({
               }}
               className="rounded-lg px-2 py-1 text-xs text-[#8a94a0] hover:text-[#1d2733]"
             >
-              Отказ
+              {t("otkaz")}
             </button>
             <button
               onClick={() => {
@@ -257,7 +243,7 @@ function ControlBar({
               disabled={busy || !redirectText.trim()}
               className="rounded-lg bg-[#1d2733] px-3 py-1 text-xs font-medium text-white hover:bg-[#2b3947] disabled:opacity-40"
             >
-              Изпрати
+              {t("izprati")}
             </button>
           </div>
         </div>

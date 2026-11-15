@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { isFullAdmin, requireAdminSession } from "@/lib/admin-auth";
@@ -39,7 +40,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to update user." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Failed to update user.") },
       { status: 400 },
     );
   }

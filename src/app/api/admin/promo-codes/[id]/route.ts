@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireFullAdminSession } from "@/lib/admin-auth";
@@ -36,7 +37,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return NextResponse.json({ code: updated });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to update code." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Failed to update code.") },
       { status: 400 },
     );
   }
@@ -50,7 +51,7 @@ export async function DELETE(_: Request, { params }: RouteContext) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to delete code." },
+      { error: await localizeApiError(error instanceof Error ? error.message : "Failed to delete code.") },
       { status: 400 },
     );
   }

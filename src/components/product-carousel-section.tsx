@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { ProductCard } from "@/components/product-card";
@@ -8,6 +8,7 @@ import {
   SectionIntro,
 } from "@/components/section-intro";
 import { getProductBadgeLabel, type Product } from "@/data/products";
+import { Link } from "@/i18n/navigation";
 
 function ArrowIcon({ direction }: { direction: "left" | "right" }) {
   return (
@@ -43,6 +44,8 @@ export function ProductCarouselSection({
   titleClassName,
   emptyState = null,
 }: ProductCarouselSectionProps) {
+  const t = useTranslations("Carousel");
+  const tProduct = useTranslations("Product");
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [visibleCardsCount, setVisibleCardsCount] = useState(1);
@@ -250,7 +253,7 @@ export function ProductCarouselSection({
               href="/products"
               className="inline-flex w-auto items-center justify-start text-[13px] font-medium text-[#7a688d] underline decoration-[#cdbed9] underline-offset-[0.22em] transition hover:text-[#432855] hover:decoration-[#432855]"
             >
-              Към продуктите
+              {t("toProducts")}
             </Link>
           </div>
 
@@ -258,7 +261,7 @@ export function ProductCarouselSection({
             <div className="hidden items-center gap-3 lg:flex">
               <button
                 type="button"
-                aria-label={`РџСЂРµРґРёС€РЅРё ${title.toLowerCase()}`}
+                aria-label={t("previous", { title: title.toLowerCase() })}
                 onClick={() => scrollByPage("left")}
                 className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d0de] bg-white text-[#432855] transition hover:border-[#c4b2d1] hover:bg-[#faf7fc]"
               >
@@ -266,7 +269,7 @@ export function ProductCarouselSection({
               </button>
               <button
                 type="button"
-                aria-label={`РЎР»РµРґРІР°С‰Рё ${title.toLowerCase()}`}
+                aria-label={t("next", { title: title.toLowerCase() })}
                 onClick={() => scrollByPage("right")}
                 className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d8d0de] bg-white text-[#432855] transition hover:border-[#c4b2d1] hover:bg-[#faf7fc]"
               >
@@ -292,7 +295,7 @@ export function ProductCarouselSection({
               >
                 <ProductCard
                   product={product}
-                  badge={getProductBadgeLabel(product.badge, product.discountPercent)}
+                  badge={getProductBadgeLabel(product.badge, tProduct, product.discountPercent)}
                   compact
                   className="w-full max-w-[168px] min-[640px]:w-[198px] min-[640px]:max-w-[198px]"
                 />

@@ -1,3 +1,4 @@
+import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -16,7 +17,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   const modelConfigId = typeof body?.modelConfigId === "string" ? body.modelConfigId : "";
 
   if (!modelConfigId) {
-    return NextResponse.json({ error: "Липсва modelConfigId." }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError("Липсва modelConfigId.") }, { status: 400 });
   }
 
   try {
@@ -24,7 +25,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Неуспешна смяна на модел.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError(message) }, { status: 400 });
   }
 }
 
@@ -37,6 +38,6 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Неуспешно премахване.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: await localizeApiError(message) }, { status: 400 });
   }
 }

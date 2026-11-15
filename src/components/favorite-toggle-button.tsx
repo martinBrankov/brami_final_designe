@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useFavorites } from "@/components/favorites-provider";
 
 function HeartIcon({ filled }: { filled: boolean }) {
@@ -26,6 +28,7 @@ export function FavoriteToggleButton({
   productId: number;
   className?: string;
 }) {
+  const t = useTranslations("Product");
   const { isFavorite, toggleFavorite } = useFavorites();
   const favorite = isFavorite(productId);
 
@@ -41,7 +44,7 @@ export function FavoriteToggleButton({
       aria-pressed={favorite}
     >
       <HeartIcon filled={favorite} />
-      {favorite ? "В любими" : "Добави в любими"}
+      {favorite ? t("inFavorites") : t("addToFavorites")}
     </button>
   );
 }

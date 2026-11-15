@@ -1,6 +1,9 @@
 import "server-only";
 
-import { redirect } from "next/navigation";
+import { getLocale } from "next-intl/server";
+
+import { redirect } from "@/i18n/navigation";
+import { isAppLocale } from "@/i18n/routing";
 
 import { getUserProfile, getUserSession } from "@/lib/user-auth";
 
@@ -37,10 +40,16 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   };
 }
 
+/** Sends a visitor without admin rights to the login page in their language. */
+async function redirectToAccount(): Promise<never> {
+  const locale = await getLocale();
+  return redirect({ href: "/account", locale: isAppLocale(locale) ? locale : "bg" });
+}
+
 export async function requireAdminSession(): Promise<AdminSession> {
   const session = await getAdminSession();
   if (!session) {
-    redirect("/account");
+    return redirectToAccount();
   }
   return session;
 }
@@ -52,7 +61,7 @@ export function isFullAdmin(session: AdminSession | null | undefined): boolean {
 export async function requireFullAdminSession(): Promise<AdminSession> {
   const session = await getAdminSession();
   if (!session || session.role !== "admin") {
-    redirect("/account");
+    return redirectToAccount();
   }
   return session;
 }

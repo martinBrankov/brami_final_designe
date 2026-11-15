@@ -1,0 +1,254 @@
+{
+  "Categories": {
+    "face": "Face",
+    "body": "Body",
+    "hair": "Hair"
+  },
+  "Product": {
+    "badges": {
+      "bestseller": "Bestseller",
+      "new": "New",
+      "favorite": "We recommend",
+      "kids": "For kids",
+      "featured": "Featured",
+      "none": "Product",
+      "sale": "Sale"
+    },
+    "highlightsLabel": "Highlights:",
+    "fallbackDescription": "{packaging} – a natural product with carefully selected ingredients for everyday care.",
+    "fallbackShareDescription": "Natural care for everyday use",
+    "breadcrumb": "Breadcrumb",
+    "inStock": "In stock",
+    "outOfStock": "Out of stock",
+    "ratingCount": "{count, plural, one {# rating} other {# ratings}}",
+    "addToCart": "Add to cart",
+    "buy": "Buy",
+    "addToFavorites": "Add to favourites",
+    "removeFromFavorites": "Remove from favourites",
+    "relatedProducts": "Related products",
+    "recentlyViewed": "Recently viewed",
+    "faqTitle": "Frequently asked questions about this product",
+    "specs": {
+      "title": "Product details",
+      "brand": "Brand",
+      "manufacturer": "Manufacturer",
+      "origin": "Origin",
+      "originBulgaria": "Bulgaria",
+      "packaging": "Size",
+      "category": "Category",
+      "highlights": "Highlights",
+      "price": "Price",
+      "availability": "Availability"
+    },
+    "soldOut": "sold out",
+    "inFavorites": "In favourites"
+  },
+  "ProductTabs": {
+    "description": "Description",
+    "reviews": "Reviews",
+    "noReviews": "There are no ratings for this product yet.",
+    "saveFailed": "Could not save.",
+    "chooseStars": "Choose a number of stars.",
+    "ratingSent": "Your rating has been sent.",
+    "genericError": "Something went wrong.",
+    "anonymousUser": "Anonymous user",
+    "commentRequired": "Write a comment before sending it.",
+    "ratingRequired": "Please rate the product first.",
+    "confirmDelete": "Are you sure you want to delete this comment?",
+    "rateProduct": "Rate this product",
+    "loginToReview": "Log in to your account to leave a rating and a comment.",
+    "loginRegister": "Log in / Sign up",
+    "addRating": "Add a rating",
+    "addRatingHint": "Choose a number of stars and send your rating.",
+    "sending": "Sending...",
+    "rate": "Rate",
+    "addComment": "Add a comment",
+    "addCommentHint": "Share your experience with the product and add a star rating.",
+    "name": "Name",
+    "namePlaceholder": "Enter your name",
+    "review": "Review",
+    "reviewPlaceholder": "Share your opinion about the product",
+    "sendComment": "Send comment",
+    "thanks": "Thank you for your rating and comment!",
+    "deleteComment": "Delete comment"
+  },
+  "ProductsPage": {
+    "metaTitle": "Natural cosmetics – all products",
+    "metaDescription": "Browse Brami's full range of natural Bulgarian cosmetics – creams, serums, shampoos and shower gels with saffron for face, body and hair, with fast delivery.",
+    "ogDescription": "Natural cosmetics for face, body and hair – discover Brami's full range of clean formulas and gentle care.",
+    "title": "Browse our products",
+    "description": "Formulas made for natural care and balance.",
+    "resultsFor": "Results for: “{query}”",
+    "favoritesOnly": "Showing your favourite products only.",
+    "categories": "Categories",
+    "allCategories": "All",
+    "filters": "Filters",
+    "brand": "Brand",
+    "chooseBrands": "Choose brands",
+    "audience": "Suitable for",
+    "chooseAudience": "Choose who it's for",
+    "badge": "Label",
+    "chooseBadges": "Choose labels",
+    "selectedCount": "{count} selected",
+    "clearFilters": "CLEAR FILTERS",
+    "noFavorites": "You haven't added any favourite products yet.",
+    "audiences": {
+      "women": "For women",
+      "men": "For men",
+      "unisex": "Unisex",
+      "kids": "For kids"
+    },
+    "badgeFilters": {
+      "bestseller": "Bestsellers",
+      "sale": "On sale",
+      "new": "New",
+      "favorite": "We recommend",
+      "kids": "For kids"
+    }
+  },
+  "Collections": {
+    "faqTitle": "Frequently asked questions",
+    "moreCollections": "Explore more",
+    "face": {
+      "title": "Natural face care",
+      "metaTitle": "Natural face care – creams, serums and masks",
+      "metaDescription": "Natural saffron face creams, vitamin C serums, masks, micellar water and sunscreen from Bulgarian brands. Order online with delivery across Bulgaria.",
+      "lead": "Creams, serums, masks and cleansers for the face from Bulgarian brands.",
+      "body": [
+        "This category brings together natural face care from three Bulgarian brands: Saffron Adela Sunny (with saffron grown in Bulgaria), Voditsa (with tuberose extract and floral waters) and Shafpol Beauty (with saffron, pearl and vitamin C).",
+        "There are products for every step of your routine: cleansing (micellar water, cleansing gel), hydration (face mist, saffron water), nourishing and anti-ageing care (day, night and eye cream, serum) and sun protection (SPF 50+ face cream)."
+      ],
+      "faq": [
+        {
+          "question": "Which saffron face cream should I choose?",
+          "answer": "The Saffron Adela Sunny face cream (50 ml) combines hyaluronic acid, 100% natural ISO 3632 saffron, peach oil, Brazil nut oil, aloe vera and vitamin E. It is suitable for the face, neck and décolleté."
+        },
+        {
+          "question": "What is the difference between the Voditsa day and night creams?",
+          "answer": "The Voditsa day cream has a light texture, absorbs quickly and works well under make-up. The night cream is richer and is made to restore the skin's moisture and elasticity overnight. Both contain tuberose extract."
+        },
+        {
+          "question": "Do you deliver across Bulgaria?",
+          "answer": "Yes. We deliver with Speedy to an office, a parcel locker or an address anywhere in Bulgaria, usually within 1–3 working days."
+        }
+      ]
+    },
+    "hair": {
+      "title": "Natural hair care",
+      "metaTitle": "Natural saffron shampoo and hair conditioner",
+      "metaDescription": "Natural saffron shampoo, hair conditioner and 2-in-1 wash by Saffron Adela Sunny – made in Bulgaria with Bulgarian saffron. Order online.",
+      "lead": "Shampoos, conditioner and 2-in-1 products with saffron, created and made in Bulgaria.",
+      "body": [
+        "Saffron Adela Sunny hair care is the first Bulgarian line of wash products with saffron (Crocus sativus). The saffron is grown in Bulgaria.",
+        "The saffron shampoo is the brand's bestselling product and suits every hair type. The saffron conditioner contains olive oil, argan oil, jojoba oil, vitamin E and D-panthenol. For travel there is a 50 ml shampoo and a travel set."
+      ],
+      "faq": [
+        {
+          "question": "Which natural saffron shampoos do you sell?",
+          "answer": "The Saffron Adela Sunny saffron shampoo comes in 250 ml and 50 ml (travel) sizes. For men there is also a saffron hair and body wash (300 ml and 50 ml)."
+        },
+        {
+          "question": "Which hair type is the saffron shampoo for?",
+          "answer": "The saffron shampoo suits every hair type and everyday use. For dry and damaged hair you can pair it with the saffron hair conditioner."
+        },
+        {
+          "question": "Where are the saffron cosmetics made?",
+          "answer": "The Saffron Adela Sunny line is created and made in Bulgaria by Brami Trade, with saffron grown in Bulgaria."
+        }
+      ]
+    },
+    "body": {
+      "title": "Natural body care",
+      "metaTitle": "Natural saffron shower gel, body lotion and soap",
+      "metaDescription": "Natural shower gels, body cream-lotion and handmade glycerin soap with saffron from Bulgaria. Gift sets and travel sizes.",
+      "lead": "Shower gels, lotion and soap with saffron, gift sets and travel sizes.",
+      "body": [
+        "Saffron Adela Sunny body care is made with saffron grown in Bulgaria. There are saffron shower gels for every skin type, a hair and body wash for men, a body cream-lotion with 10 nourishing ingredients and a handmade glycerin soap with saffron.",
+        "As a gift there is the “Saffron Adela Sunny” set (shampoo, shower gel and soap), and for travel a set of three 50 ml products."
+      ],
+      "faq": [
+        {
+          "question": "What is in the saffron body cream-lotion?",
+          "answer": "The cream-lotion (120 ml) contains shea butter, cocoa butter, jojoba oil, coconut oil, aloe vera oil extract, glycerin, beeswax and 100% natural ISO 3632 saffron."
+        },
+        {
+          "question": "Is there a saffron gift set?",
+          "answer": "Yes. The “Saffron Adela Sunny” set contains a 250 ml saffron shampoo, a 250 ml saffron shower gel and an 80 g saffron glycerin soap."
+        },
+        {
+          "question": "Do you have travel-size cosmetics for flights?",
+          "answer": "Yes. The saffron shampoo, shower gel and men's wash also come in 50 ml, and the travel set contains three 50 ml products."
+        }
+      ]
+    },
+    "saffron": {
+      "title": "Saffron cosmetics",
+      "metaTitle": "Saffron cosmetics – Bulgarian saffron (Crocus sativus)",
+      "metaDescription": "Natural cosmetics with Bulgarian saffron: shampoo, conditioner, creams, shower gels, soap, saffron water and serum. Created in Bulgaria by Brami. Order online.",
+      "lead": "Shampoos, creams, shower gels and face care with saffron grown in Bulgaria.",
+      "body": [
+        "Saffron (Crocus sativus) is a flower whose stigmas give one of the most valuable spices in the world. In cosmetics it is valued for its antioxidant properties.",
+        "Brami grows saffron in Bulgaria. After research carried out in 2019–2021, the team created Saffron Adela Sunny – the first line of hair and body wash products with saffron created and made in Bulgaria. The products use 100% natural saffron that meets the ISO 3632 standard.",
+        "Here you will find every saffron product in the shop – from the shampoo and hair conditioner to the face cream, body cream-lotion, soap, saffron hydrosol and the serum with saffron, pearl and vitamin C."
+      ],
+      "faq": [
+        {
+          "question": "What are Brami's best-known saffron products?",
+          "answer": "The bestselling product is the saffron shampoo. The Saffron Adela Sunny line also includes a hair conditioner, a face cream, a body cream-lotion, shower gels and a glycerin soap with saffron."
+        },
+        {
+          "question": "Is the saffron in the cosmetics Bulgarian?",
+          "answer": "Yes. Brami grows saffron in Bulgaria and uses it in the Saffron Adela Sunny line."
+        },
+        {
+          "question": "What is ISO 3632?",
+          "answer": "ISO 3632 is the international standard that defines saffron quality – colour, aroma and flavour. The saffron in Saffron Adela Sunny products is 100% natural and meets this standard."
+        }
+      ]
+    },
+    "bulgarian": {
+      "title": "Bulgarian natural cosmetics",
+      "metaTitle": "Bulgarian natural cosmetics – Saffron Adela Sunny, Voditsa, Shafpol",
+      "metaDescription": "Natural cosmetics from Bulgarian brands: Saffron Adela Sunny with Bulgarian saffron, Voditsa and Shafpol Beauty. Face, body and hair care delivered across Bulgaria.",
+      "lead": "Natural face, body and hair care from Bulgarian brands.",
+      "body": [
+        "At Brami we select cosmetics from Bulgarian producers. Saffron Adela Sunny is our own line made with saffron grown in Bulgaria – shampoos, conditioner, creams, shower gels and soap.",
+        "Voditsa offers face care with tuberose extract, floral waters and cold-pressed oils – anti-wrinkle creams, a mask, a mist and micellar water. Shafpol Beauty offers a serum with saffron, pearl and vitamin C, an SPF 50+ sunscreen and a face cleansing gel.",
+        "All products are delivered by Speedy across Bulgaria, usually within 1–3 working days, and delivery is free for orders over €70."
+      ],
+      "faq": [
+        {
+          "question": "Which Bulgarian natural cosmetics brands do you sell?",
+          "answer": "Saffron Adela Sunny (Brami's own line with Bulgarian saffron), Voditsa and Shafpol Beauty."
+        },
+        {
+          "question": "Is there free delivery?",
+          "answer": "Yes, delivery is free for orders over €70."
+        },
+        {
+          "question": "How can I order?",
+          "answer": "Order online at brami.shop. You can choose delivery to a Speedy office, a parcel locker or an address."
+        }
+      ]
+    }
+  },
+  "Carousel": {
+    "toProducts": "View all products",
+    "previous": "Previous {title}",
+    "next": "Next {title}"
+  },
+  "CartNotification": {
+    "stockLimit": "You can't add more than the available stock.",
+    "added": "The product has been added to your cart.",
+    "close": "Close notification",
+    "stockLimitStepper": "Only {stock} items are available. You can't order more than the available stock, so the quantity has been set to the maximum.",
+    "soldOut": "This product is currently out of stock.",
+    "stockLimitCount": "Only {stock} items are available. You can't add more than the available stock."
+  },
+  "InfoStrip": {
+    "freeDelivery": "Free delivery",
+    "over": "over €{amount}",
+    "natural": "Natural",
+    "ingredients": "ingredients"
+  }
+}

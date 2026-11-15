@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { useCart } from "@/components/cart-provider";
@@ -17,6 +18,7 @@ export function AddToCartButton({
   className,
   children,
 }: AddToCartButtonProps) {
+  const t = useTranslations("Product");
   const { addItem, items, notifyStockLimit } = useCart();
 
   const outOfStock = stock <= 0;
@@ -42,7 +44,7 @@ export function AddToCartButton({
       disabled={outOfStock}
       className={`${className}${outOfStock ? " cursor-not-allowed opacity-60" : ""}`}
     >
-      {outOfStock ? "изчерпана наличност" : children}
+      {outOfStock ? t("soldOut") : children}
     </button>
   );
 }

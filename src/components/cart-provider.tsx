@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   createContext,
   useContext,
@@ -43,6 +44,7 @@ const STORAGE_KEY = "brami-cart";
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const products = useProducts();
+  const t = useTranslations("CartNotification");
   const [items, setItems] = useState<CartItem[]>([]);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [notification, setNotification] = useState<CartNotificationState | null>(null);
@@ -152,8 +154,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       const message =
         product.stock <= 0
-          ? "Този продукт в момента е изчерпан."
-          : `Наличните бройки са ${product.stock}. Не може да добавите повече от наличното.`;
+          ? t("soldOut")
+          : t("stockLimitCount", { stock: product.stock });
 
       showNotification({
         productId,
@@ -199,7 +201,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       notifyStockLimit,
       clearCart,
     };
-  }, [items, products]);
+  }, [items, products, t]);
 
   return (
     <CartContext.Provider value={value}>

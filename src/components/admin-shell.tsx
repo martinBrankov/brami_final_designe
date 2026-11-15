@@ -1,30 +1,27 @@
+import { useTranslations } from "next-intl";
 import type React from "react";
 import Image from "next/image";
-import Link from "next/link";
 
-import logo from "@/assets/images/logo.png";
+import { Link } from "@/i18n/navigation";
+
+import logo from "@/assets/images/brami-logo.png";
 import type { AdminSession } from "@/lib/admin-auth";
 
-const ROLE_LABELS: Record<string, string> = {
-  user: "Потребител",
-  merchant: "Търговец",
-  admin: "Админ",
-};
+const ROLES = new Set(["user", "merchant", "admin"]);
 
-type NavItem = { href: string; label: string; adminOnly?: boolean };
-
-const navItems: NavItem[] = [
-  { href: "/admin-panel/products", label: "Продукти" },
-  { href: "/admin-panel/users", label: "Потребители" },
-  { href: "/admin-panel/orders", label: "Поръчки" },
-  { href: "/admin-panel/merchants", label: "Търговци", adminOnly: true },
-  { href: "/admin-panel/promo-codes", label: "Промо кодове", adminOnly: true },
-  { href: "/admin-panel/stats", label: "Статистики" },
-  { href: "/admin-panel/blog", label: "Блог" },
-  { href: "/admin-panel/faq", label: "Въпроси и отговори" },
-  { href: "/admin-panel/ai", label: "AI агенти", adminOnly: true },
-  { href: "/admin-panel/agent-chat", label: "AI Agent Chat", adminOnly: true },
-];
+// `key` is the label in messages (AdminShell.nav.<key>).
+const navItems = [
+  { href: "/admin-panel/products", key: "products", adminOnly: false },
+  { href: "/admin-panel/users", key: "users", adminOnly: false },
+  { href: "/admin-panel/orders", key: "orders", adminOnly: false },
+  { href: "/admin-panel/merchants", key: "merchants", adminOnly: true },
+  { href: "/admin-panel/promo-codes", key: "promoCodes", adminOnly: true },
+  { href: "/admin-panel/stats", key: "stats", adminOnly: false },
+  { href: "/admin-panel/blog", key: "blog", adminOnly: false },
+  { href: "/admin-panel/faq", key: "faq", adminOnly: false },
+  { href: "/admin-panel/ai", key: "ai", adminOnly: true },
+  { href: "/admin-panel/agent-chat", key: "agentChat", adminOnly: true },
+] as const;
 
 export function AdminShell({
   session,
@@ -39,6 +36,7 @@ export function AdminShell({
   description: string;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("AdminShell");
   return (
     <main className="flex min-h-screen flex-col bg-[linear-gradient(180deg,#f4efe5_0%,#eef2f4_52%,#ffffff_100%)] text-[#1d2733] lg:flex-row" style={{ userSelect: "text", WebkitUserSelect: "text" } as React.CSSProperties}>
         <aside className="shrink-0 border-b border-[#d9d4ca] bg-[#1d2733] px-6 py-6 text-white lg:flex lg:min-h-screen lg:w-[280px] lg:flex-col lg:border-b-0 lg:border-r lg:px-7">
@@ -53,7 +51,7 @@ export function AdminShell({
                 </div>
                 <div>
                   <p className="text-sm font-semibold">{session.username}</p>
-                  <p className="text-xs text-white/60">{ROLE_LABELS[session.role] ?? session.role}</p>
+                  <p className="text-xs text-white/60">{ROLES.has(session.role) ? t(`roles.${session.role}`) : session.role}</p>
                 </div>
               </div>
               <form action="/api/admin/logout" method="post">
@@ -61,7 +59,7 @@ export function AdminShell({
                   type="submit"
                   className="inline-flex h-9 items-center justify-center rounded-full border border-white/20 px-4 text-sm font-medium text-white transition hover:bg-white/10"
                 >
-                  Изход
+                  {t("izhod")}
                 </button>
               </form>
             </div>
@@ -85,7 +83,7 @@ export function AdminShell({
                         : "bg-white/5 text-white/82 hover:bg-white/12 hover:text-white"
                     }`}
                   >
-                    {item.label}
+                    {t(`nav.${item.key}`)}
                   </Link>
                 );
               })}
@@ -99,12 +97,12 @@ export function AdminShell({
                 : "bg-white/5 text-white/82 hover:bg-white/12 hover:text-white"
             }`}
           >
-            Маркетинг имейли
+            {t("marketingImeyli")}
           </Link>
 
           <div className="mt-auto hidden border-t border-white/10 pt-6 lg:block">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/50">Технически съпорт</p>
-            <p className="mt-1 text-sm font-medium text-white/80">Мартин Бранков</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/50">{t("tehnicheskiSaport")}</p>
+            <p className="mt-1 text-sm font-medium text-white/80">{t("martinBrankov")}</p>
             <p className="mt-0.5 text-sm text-white/60">0898 85 65 45</p>
           </div>
         </aside>
