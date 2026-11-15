@@ -73,9 +73,9 @@
     "deleteComment": "Delete comment"
   },
   "ProductsPage": {
-    "metaTitle": "Natural cosmetics – all products",
-    "metaDescription": "Browse Brami's full range of natural Bulgarian cosmetics – creams, serums, shampoos and shower gels with saffron for face, body and hair, with fast delivery.",
-    "ogDescription": "Natural cosmetics for face, body and hair – discover Brami's full range of clean formulas and gentle care.",
+    "metaTitle": "Saffron and natural cosmetics – all products",
+    "metaDescription": "Browse all Brami products – saffron cosmetics and natural Bulgarian cosmetics: creams, serums, shampoos and shower gels for face, body and hair.",
+    "ogDescription": "Saffron cosmetics and natural cosmetics for face, body and hair – discover Brami's full range.",
     "title": "Browse our products",
     "description": "Formulas made for natural care and balance.",
     "resultsFor": "Results for: “{query}”",
@@ -111,7 +111,7 @@
     "moreCollections": "Explore more",
     "face": {
       "title": "Natural face care",
-      "metaTitle": "Natural face care – creams, serums and masks",
+      "metaTitle": "Saffron face care – natural creams and serums",
       "metaDescription": "Natural saffron face creams, vitamin C serums, masks, micellar water and sunscreen from Bulgarian brands. Order online with delivery across Bulgaria.",
       "lead": "Creams, serums, masks and cleansers for the face from Bulgarian brands.",
       "body": [
@@ -184,7 +184,7 @@
     "saffron": {
       "title": "Saffron cosmetics",
       "metaTitle": "Saffron cosmetics – Bulgarian saffron (Crocus sativus)",
-      "metaDescription": "Natural cosmetics with Bulgarian saffron: shampoo, conditioner, creams, shower gels, soap, saffron water and serum. Created in Bulgaria by Brami. Order online.",
+      "metaDescription": "Cosmetics with Bulgarian saffron: natural shampoo, conditioner, creams, shower gels, soap, saffron water and serum. Created in Bulgaria by Brami. Order online.",
       "lead": "Shampoos, creams, shower gels and face care with saffron grown in Bulgaria.",
       "body": [
         "Saffron (Crocus sativus) is a flower whose stigmas give one of the most valuable spices in the world. In cosmetics it is valued for its antioxidant properties.",
@@ -208,7 +208,7 @@
     },
     "bulgarian": {
       "title": "Bulgarian natural cosmetics",
-      "metaTitle": "Bulgarian natural cosmetics – Saffron Adela Sunny, Voditsa, Shafpol",
+      "metaTitle": "Bulgarian natural cosmetics and saffron cosmetics",
       "metaDescription": "Natural cosmetics from Bulgarian brands: Saffron Adela Sunny with Bulgarian saffron, Voditsa and Shafpol Beauty. Face, body and hair care delivered across Bulgaria.",
       "lead": "Natural face, body and hair care from Bulgarian brands.",
       "body": [

@@ -9,6 +9,7 @@ import {
   pageSectionClassName,
   sectionActionClassName,
 } from "@/components/section-intro";
+import { SeeAlsoLinks, type SeeAlsoPage } from "@/components/see-also-links";
 import { Link } from "@/i18n/navigation";
 import { isAppLocale } from "@/i18n/routing";
 import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates } from "@/lib/seo";
@@ -22,6 +23,12 @@ const LEGAL_PATHS = {
   terms: "/terms",
   privacy: "/privacy-policy",
 } as const satisfies Record<LegalPageKey, string>;
+
+const LEGAL_SEE_ALSO = {
+  deliveryReturns: ["cancellationForm", "terms", "faq", "contact"],
+  terms: ["deliveryReturns", "cancellationForm", "privacyPolicy", "contact"],
+  privacy: ["terms", "deliveryReturns", "contact"],
+} as const satisfies Record<LegalPageKey, readonly SeeAlsoPage[]>;
 
 type LegalSection = { title: string; paragraphs: string[] };
 
@@ -117,6 +124,8 @@ export async function LegalPage({
           ))}
         </div>
       </section>
+
+      <SeeAlsoLinks locale={locale} pages={LEGAL_SEE_ALSO[pageKey]} />
     </main>
   );
 }

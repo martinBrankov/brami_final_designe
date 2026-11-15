@@ -5,7 +5,10 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import addelaSunny from "@/assets/images/about/saffron-adela-sunny-kozmetika-s-shafran.jpg";
 import garden from "@/assets/images/about/shafranova-gradina-v-balgariya.jpg";
 import saffron from "@/assets/images/about/balgarski-shafran-crocus-sativus.jpg";
+import { sectionActionClassName, sectionPrimaryButtonClassName } from "@/components/section-intro";
+import { Link } from "@/i18n/navigation";
 import { isAppLocale } from "@/i18n/routing";
+import { COLLECTION_PATHS } from "@/lib/collections";
 import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates, jsonLdScript } from "@/lib/seo";
 import { SITE_URL } from "@/lib/site-url";
 
@@ -179,6 +182,29 @@ export default async function AboutPage({ params }: AboutPageProps) {
               alt={t("productsAlt")}
               className="h-auto w-full object-cover"
             />
+          </div>
+        </div>
+      </section>
+
+      <section className="w-full border-t border-[#d8d0de] bg-[#fbf8ff]">
+        <div className="mx-auto max-w-4xl px-6 py-14 sm:px-10 lg:px-14">
+          <h2 className="font-serif text-3xl leading-tight text-[#432855] sm:text-4xl">
+            {t("exploreTitle")}
+          </h2>
+          <p className="mt-4 text-base leading-8 text-[#5f4b73]">{t("exploreText")}</p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href={COLLECTION_PATHS.saffron} className={sectionPrimaryButtonClassName}>
+              {t("exploreSaffron")}
+            </Link>
+            <Link href={COLLECTION_PATHS.bulgarian} className={sectionActionClassName}>
+              {t("exploreBulgarian")}
+            </Link>
+            <Link href="/products" className={sectionActionClassName}>
+              {t("exploreAll")}
+            </Link>
+            <Link href="/beauty-care" className={sectionActionClassName}>
+              {t("exploreBlog")}
+            </Link>
           </div>
         </div>
       </section>

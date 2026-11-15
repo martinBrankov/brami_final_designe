@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Fragment, type ReactNode } from "react";
 
 import { Link } from "@/i18n/navigation";
+import { COLLECTION_PAGES, SeeAlsoLinks } from "@/components/see-also-links";
 import { isAppLocale, type AppLocale } from "@/i18n/routing";
 import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates } from "@/lib/seo";
 
@@ -393,6 +394,8 @@ export default async function BeautyCarePage({ params }: BeautyCarePageProps) {
           </div>
         </section>
       )}
+
+      <SeeAlsoLinks locale={locale} pages={[...COLLECTION_PAGES, "faq"]} />
 
       <div>
         <ArticleSubscriptionForm />

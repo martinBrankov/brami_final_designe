@@ -56,6 +56,15 @@ export function buildAlternates(
   return { canonical: languages[locale] ?? languages[defaultLocale], languages };
 }
 
+/** Shortens text to `maxLength` without cutting a word in half; adds "…" when shortened. */
+export function truncateAtWord(text: string, maxLength: number): string {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= maxLength) return clean;
+  const cut = clean.slice(0, maxLength);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > maxLength / 2 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:–—-]+$/, "")}…`;
+}
+
 export function jsonLdScript(data: unknown): { __html: string } {
   // "<" is escaped so user-provided text can never close the script tag.
   return { __html: JSON.stringify(data).replace(/</g, "\\u003c") };

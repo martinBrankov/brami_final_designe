@@ -4,7 +4,8 @@
 
 import type { Product } from "@/data/products";
 
-export const COLLECTION_KEYS = ["face", "hair", "body", "saffron", "bulgarian"] as const;
+// Order = SEO priority: saffron cosmetics first, natural cosmetics second.
+export const COLLECTION_KEYS = ["saffron", "bulgarian", "face", "hair", "body"] as const;
 export type CollectionKey = (typeof COLLECTION_KEYS)[number];
 
 export const COLLECTION_PATHS = {

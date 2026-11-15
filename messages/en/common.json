@@ -1,13 +1,13 @@
 {
   "Metadata": {
-    "defaultTitle": "Brami – natural Bulgarian saffron cosmetics",
-    "description": "Brami is a Bulgarian online shop for natural cosmetics made with saffron grown in Bulgaria. Shampoos, creams, shower gels and face, body and hair care, delivered across Bulgaria.",
-    "ogDescription": "Natural Bulgarian saffron cosmetics for face, body and hair – with fast delivery across Bulgaria.",
+    "defaultTitle": "Brami – saffron cosmetics and natural Bulgarian cosmetics",
+    "description": "Brami is a Bulgarian online shop for saffron cosmetics, made with saffron grown in Bulgaria, and natural cosmetics for face, body and hair. Shampoos, creams and shower gels, delivered across Bulgaria.",
+    "ogDescription": "Saffron cosmetics and natural Bulgarian cosmetics for face, body and hair – with fast delivery across Bulgaria.",
     "organizationDescription": "Brami (Brami Trade) is a Bulgarian company that grows saffron (Crocus sativus) in Bulgaria and makes the natural cosmetics line Saffron Adela Sunny – shampoos, conditioners, shower gels, creams and soaps with saffron. Its online shop brami.shop also offers selected Bulgarian natural cosmetics by Voditsa and Shafpol Beauty.",
     "saffronLineDescription": "Natural cosmetics with Bulgarian saffron (Crocus sativus, ISO 3632) – the first Bulgarian line of hair and body wash products with saffron.",
     "founderName": "Rumyana Brankova",
     "countryName": "Bulgaria",
-    "organizationKnowsAbout": "natural cosmetics|saffron|Crocus sativus|Bulgarian cosmetics|hair care|skin care",
+    "organizationKnowsAbout": "saffron cosmetics|saffron|Crocus sativus|natural cosmetics|Bulgarian cosmetics|hair care|skin care",
     "streetAddress": "13 \"Demokratsiya\" St., Krivina district",
     "city": "Sofia"
   },
@@ -49,7 +49,7 @@
     }
   },
   "Footer": {
-    "title": "Natural care for face, body and hair.",
+    "title": "Saffron cosmetics and natural care for face, body and hair.",
     "text": "Carefully selected formulas, gentle textures and care that fits into your everyday life.",
     "useful": "Useful",
     "navigation": "Navigation",
@@ -69,8 +69,14 @@
       "cancellationForm": "Withdrawal form",
       "terms": "Terms and conditions",
       "partners": "Partners",
-      "privacyPolicy": "Privacy policy"
-    }
+      "privacyPolicy": "Privacy policy",
+      "faceCare": "Face care",
+      "hairCare": "Hair care",
+      "bodyCare": "Body care",
+      "bulgarianCosmetics": "Bulgarian natural cosmetics"
+    },
+    "categories": "Categories",
+    "seeAlso": "See also"
   },
   "RequestErrors": {
     "requestFailed": "The request failed (status {status}).",

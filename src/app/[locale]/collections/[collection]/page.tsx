@@ -3,16 +3,19 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { ProductCard } from "@/components/product-card";
+import { RelatedReadingSection } from "@/components/related-reading-section";
 import { SectionIntro, pageSectionClassName } from "@/components/section-intro";
 import { getProductBadgeLabel, getProductHref, getProducts, toClientProduct } from "@/data/products";
 import { Link } from "@/i18n/navigation";
 import { isAppLocale } from "@/i18n/routing";
+import { getBlogPosts } from "@/lib/blog";
 import {
   COLLECTION_KEYS,
   COLLECTION_PATHS,
   filterCollectionProducts,
   isCollectionKey,
 } from "@/lib/collections";
+import { pickRelatedPosts } from "@/lib/related-content";
 import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates, jsonLdScript, localizedUrl } from "@/lib/seo";
 
 type CollectionPageProps = {
@@ -46,14 +49,23 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
   if (!isAppLocale(locale) || !isCollectionKey(collection)) notFound();
   setRequestLocale(locale);
 
-  const [t, tAll, tNav, tProduct, allProducts] = await Promise.all([
+  const [t, tAll, tNav, tProduct, allProducts, posts] = await Promise.all([
     getTranslations({ locale, namespace: `Collections.${collection}` }),
     getTranslations({ locale, namespace: "Collections" }),
     getTranslations({ locale, namespace: "Nav" }),
     getTranslations({ locale, namespace: "Product" }),
     getProducts(locale),
+    getBlogPosts(locale),
   ]);
   const products = filterCollectionProducts(collection, allProducts);
+  // Category pages get the articles about that category; the saffron and
+  // Bulgarian pages cover every category, so they get the newest ones.
+  const relatedPosts = pickRelatedPosts(
+    collection === "face" || collection === "hair" || collection === "body" ? [collection] : [],
+    posts,
+    locale,
+    { fill: true },
+  );
   const body = t.raw("body") as string[];
   const faq = t.raw("faq") as FaqItem[];
   const pageUrl = localizedUrl(locale, COLLECTION_PATHS[collection]);
@@ -176,6 +188,12 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
           </nav>
         </div>
       </section>
+
+      <RelatedReadingSection
+        locale={locale}
+        posts={relatedPosts}
+        pages={["beautyCare", "faq", "deliveryReturns", "about"]}
+      />
     </main>
   );
 }

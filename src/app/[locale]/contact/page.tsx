@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import { SeeAlsoLinks } from "@/components/see-also-links";
 import { Link } from "@/i18n/navigation";
 import { isAppLocale } from "@/i18n/routing";
 import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates, jsonLdScript } from "@/lib/seo";
@@ -263,6 +264,10 @@ export default async function ContactPage({ params }: ContactPageProps) {
           </Link>
         </p>
       </section>
+
+      {isAppLocale(locale) ? (
+        <SeeAlsoLinks locale={locale} pages={["faq", "deliveryReturns", "about", "partners"]} />
+      ) : null}
     </main>
   );
 }

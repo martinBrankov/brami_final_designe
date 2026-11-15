@@ -2,11 +2,21 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import { RelatedProductsSection } from "@/components/related-products-section";
+import { getProducts } from "@/data/products";
 import { Link, permanentRedirect } from "@/i18n/navigation";
 import { isAppLocale, locales, type AppLocale } from "@/i18n/routing";
 import { findFaqEntryBySlug, type LocalizedFaqEntry } from "@/lib/faq";
 import { looksLikeHtml, toParagraphs, toPlainText } from "@/lib/faq-text";
-import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates, jsonLdScript, localizedUrl } from "@/lib/seo";
+import { pickRelatedCollections, pickRelatedProducts } from "@/lib/related-content";
+import {
+  DEFAULT_OG_IMAGES,
+  OG_LOCALES,
+  buildAlternates,
+  jsonLdScript,
+  localizedUrl,
+  truncateAtWord,
+} from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -36,11 +46,14 @@ export async function generateMetadata({ params }: FaqAnswerPageProps): Promise<
 
   if (!entry) return {};
 
-  const description = toPlainText(entry.answer ?? "").slice(0, 200) || undefined;
+  const description = truncateAtWord(toPlainText(entry.answer ?? ""), 155) || undefined;
   const alternates = faqAlternates(locale, entry);
+  // Long questions are shortened and lose the " | Brami" suffix, so the title
+  // fits in a search result. The <h1> and og:title keep the full question.
+  const title = truncateAtWord(entry.question, 60);
 
   return {
-    title: entry.question,
+    title: title.length <= 52 ? title : { absolute: title },
     description,
     alternates,
     ...(!entry.availableLocales.includes(locale) ? { robots: { index: false, follow: true } } : {}),
@@ -95,10 +108,12 @@ export default async function FaqAnswerPage({ params }: FaqAnswerPageProps) {
     notFound();
   }
 
-  const [t, tNav] = await Promise.all([
+  const [t, tNav, products] = await Promise.all([
     getTranslations({ locale, namespace: "Faq" }),
     getTranslations({ locale, namespace: "Nav" }),
+    getProducts(locale),
   ]);
+  const faqText = `${entry.question} ${toPlainText(entry.answer ?? "")}`;
   const pageUrl = localizedUrl(locale, faqHref(entry.slug));
   const jsonLd = [
     {
@@ -195,6 +210,13 @@ export default async function FaqAnswerPage({ params }: FaqAnswerPageProps) {
           </div>
         </div>
       </section>
+
+      <RelatedProductsSection
+        locale={locale}
+        title={t("relatedProducts")}
+        products={pickRelatedProducts(faqText, products)}
+        collections={pickRelatedCollections(faqText)}
+      />
     </main>
   );
 }

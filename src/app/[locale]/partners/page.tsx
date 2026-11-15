@@ -7,6 +7,7 @@ import {
   pageSectionClassName,
 } from "@/components/section-intro";
 
+import { SeeAlsoLinks } from "@/components/see-also-links";
 import { isAppLocale } from "@/i18n/routing";
 import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates } from "@/lib/seo";
 
@@ -143,6 +144,10 @@ export default async function PartnersPage({ params }: PartnersPageProps) {
           ))}
         </div>
       </section>
+
+      {isAppLocale(locale) ? (
+        <SeeAlsoLinks locale={locale} pages={["about", "products", "bulgarianCosmetics", "contact"]} />
+      ) : null}
     </main>
   );
 }

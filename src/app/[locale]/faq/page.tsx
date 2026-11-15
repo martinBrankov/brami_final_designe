@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { FaqAskForm } from "@/components/faq-ask-form";
 import { FaqList, type FaqListItem } from "@/components/faq-list";
+import { SeeAlsoLinks } from "@/components/see-also-links";
 import { isAppLocale } from "@/i18n/routing";
 import { getPublishedFaqEntries } from "@/lib/faq";
 import { toPlainText } from "@/lib/faq-text";
@@ -128,6 +129,11 @@ export default async function FaqPage({ params }: FaqPageProps) {
           </div>
         </div>
       </section>
+
+      <SeeAlsoLinks
+        locale={locale}
+        pages={["deliveryReturns", "cancellationForm", "contact", "products", "beautyCare"]}
+      />
     </main>
   );
 }

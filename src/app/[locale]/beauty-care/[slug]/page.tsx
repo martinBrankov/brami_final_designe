@@ -5,8 +5,11 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link, permanentRedirect } from "@/i18n/navigation";
 import { isAppLocale, locales, type AppLocale } from "@/i18n/routing";
-import { findBlogPostBySlug } from "@/lib/blog";
+import { RelatedProductsSection } from "@/components/related-products-section";
+import { getProducts, stripHtml } from "@/data/products";
+import { findBlogPostBySlug, getBlogPosts } from "@/lib/blog";
 import type { BlogBlock, BlogPost } from "@/lib/blog";
+import { pickRelatedCollections, pickRelatedProducts } from "@/lib/related-content";
 import { DEFAULT_OG_IMAGES, OG_LOCALES, absoluteUrl, buildAlternates, jsonLdScript, localizedUrl } from "@/lib/seo";
 import { SITE_URL } from "@/lib/site-url";
 
@@ -180,10 +183,18 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     notFound();
   }
 
-  const [t, tNav] = await Promise.all([
+  const [t, tNav, products, allPosts] = await Promise.all([
     getTranslations({ locale, namespace: "BeautyCare" }),
     getTranslations({ locale, namespace: "Nav" }),
+    getProducts(locale),
+    getBlogPosts(locale),
   ]);
+  const articleText = stripHtml(
+    [post.title, post.excerpt ?? "", ...post.blocks.map((block) => extractText(block.content))].join(" "),
+  );
+  const morePosts = allPosts
+    .filter((other) => other.id !== post.id && other.availableLocales.includes(locale))
+    .slice(0, 3);
   const articleUrl = localizedUrl(locale, articleHref(post.slug));
   const articleJsonLd = [
     {
@@ -298,6 +309,40 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           </section>
         ) : null}
       </article>
+
+      <RelatedProductsSection
+        locale={locale}
+        title={t("relatedProducts")}
+        products={pickRelatedProducts(articleText, products)}
+        collections={pickRelatedCollections(articleText)}
+      />
+
+      {morePosts.length > 0 ? (
+        <section className="border-b border-[#eadde4]">
+          <div className="mx-auto max-w-5xl px-6 py-12 sm:px-10 lg:px-14 lg:py-14">
+            <h2 className="font-serif text-2xl leading-snug text-[#432855] sm:text-3xl">
+              {t("moreArticles")}
+            </h2>
+            <ul className="mt-6 grid gap-4 sm:grid-cols-3">
+              {morePosts.map((other) => (
+                <li key={other.id}>
+                  <Link
+                    href={articleHref(other.slug)}
+                    className="block h-full rounded-[20px] border border-[#eadde4] bg-white px-5 py-5 transition hover:bg-[#faf7fc]"
+                  >
+                    <span className="font-serif text-lg leading-snug text-[#432855]">{other.title}</span>
+                    {other.excerpt ? (
+                      <span className="mt-2 line-clamp-3 block text-sm leading-6 text-[#6b587f]">
+                        {other.excerpt}
+                      </span>
+                    ) : null}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : null}
     </main>
   );
 }

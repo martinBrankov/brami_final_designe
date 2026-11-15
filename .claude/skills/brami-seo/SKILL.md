@@ -8,6 +8,7 @@ description: Техническо SEO и оптимизация за AI търс
 Подробният план и решенията са в `docs/seo-geo-plan.md`; последният одит — `docs/seo-review-2026-11-15.md`. За текстовете на продукти/статии виж skill `brami-seo-content`.
 
 ## Принципи
+- **Приоритет на фразите: първо „козметика с шафран“, после „натурална козметика“.** Важи навсякъде, където двете се срещат: заглавие, H1, meta описание, alt текст, schema, `llms.txt` и редът на връзките. „Козметика с шафран“ стои първа; „натурална (българска) козметика“ е втората фраза, не водещата. На английски: „saffron cosmetics“, после „natural cosmetics“.
 - **Нито едно SEO подобрение не трябва да вреди на AI търсенето и обратно.** ~80% е общо: уникално съдържание, пълна schema, HTML от сървъра, бърз сайт.
 - **Само HTML-ът от сървъра се брои.** Повечето AI ботове не изпълняват JS. Съдържанието, което трябва да се цитира (описание, таблица, FAQ, отзиви), се рендерира на сървъра. Табовете на продукта рендерират **и двата** панела; неактивният е с `hidden` (`product-detail-tabs.tsx`).
 - ChatGPT и Copilot търсят през **Bing** → Bing Webmaster Tools + IndexNow са толкова важни, колкото Google.
@@ -61,6 +62,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 Правила: препращай към организацията с `@id`, вместо да я дублираш. **Без `priceValidUntil`**, освен ако има реална дата на промоцията. Цената е `toFixed(2)` в EUR.
 
+## Вътрешни връзки и икони
+- Статиите и отделните FAQ страници завършват с `RelatedProductsSection` (`src/components/related-products-section.tsx`): продукти и колекции, избрани по текста от `pickRelatedProducts` / `pickRelatedCollections` (`src/lib/related-content.ts`). Нов вид продукт или категория → допълни `CATEGORY_PATTERNS`.
+- Всяка колекция има връзка от началната страница (`HomeCollections`) и от футъра (`collectionLinks` в `bottom-bar.tsx`). Нова колекция → добави я и на двете места.
+- Икони: `src/app/favicon.ico`, `icon.png`, `apple-icon.png` (цветето от логото). Next.js сам добавя `<link rel="icon">`.
+- Заглавие и описание на FAQ страница се съкращават с `truncateAtWord()` (60 / 155 знака); `<h1>` и `og:title` пазят целия въпрос.
+- Hero снимките на началната имат `sizes`, за да не се тегли скритата в пълен размер. Не махай `sizes`.
+
+- Ред на колекциите навсякъде (`COLLECTION_KEYS`, `COLLECTION_PAGES`, футър, начална): **шафран → българска натурална → лице → коса → тяло**. В свързаните продукти линията Saffron Adela Sunny излиза преди другите марки при близко съвпадение (`rankProducts`).
+- Блокът „Виж още“ (`SeeAlsoLinks` / `SeeAlsoPills` в `see-also-links.tsx`) стои в края на списъчните и служебните страници; продуктът и колекцията ползват `RelatedReadingSection` (статии по категорията, въпроси за продукта, колекции). Нова публична страница → добави я в `SEE_ALSO_PAGES` и сложи блок с подходящите връзки.
+
 ## Sitemap, robots, llms.txt
 - `src/app/sitemap.ts` (`force-dynamic`): всеки адрес на всеки готов език с `alternates.languages`, `lastModified` от `updated_at`, снимки за продуктите. **Нова публична страница → добави я тук.**
 - `public/robots.txt`: разрешени са всички търсачки и AI ботове (търсене **и** обучение: GPTBot, ClaudeBot, Google-Extended, CCBot, Meta-ExternalAgent…). Блокирани са само `/api/`, админът и отписването (лични токени). **Не блокирай страници с noindex** — тогава търсачката не вижда noindex. Ботовете са изброени в две групи с еднакви правила — при промяна обнови и двете.
@@ -103,6 +114,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 - [ ] Папка под `src/app/[locale]/` + локализиран адрес в `routing.ts` (bg на латиница, en на английски)
 - [ ] `setRequestLocale`, `generateMetadata` с `buildAlternates` и `openGraph.images`
 - [ ] Един `<h1>`; съдържанието е в HTML от сървъра
+- [ ] Фразите са в реда „козметика с шафран“ → „натурална козметика“; има връзки към и от свързаните страници
 - [ ] JSON-LD, ако има смисъл (FAQPage, BreadcrumbList…)
 - [ ] Добавена в `sitemap.ts` (и в `llms.txt`, ако е ключова)
 - [ ] Не е блокирана в `robots.txt`

@@ -8,6 +8,7 @@ import { FavoriteToggleButton } from "@/components/favorite-toggle-button";
 import { InfoStrip } from "@/components/info-strip";
 import { ProductCarouselSection } from "@/components/product-carousel-section";
 import { ProductDetailTabs } from "@/components/product-detail-tabs";
+import { RelatedReadingSection } from "@/components/related-reading-section";
 import { RecentlyViewedTracker } from "@/components/recently-viewed-tracker";
 import {
   findProductByUrlKey,
@@ -25,16 +26,20 @@ import {
   trimToLength,
   type Product,
 } from "@/data/products";
+import type { SeeAlsoPage } from "@/components/see-also-links";
 import { Link, permanentRedirect } from "@/i18n/navigation";
 import { isAppLocale, locales, type AppLocale } from "@/i18n/routing";
-import { CATEGORY_COLLECTIONS } from "@/lib/collections";
+import { getBlogPosts } from "@/lib/blog";
+import { CATEGORY_COLLECTIONS, filterCollectionProducts } from "@/lib/collections";
 import { getDisplayName } from "@/lib/display-name";
+import { getPublishedFaqEntries } from "@/lib/faq";
 import { isValidGtin, normalizeGtin } from "@/lib/gtin";
 import { getProductReviews } from "@/lib/product-reviews";
+import { pickRelatedFaq, pickRelatedPosts } from "@/lib/related-content";
 import { OG_LOCALES, absoluteUrl, buildAlternates, jsonLdScript, localizedUrl } from "@/lib/seo";
 import { SITE_URL } from "@/lib/site-url";
 import { getUserProfile, getUserSession } from "@/lib/user-auth";
-import homeScreenImgMobile from "@/assets/images/brami-naturalna-balgarska-kozmetika-s-shafran-mobile.png";
+import homeScreenImgMobile from "@/assets/images/brami-naturalna-balgarska-kozmetika-s-shafran-mobile.jpg";
 
 export const dynamic = "force-dynamic";
 
@@ -127,6 +132,12 @@ function imageUrl(image: unknown): string {
     ? absoluteUrl(String((image as { src: string }).src))
     : absoluteUrl(homeScreenImgMobile.src);
 }
+
+const CATEGORY_PAGES = {
+  face: "faceCare",
+  hair: "hairCare",
+  body: "bodyCare",
+} as const satisfies Record<Product["category"][number], SeeAlsoPage>;
 
 function getPricing(product: Product) {
   const originalPriceEuro = parseEuroPrice(product.price);
@@ -248,10 +259,29 @@ export default async function ProductDetailPage({
   );
 
   // User-submitted reviews (stored in DB) merged with the seed testimonials.
-  const [session, userReviews] = await Promise.all([
+  const [session, userReviews, blogPosts, faqEntries] = await Promise.all([
     getUserSession(),
     getProductReviews(product.id),
+    getBlogPosts(locale),
+    getPublishedFaqEntries(locale),
   ]);
+
+  // Internal links: every collection the product is in, the articles about
+  // its category and the published questions that mention it.
+  const inSaffronCollection = filterCollectionProducts("saffron", [product]).length > 0;
+  const collectionPages: SeeAlsoPage[] = [
+    ...(inSaffronCollection ? (["saffronCosmetics"] as const) : []),
+    ...product.category.map((c) => CATEGORY_PAGES[c]),
+    ...(filterCollectionProducts("bulgarian", [product]).length
+      ? (["bulgarianCosmetics"] as const)
+      : []),
+  ];
+  // The articles are about saffron care, so other saffron articles fill the
+  // list only for the saffron products.
+  const relatedPosts = pickRelatedPosts(product.category, blogPosts, locale, {
+    fill: inSaffronCollection && product.category.length > 0,
+  });
+  const relatedFaq = pickRelatedFaq(product, faqEntries, allProducts, locale);
   const currentUserReview = session
     ? userReviews.find((review) => review.userId === session.id) ?? null
     : null;
@@ -654,6 +684,13 @@ export default async function ProductDetailPage({
       <ProductCarouselSection
         title={t("relatedProducts")}
         products={relatedProducts.map(toClientProduct)}
+      />
+
+      <RelatedReadingSection
+        locale={locale}
+        posts={relatedPosts}
+        faqEntries={relatedFaq}
+        pages={[...collectionPages, "deliveryReturns", "faq"]}
       />
 
       <InfoStrip className="border-b-0 bg-transparent" />

@@ -46,11 +46,17 @@
     "brandParagraphs": [
       "For us, a product's beauty is not only in how it looks. It is also in how it feels on the skin, in the purity of the formula and in the trust it builds with every use.",
       "We are building Brami as a brand with a clear character: soft aesthetics, carefully chosen ingredients and products that feel high-quality from the very first touch."
-    ]
+    ],
+    "exploreTitle": "Explore Brami cosmetics",
+    "exploreText": "The saffron from our gardens is at the heart of the Saffron Adela Sunny line – shampoo, conditioner, shower gels, creams and soap, created and made in Bulgaria.",
+    "exploreSaffron": "Saffron cosmetics",
+    "exploreBulgarian": "Bulgarian natural cosmetics",
+    "exploreAll": "All products",
+    "exploreBlog": "Articles on saffron and skin care"
   },
   "BeautyCare": {
-    "metaTitle": "Beauty & care – natural cosmetics blog",
-    "metaDescription": "Articles about natural cosmetics, saffron, active ingredients and everyday skin and hair care rituals from Brami.",
+    "metaTitle": "Beauty & care – saffron cosmetics blog",
+    "metaDescription": "Articles about saffron cosmetics, natural cosmetics, active ingredients and everyday skin and hair care rituals from Brami.",
     "ogDescription": "Discover a selection of articles about saffron, natural cosmetics and everyday beauty rituals.",
     "eyebrow": "Online blog",
     "title": "Beauty & care",
@@ -61,7 +67,10 @@
     "featured": "Featured this week",
     "readTime": "{time} read",
     "read": "Read →",
-    "breadcrumb": "Breadcrumb"
+    "breadcrumb": "Breadcrumb",
+    "relatedProducts": "Products on this topic",
+    "moreArticles": "More articles",
+    "relatedArticles": "Related articles"
   },
   "Subscription": {
     "eyebrow": "New articles",
@@ -98,7 +107,9 @@
     "answeredOn": "Answered on {date}",
     "answerFromTeam": "Answer from the Brami team",
     "allQuestions": "← All questions",
-    "contactUs": "Contact us"
+    "contactUs": "Contact us",
+    "relatedProducts": "Products related to this question",
+    "relatedQuestions": "Related questions"
   },
   "FaqAskForm": {
     "saveError": "We couldn't save your question. Please try again.",

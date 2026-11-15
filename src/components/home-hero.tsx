@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 
 import homeScreenImgDesktop from "@/assets/images/brami-naturalna-balgarska-kozmetika-s-shafran-desktop.jpg";
-import homeScreenImgMobile from "@/assets/images/brami-naturalna-balgarska-kozmetika-s-shafran-mobile.png";
+import homeScreenImgMobile from "@/assets/images/brami-naturalna-balgarska-kozmetika-s-shafran-mobile.jpg";
 import {
   SectionIntro,
   sectionActionClassName,
@@ -47,12 +47,16 @@ export function HomeHero() {
             src={homeScreenImgMobile}
             alt={t("heroImageAlt")}
             priority
+            // Both hero images are preloaded; `sizes` makes the one hidden at
+            // this width download as a 1px-wide placeholder instead of full size.
+            sizes="(min-width: 1024px) 1px, 100vw"
             className="block w-full h-auto object-contain object-left-bottom lg:hidden"
           />
           <Image
             src={homeScreenImgDesktop}
             alt={t("heroImageAlt")}
             priority
+            sizes="(min-width: 1024px) 50vw, 1px"
             className="absolute inset-0 hidden h-full w-full object-contain object-right-bottom lg:block"
           />
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(243,237,247,0.08)_0%,rgba(243,237,247,0)_30%,rgba(243,237,247,0)_100%)] lg:hidden" />

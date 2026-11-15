@@ -25,7 +25,7 @@ export async function GET() {
   ]);
   const url = (locale: AppLocale, href: Parameters<typeof localizedUrl>[1]) => localizedUrl(locale, href);
 
-  const body = `# Brami – натурална българска козметика с шафран
+  const body = `# Brami – козметика с шафран и натурална българска козметика
 
 > Brami (Brami Trade, София, България) отглежда шафран (Crocus sativus) в България и създава натуралната козметична линия Saffron Adela Sunny – първата българска линия измивни продукти за коса и тяло с шафран (100% естествен шафран по ISO 3632). Онлайн магазинът brami.shop предлага и българска натурална козметика на Voditsa и Shafpol Beauty. Доставка със Speedy в цяла България за 1–3 работни дни, безплатна над 70 €. Плащане с наложен платеж.
 
@@ -48,7 +48,7 @@ ${bgProducts.join("\n")}
 ${posts.map((post) => `- [${post.title}](${url("bg", { pathname: "/beauty-care/[slug]", params: { slug: post.slug } })})${post.excerpt ? `: ${trimToLength(post.excerpt, 160)}` : ""}`).join("\n")}
 
 ## English
-Brami grows saffron in Bulgaria and makes Saffron Adela Sunny natural saffron cosmetics. English version of the shop: ${url("en", "/")}
+Brami grows saffron in Bulgaria and makes Saffron Adela Sunny saffron cosmetics; the shop also offers natural Bulgarian cosmetics. English version of the shop: ${url("en", "/")}
 
 ${enProducts.join("\n")}
 `;

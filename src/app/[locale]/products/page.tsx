@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { permanentRedirect } from "@/i18n/navigation";
+import { COLLECTION_PAGES, SeeAlsoLinks } from "@/components/see-also-links";
 import { isAppLocale } from "@/i18n/routing";
 import { CATEGORY_COLLECTIONS } from "@/lib/collections";
 import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates } from "@/lib/seo";
@@ -53,9 +54,14 @@ export default async function ProductsPage({ params, searchParams }: ProductsPag
   }
 
   return (
-    <ProductsPageContent
-      initialQuery={firstParam(query.q).toLowerCase()}
-      initialFavoritesOnly={firstParam(query.favorites) === "1"}
-    />
+    <>
+      <ProductsPageContent
+        initialQuery={firstParam(query.q).toLowerCase()}
+        initialFavoritesOnly={firstParam(query.favorites) === "1"}
+      />
+      {isAppLocale(locale) ? (
+        <SeeAlsoLinks locale={locale} pages={[...COLLECTION_PAGES, "deliveryReturns", "faq"]} />
+      ) : null}
+    </>
   );
 }

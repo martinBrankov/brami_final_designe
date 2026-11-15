@@ -1,13 +1,15 @@
 {
   "Home": {
     "bestsellers": "Bestselling products",
-    "metaTitle": "Brami – natural Bulgarian saffron cosmetics for face, body and hair",
-    "metaDescription": "Natural cosmetics made with saffron grown in Bulgaria: Saffron Adela Sunny shampoo, conditioner, creams and shower gels, plus Voditsa and Shafpol Beauty. Delivery across Bulgaria.",
-    "ogDescription": "Discover Brami's natural cosmetics – products with Bulgarian saffron for face, body and hair, with clean formulas and gentle care.",
-    "heroTitle": "Natural care with Brami<sup>®</sup> Cosmetics",
+    "metaTitle": "Saffron cosmetics and natural cosmetics | Brami",
+    "metaDescription": "Saffron cosmetics made with saffron grown in Bulgaria: Saffron Adela Sunny shampoo, conditioner, creams and shower gels. Natural face, body and hair care.",
+    "ogDescription": "Discover Brami's saffron cosmetics – natural face, body and hair care with Bulgarian saffron and clean formulas.",
+    "heroTitle": "Saffron cosmetics by Brami<sup>®</sup>",
     "heroDescription": "Care inspired by the power of saffron – from the surface to the cells within, bringing out your natural radiance and confidence.",
     "viewProducts": "View products",
     "learnMore": "LEARN MORE",
-    "heroImageAlt": "Natural cosmetics with Bulgarian saffron by Saffron Adela Sunny"
+    "heroImageAlt": "Saffron Adela Sunny cosmetics with Bulgarian saffron – natural face, body and hair care",
+    "collectionsTitle": "Saffron cosmetics and natural cosmetics by type of care",
+    "collectionsText": "Choose the care you are looking for – cosmetics with Bulgarian saffron and natural cosmetics for face, hair and body from Bulgarian brands."
   }
 }

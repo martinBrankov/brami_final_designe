@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { BestsellersSection } from "@/components/bestsellers-section";
+import { HomeCollections } from "@/components/home-collections";
 import { HomeHero } from "@/components/home-hero";
 import { InfoStrip } from "@/components/info-strip";
 import { getMappedProductId } from "@/data/external-product-map";
@@ -74,6 +75,7 @@ export default async function Home({ params, searchParams }: HomePageProps) {
       <HomeHero />
       <InfoStrip />
       <BestsellersSection />
+      <HomeCollections />
     </main>
   );
 }

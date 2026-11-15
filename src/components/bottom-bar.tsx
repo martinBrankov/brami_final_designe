@@ -73,7 +73,6 @@ function PhoneIcon() {
 
 const shopLinks = [
   { href: "/products", key: "products" },
-  { href: "/collections/saffron", key: "saffronCosmetics" },
   { href: "/about", key: "about" },
   { href: "/beauty-care", key: "beautyCare" },
   { href: "/contact", key: "contact" },
@@ -87,6 +86,14 @@ const helpLinks = [
   { href: "/terms", key: "terms" },
   { href: "/partners", key: "partners" },
   { href: "/privacy-policy", key: "privacyPolicy" },
+] as const;
+
+const collectionLinks = [
+  { href: "/collections/saffron", key: "saffronCosmetics" },
+  { href: "/collections/bulgarian", key: "bulgarianCosmetics" },
+  { href: "/collections/face", key: "faceCare" },
+  { href: "/collections/hair", key: "hairCare" },
+  { href: "/collections/body", key: "bodyCare" },
 ] as const;
 
 const socialLinks = [
@@ -190,6 +197,23 @@ export function BottomBar() {
             </div>
           </div>
         </div>
+
+        <nav aria-label={t("categories")} className="mt-8 border-t border-[#6f4f88] pt-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#d3bddf]">
+            {t("categories")}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+            {collectionLinks.map((link) => (
+              <Link
+                key={link.key}
+                href={link.href}
+                className="text-sm text-white transition hover:text-[#eadcf3]"
+              >
+                {t(`links.${link.key}`)}
+              </Link>
+            ))}
+          </div>
+        </nav>
 
         <div className="mt-8 border-t border-[#6f4f88] pt-5 text-xs text-[#d8c7e4]">
           <p className="mb-3 leading-5 text-[#c9b6d9]">
