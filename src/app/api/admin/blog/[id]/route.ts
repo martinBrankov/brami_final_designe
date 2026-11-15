@@ -1,6 +1,7 @@
 import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 import { getBlogPostUrls, notifyIndexNow } from "@/lib/indexnow";
+import { revalidatePublicContent } from "@/lib/revalidate";
 import { asTranslations, assertUniqueEnglishSlug, toEnglishSlug, withEnglish } from "@/lib/admin-translations";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -142,6 +143,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
     }
   }
 
+  revalidatePublicContent();
   notifyIndexNow(async () => [...urlsBefore, ...(await getBlogPostUrls(id))]);
   return NextResponse.json({ ok: true });
 }
@@ -185,6 +187,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     if (error) return NextResponse.json({ error: await localizeApiError(error.message) }, { status: 500 });
   }
 
+  revalidatePublicContent();
   notifyIndexNow(async () => [...urlsBefore, ...(await getBlogPostUrls(id))]);
   return NextResponse.json({ ok: true });
 }
@@ -201,6 +204,7 @@ export async function DELETE(_req: Request, { params }: RouteContext) {
   const { error } = await supabase.from("blog_posts").delete().eq("id", id);
   if (error) return NextResponse.json({ error: await localizeApiError(error.message) }, { status: 500 });
 
+  revalidatePublicContent();
   notifyIndexNow(() => urlsBefore);
   return NextResponse.json({ ok: true });
 }

@@ -6,7 +6,7 @@ import { RelatedProductsSection } from "@/components/related-products-section";
 import { getProducts } from "@/data/products";
 import { Link, permanentRedirect } from "@/i18n/navigation";
 import { isAppLocale, locales, type AppLocale } from "@/i18n/routing";
-import { findFaqEntryBySlug, type LocalizedFaqEntry } from "@/lib/faq";
+import { findFaqEntryBySlug, getPublishedFaqEntries, type LocalizedFaqEntry } from "@/lib/faq";
 import { looksLikeHtml, toParagraphs, toPlainText } from "@/lib/faq-text";
 import { pickRelatedCollections, pickRelatedProducts } from "@/lib/related-content";
 import {
@@ -18,7 +18,15 @@ import {
   truncateAtWord,
 } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+// Every known page is rendered at build time and served from the cache (ISR).
+// A slug created later is rendered on its first visit.
+export async function generateStaticParams({ params }: { params: { locale: string } }) {
+  const { locale } = params;
+  if (!isAppLocale(locale)) return [];
+  return (await getPublishedFaqEntries(locale))
+    .filter((entry) => entry.availableLocales.includes(locale))
+    .map((entry) => ({ slug: entry.slug }));
+}
 
 type FaqAnswerPageProps = {
   params: Promise<{ locale: string; slug: string }>;

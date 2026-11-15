@@ -7,17 +7,11 @@ import { BestsellersSection } from "@/components/bestsellers-section";
 import { HomeCollections } from "@/components/home-collections";
 import { HomeHero } from "@/components/home-hero";
 import { InfoStrip } from "@/components/info-strip";
-import { getMappedProductId } from "@/data/external-product-map";
-import { permanentRedirect } from "@/i18n/navigation";
-import { isAppLocale, type AppLocale } from "@/i18n/routing";
+import { isAppLocale } from "@/i18n/routing";
 import { OG_LOCALES, absoluteUrl, buildAlternates } from "@/lib/seo";
 
 type HomePageProps = {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{
-    productID?: string | string[];
-    productId?: string | string[];
-  }>;
 };
 
 export async function generateMetadata({ params }: HomePageProps): Promise<Metadata> {
@@ -49,26 +43,9 @@ export async function generateMetadata({ params }: HomePageProps): Promise<Metad
   };
 }
 
-export default async function Home({ params, searchParams }: HomePageProps) {
+export default async function Home({ params }: HomePageProps) {
   const { locale } = await params;
   if (isAppLocale(locale)) setRequestLocale(locale);
-  const resolvedSearchParams = await searchParams;
-  const externalProductId = resolvedSearchParams.productID ?? resolvedSearchParams.productId;
-  const normalizedProductId = Array.isArray(externalProductId)
-    ? externalProductId[0]
-    : externalProductId;
-
-  if (normalizedProductId) {
-    const mappedProductId = getMappedProductId(normalizedProductId);
-
-    if (mappedProductId) {
-      // The product page resolves the numeric id and redirects to the slug URL.
-      permanentRedirect({
-        href: { pathname: "/products/[slug]", params: { slug: String(mappedProductId) } },
-        locale: locale as AppLocale,
-      });
-    }
-  }
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fbf8fd_0%,_#f3edf7_45%,_#efe6f6_100%)]">

@@ -31,17 +31,23 @@ import { Link, permanentRedirect } from "@/i18n/navigation";
 import { isAppLocale, locales, type AppLocale } from "@/i18n/routing";
 import { getBlogPosts } from "@/lib/blog";
 import { CATEGORY_COLLECTIONS, filterCollectionProducts } from "@/lib/collections";
-import { getDisplayName } from "@/lib/display-name";
 import { getPublishedFaqEntries } from "@/lib/faq";
 import { isValidGtin, normalizeGtin } from "@/lib/gtin";
 import { getProductReviews } from "@/lib/product-reviews";
 import { pickRelatedFaq, pickRelatedPosts } from "@/lib/related-content";
 import { OG_LOCALES, absoluteUrl, buildAlternates, jsonLdScript, localizedUrl } from "@/lib/seo";
 import { SITE_URL } from "@/lib/site-url";
-import { getUserProfile, getUserSession } from "@/lib/user-auth";
 import homeScreenImgMobile from "@/assets/images/brami-naturalna-balgarska-kozmetika-s-shafran-mobile.jpg";
 
-export const dynamic = "force-dynamic";
+// Every known page is rendered at build time and served from the cache (ISR).
+// A slug created later is rendered on its first visit.
+export async function generateStaticParams({ params }: { params: { locale: string } }) {
+  const { locale } = params;
+  if (!isAppLocale(locale)) return [];
+  return (await getProducts(locale))
+    .filter((product) => product.availableLocales.includes(locale))
+    .map((product) => ({ slug: product.slug }));
+}
 
 type ProductDetailPageProps = {
   params: Promise<{
@@ -259,8 +265,7 @@ export default async function ProductDetailPage({
   );
 
   // User-submitted reviews (stored in DB) merged with the seed testimonials.
-  const [session, userReviews, blogPosts, faqEntries] = await Promise.all([
-    getUserSession(),
+  const [userReviews, blogPosts, faqEntries] = await Promise.all([
     getProductReviews(product.id),
     getBlogPosts(locale),
     getPublishedFaqEntries(locale),
@@ -285,17 +290,6 @@ export default async function ProductDetailPage({
     fill: inSaffronCollection && product.category.length > 0,
   });
   const relatedFaq = pickRelatedFaq(product, faqEntries, allProducts, locale);
-  const currentUserReview = session
-    ? userReviews.find((review) => review.userId === session.id) ?? null
-    : null;
-
-  // Prefill the review name with the profile name ("Име"), falling back to a
-  // readable name derived from the email when it's missing.
-  const sessionProfile = session ? await getUserProfile(session.id) : null;
-  const reviewerName = session
-    ? getDisplayName(sessionProfile?.fullName, session.email)
-    : "";
-
   // Only reviews that include a written comment are listed; rating-only
   // submissions still count toward the average below.
   const commentedUserReviews = userReviews.filter((review) => review.comment.trim().length > 0);
@@ -621,14 +615,6 @@ export default async function ProductDetailPage({
         productName={product.name}
         description={productDescription}
         reviews={displayReviews}
-        isAuthenticated={Boolean(session)}
-        isAdmin={session?.role === "admin"}
-        userName={reviewerName}
-        initialUserReview={
-          currentUserReview
-            ? { rating: currentUserReview.rating, comment: currentUserReview.comment }
-            : null
-        }
       >
         <div className="pt-2">
           <h3 className="font-serif text-[1.5rem] leading-tight text-[#432855]">

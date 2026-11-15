@@ -1,12 +1,13 @@
 "use client";
 
-import { useRouter } from "@/i18n/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -61,44 +62,76 @@ type UserContextValue = {
   profile: CurrentUserProfile | null;
   discount: CurrentUserDiscount | null;
   isAuthenticated: boolean;
+  /** False until the first answer from /api/auth/session has arrived. */
+  isLoaded: boolean;
   setUser: (user: CurrentUser | null) => void;
   setProfile: (profile: CurrentUserProfile | null) => void;
+  /** Reloads user, profile and discount from the server. */
+  refreshUser: () => Promise<void>;
   logout: () => Promise<void>;
+};
+
+type SessionResponse = {
+  user: CurrentUser | null;
+  profile: CurrentUserProfile | null;
+  discount: CurrentUserDiscount | null;
 };
 
 const UserContext = createContext<UserContextValue | null>(null);
 
-export function UserProvider({
-  initialUser,
-  initialProfile = null,
-  initialDiscount = null,
-  children,
-}: {
-  initialUser: CurrentUser | null;
-  initialProfile?: CurrentUserProfile | null;
-  initialDiscount?: CurrentUserDiscount | null;
-  children: ReactNode;
-}) {
+// The pages are cached and identical for everyone, so the signed-in visitor
+// is loaded in the browser from /api/auth/session, never rendered on the server.
+export function UserProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [user, setUser] = useState<CurrentUser | null>(initialUser);
-  const [profile, setProfile] = useState<CurrentUserProfile | null>(initialProfile);
-  const [discount, setDiscount] = useState<CurrentUserDiscount | null>(initialDiscount);
+  const pathname = usePathname();
+  const [user, setUserState] = useState<CurrentUser | null>(null);
+  const [profile, setProfile] = useState<CurrentUserProfile | null>(null);
+  const [discount, setDiscount] = useState<CurrentUserDiscount | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  // Only the answer to the latest request is applied.
+  const requestIdRef = useRef(0);
 
-  // Re-sync from the server on router.refresh()/navigation so consent, profile
-  // and discount changes are reflected without a hard reload.
+  const refreshUser = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+    try {
+      const response = await fetch("/api/auth/session", { cache: "no-store" });
+      if (!response.ok) return;
+      const state = (await response.json()) as SessionResponse;
+      if (requestId !== requestIdRef.current) return;
+      setUserState(state.user);
+      setProfile(state.profile);
+      setDiscount(state.discount);
+    } catch {
+      // Offline or aborted: keep what we have.
+    } finally {
+      if (requestId === requestIdRef.current) setIsLoaded(true);
+    }
+  }, []);
+
+  // On load and on every navigation, so consent, profile and discount changes
+  // made on one page are reflected on the next without a hard reload.
   useEffect(() => {
-    setUser(initialUser);
-  }, [initialUser]);
-  useEffect(() => {
-    setProfile(initialProfile);
-  }, [initialProfile]);
-  useEffect(() => {
-    setDiscount(initialDiscount);
-  }, [initialDiscount]);
+    void refreshUser();
+  }, [pathname, refreshUser]);
+
+  // Login/registration hand over the user at once; profile and discount follow.
+  const setUser = useCallback(
+    (nextUser: CurrentUser | null) => {
+      setUserState(nextUser);
+      if (nextUser) {
+        void refreshUser();
+      } else {
+        setProfile(null);
+        setDiscount(null);
+      }
+    },
+    [refreshUser],
+  );
 
   const logout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    setUser(null);
+    requestIdRef.current += 1;
+    setUserState(null);
     setProfile(null);
     setDiscount(null);
     router.push("/");
@@ -111,11 +144,13 @@ export function UserProvider({
       profile,
       discount,
       isAuthenticated: user !== null,
+      isLoaded,
       setUser,
       setProfile,
+      refreshUser,
       logout,
     }),
-    [user, profile, discount, logout],
+    [user, profile, discount, isLoaded, setUser, refreshUser, logout],
   );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

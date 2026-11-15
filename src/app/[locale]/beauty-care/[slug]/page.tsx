@@ -13,7 +13,15 @@ import { pickRelatedCollections, pickRelatedProducts } from "@/lib/related-conte
 import { DEFAULT_OG_IMAGES, OG_LOCALES, absoluteUrl, buildAlternates, jsonLdScript, localizedUrl } from "@/lib/seo";
 import { SITE_URL } from "@/lib/site-url";
 
-export const dynamic = "force-dynamic";
+// Every known page is rendered at build time and served from the cache (ISR).
+// A slug created later is rendered on its first visit.
+export async function generateStaticParams({ params }: { params: { locale: string } }) {
+  const { locale } = params;
+  if (!isAppLocale(locale)) return [];
+  return (await getBlogPosts(locale))
+    .filter((post) => post.availableLocales.includes(locale))
+    .map((post) => ({ slug: post.slug }));
+}
 
 type ArticlePageProps = {
   params: Promise<{ locale: string; slug: string }>;

@@ -24,6 +24,10 @@ type CollectionPageProps = {
 
 type FaqItem = { question: string; answer: string };
 
+export function generateStaticParams() {
+  return COLLECTION_KEYS.map((collection) => ({ collection }));
+}
+
 export async function generateMetadata({ params }: CollectionPageProps): Promise<Metadata> {
   const { locale, collection } = await params;
   if (!isAppLocale(locale) || !isCollectionKey(collection)) return {};

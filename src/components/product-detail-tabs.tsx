@@ -2,9 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 
+import { useUser } from "@/components/user-provider";
 import { Link } from "@/i18n/navigation";
+import { getDisplayName } from "@/lib/display-name";
 
 type DisplayReview = {
   id: string;
@@ -76,10 +78,6 @@ type ProductDetailTabsProps = {
   productName: string;
   description: string;
   reviews: DisplayReview[];
-  isAuthenticated: boolean;
-  isAdmin?: boolean;
-  userName?: string;
-  initialUserReview: { rating: number; comment: string } | null;
   /** Server-rendered extras shown under the description (specs table, FAQ). */
   children?: ReactNode;
 };
@@ -89,10 +87,6 @@ export function ProductDetailTabs({
   productName,
   description,
   reviews,
-  isAuthenticated,
-  isAdmin = false,
-  userName = "",
-  initialUserReview,
   children,
 }: ProductDetailTabsProps) {
   const router = useRouter();
@@ -102,13 +96,42 @@ export function ProductDetailTabs({
     "description",
   );
 
-  const [hasRated, setHasRated] = useState(
-    Boolean(initialUserReview && initialUserReview.rating >= 1),
-  );
-  const [hasCommented, setHasCommented] = useState(
-    Boolean(initialUserReview && initialUserReview.comment.trim()),
-  );
-  const [userRating, setUserRating] = useState(initialUserReview?.rating ?? 0);
+  // The page is cached and the same for everyone; the visitor and their own
+  // review are loaded in the browser.
+  const { user, profile, isAuthenticated } = useUser();
+  const isAdmin = user?.role === "admin";
+  const userId = user?.id;
+  // Profile name ("Име"), or a readable name derived from the email.
+  const userName = user ? getDisplayName(profile?.fullName, user.email) : "";
+
+  const [hasRated, setHasRated] = useState(false);
+  const [hasCommented, setHasCommented] = useState(false);
+  const [userRating, setUserRating] = useState(0);
+
+  useEffect(() => {
+    if (!userId) {
+      setHasRated(false);
+      setHasCommented(false);
+      setUserRating(0);
+      return;
+    }
+
+    let cancelled = false;
+    fetch(`/api/products/${productId}/reviews`, { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((result: { review?: { rating: number; comment: string } | null } | null) => {
+        const review = result?.review;
+        if (cancelled || !review) return;
+        setHasRated(review.rating >= 1);
+        setHasCommented(Boolean(review.comment.trim()));
+        setUserRating(review.rating);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [productId, userId]);
 
   // Rating form
   const [rating, setRating] = useState(5);
@@ -118,7 +141,11 @@ export function ProductDetailTabs({
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
 
   // Comment form
-  const [name, setName] = useState(userName);
+  const [name, setName] = useState("");
+  // Prefill the name once the visitor is known, unless they already typed one.
+  useEffect(() => {
+    if (userName) setName((current) => current || userName);
+  }, [userName]);
   const [commentText, setCommentText] = useState("");
   const [isCommentFormOpen, setIsCommentFormOpen] = useState(false);
   const [commentError, setCommentError] = useState("");

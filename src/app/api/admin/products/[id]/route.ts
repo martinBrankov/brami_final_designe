@@ -1,6 +1,7 @@
 import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 import { getProductUrls, notifyIndexNow } from "@/lib/indexnow";
+import { revalidatePublicContent } from "@/lib/revalidate";
 
 import { requireAdminSession } from "@/lib/admin-auth";
 import { deleteAdminProduct } from "@/lib/admin-data";
@@ -28,6 +29,7 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     // URLs are taken before the delete, so search engines learn they are gone.
     const urls = await getProductUrls(productId);
     await deleteAdminProduct(productId);
+    revalidatePublicContent();
     notifyIndexNow(() => urls);
     return NextResponse.json({ ok: true });
   } catch (error) {

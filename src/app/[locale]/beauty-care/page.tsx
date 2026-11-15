@@ -13,8 +13,6 @@ import { ArticleSubscriptionForm } from "@/components/article-subscription-form"
 import { getBlogPosts } from "@/lib/blog";
 import type { BlogPost } from "@/lib/blog";
 
-export const dynamic = "force-dynamic";
-
 type BeautyCarePageProps = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: BeautyCarePageProps): Promise<Metadata> {

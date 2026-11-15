@@ -97,6 +97,7 @@ const route = load('src/app/api/admin/blog/[id]/route.ts', {
   '@/lib/supabase-admin': { createSupabaseAdminClient: () => db },
   '@/lib/admin-translations': adminTranslations,
   '@/lib/indexnow': { getBlogPostUrls: async () => [], notifyIndexNow: () => {} },
+  '@/lib/revalidate': { revalidatePublicContent: () => {} },
 });
 const reset = () => {
   failUpsert = false;

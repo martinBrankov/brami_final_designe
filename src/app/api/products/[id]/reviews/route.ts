@@ -3,8 +3,10 @@ import { NextResponse } from "next/server";
 import {
   deleteProductComment,
   deleteProductReview,
+  getProductReviews,
   upsertProductReview,
 } from "@/lib/product-reviews";
+import { revalidatePublicContent } from "@/lib/revalidate";
 import { getUserSession } from "@/lib/user-auth";
 import { localizeApiError } from "@/lib/api-i18n";
 
@@ -16,6 +18,23 @@ type RouteContext = {
     id: string;
   }>;
 };
+
+// The signed-in visitor's own review of the product. The product page is
+// cached and the same for everyone, so its review form asks for this.
+export async function GET(_request: Request, { params }: RouteContext) {
+  const session = await getUserSession();
+  const productId = Number.parseInt((await params).id, 10);
+
+  if (!session || !Number.isInteger(productId)) {
+    return NextResponse.json({ review: null });
+  }
+
+  const review = (await getProductReviews(productId)).find((item) => item.userId === session.id);
+  return NextResponse.json(
+    { review: review ? { rating: review.rating, comment: review.comment } : null },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
+}
 
 export async function POST(request: Request, { params }: RouteContext) {
   const session = await getUserSession();
@@ -60,6 +79,7 @@ export async function POST(request: Request, { params }: RouteContext) {
       rating,
       comment,
     });
+    revalidatePublicContent();
 
     return NextResponse.json({
       ok: true,
@@ -109,6 +129,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: await localizeApiError("Невалидни данни.") }, { status: 400 });
     }
 
+    revalidatePublicContent();
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(

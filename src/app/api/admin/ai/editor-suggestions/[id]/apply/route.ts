@@ -1,6 +1,8 @@
 import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 
+import { revalidatePublicContent } from "@/lib/revalidate";
+
 import { requireAdminSession } from "@/lib/admin-auth";
 import { type GeneratedBlock } from "@/lib/blog-generate";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -76,5 +78,6 @@ export async function POST(_request: Request, { params }: RouteContext) {
     .update({ status: "applied", applied_at: new Date().toISOString() })
     .eq("id", id);
 
+  revalidatePublicContent();
   return NextResponse.json({ ok: true });
 }

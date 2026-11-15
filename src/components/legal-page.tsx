@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import {
   SectionIntro,
   contentSectionClassName,
   contentSectionInnerClassName,
   pageSectionClassName,
-  sectionActionClassName,
 } from "@/components/section-intro";
+import { LegalBackButton } from "@/components/legal-back-button";
 import { SeeAlsoLinks, type SeeAlsoPage } from "@/components/see-also-links";
-import { Link } from "@/i18n/navigation";
 import { isAppLocale } from "@/i18n/routing";
 import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates } from "@/lib/seo";
 
@@ -34,7 +34,6 @@ type LegalSection = { title: string; paragraphs: string[] };
 
 export type LegalPageProps = {
   params: Promise<{ locale: string }>;
-  searchParams?: Promise<{ from?: string; step?: string }>;
 };
 
 export async function getLegalMetadata(
@@ -63,7 +62,6 @@ export async function getLegalMetadata(
 export async function LegalPage({
   pageKey,
   params,
-  searchParams,
 }: LegalPageProps & { pageKey: LegalPageKey }) {
   const { locale } = await params;
   if (!isAppLocale(locale)) notFound();
@@ -74,12 +72,6 @@ export async function LegalPage({
     getTranslations({ locale, namespace: "Legal" }),
   ]);
   const sections = t.raw("sections") as LegalSection[];
-  const resolvedSearchParams = await searchParams;
-  const showBackButton = resolvedSearchParams?.from === "cart";
-  const backHref =
-    resolvedSearchParams?.step === "delivery"
-      ? { pathname: "/cart" as const, query: { step: "delivery" } }
-      : "/cart";
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fbf8fd_0%,_#f3edf7_45%,_#efe6f6_100%)]">
@@ -91,11 +83,9 @@ export async function LegalPage({
             size="page"
             description={t("description")}
             action={
-              showBackButton ? (
-                <Link href={backHref} className={sectionActionClassName}>
-                  {tLegal("backToCart")}
-                </Link>
-              ) : null
+              <Suspense fallback={null}>
+                <LegalBackButton label={tLegal("backToCart")} />
+              </Suspense>
             }
           />
         </div>

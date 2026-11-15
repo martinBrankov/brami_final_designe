@@ -95,6 +95,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 - Alt текст за всяка продуктова снимка (`product_images.alt` + `translations.en.alt`), различен за всеки продукт. Декоративни икони: `alt=""`.
 - `next.config.ts` сервира AVIF/WebP. OG снимките са ~1200×630.
 
+## Кеширане на публичните страници (ISR)
+- Публичните страници са статични и се сервират от кеша (`revalidate = 600` и `generateStaticParams` в `src/app/[locale]/layout.tsx`). Продуктите, статиите и въпросите се рендерират при build от `generateStaticParams` на съответната страница.
+- **Публична страница не чете заявката**: без `cookies()`, `headers()`, `getUserSession()`, `searchParams` и без `force-dynamic` — иначе пак става динамична и бавна. Потребителят идва от браузъра (`UserProvider` → `/api/auth/session`, `useUser()`); параметри от адреса се четат в client компонент с `useSearchParams` в `<Suspense>` (`UrlFilterSync`, `LegalBackButton`); пренасочвания по параметър са в `src/middleware.ts` (`legacyQueryRedirect`).
+- Лични страници (профил, поръчки, админ) са с `force-dynamic`.
+- **Всеки route, който променя публично съдържание, вика `revalidatePublicContent()`** (`src/lib/revalidate.ts`) до `notifyIndexNow` — продукти, статии, FAQ, отзиви, публикуване от Agent Chat. Без него промяната се вижда чак след 10 минути.
+- Нов slug на български, създаден след build, се рендерира при всяка заявка до следващия deploy (локално `next start` не кешира пренаписани от middleware адреси). След добавяне на много ново съдържание пусни нов deploy.
+- Проверка: `curl -sI URL` → `x-nextjs-cache: HIT` и `Cache-Control: s-maxage=600`.
+
 ## Тежест на страниците
 - Към браузъра отива `ClientProduct` (`toClientProduct()`), не пълният `Product`. Server страница, която подава продукт на client компонент, подава `toClientProduct(product)`.
 - `NextIntlClientProvider` получава само текстовете за client компонентите (`getPublicClientMessages`). Нов namespace само за сървъра → `SERVER_ONLY_NAMESPACES` в `src/i18n/client-messages.ts`.

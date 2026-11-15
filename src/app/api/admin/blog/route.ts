@@ -1,6 +1,7 @@
 import { localizeApiError } from "@/lib/api-i18n";
 import { NextResponse } from "next/server";
 import { getBlogPostUrls, notifyIndexNow } from "@/lib/indexnow";
+import { revalidatePublicContent } from "@/lib/revalidate";
 
 import { requireAdminSession } from "@/lib/admin-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
     if (blocksErr) return NextResponse.json({ error: await localizeApiError(blocksErr.message) }, { status: 500 });
   }
 
+  revalidatePublicContent();
   notifyIndexNow(() => getBlogPostUrls(post.id));
   return NextResponse.json({ id: post.id });
 }

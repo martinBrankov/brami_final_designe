@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { getArtifact, publishArtifact, resolveApproval } from "@/lib/agent-chat/artifacts";
 import { postMessage } from "@/lib/agent-chat/conversations";
+import { getBlogPostUrls, notifyIndexNow } from "@/lib/indexnow";
+import { revalidatePublicContent } from "@/lib/revalidate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,6 +37,12 @@ export async function POST(request: Request, { params }: RouteContext) {
   try {
     if (action === "publish") {
       const { publishedUrl } = await publishArtifact(id);
+      // The article is public now: refresh the cached pages and tell Bing.
+      revalidatePublicContent();
+      const postId = artifact.metadata.postId;
+      if (typeof postId === "string") {
+        notifyIndexNow(() => getBlogPostUrls(postId));
+      }
       if (artifact.conversationId) {
         await postMessage({
           conversationId: artifact.conversationId,

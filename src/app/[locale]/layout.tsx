@@ -11,21 +11,21 @@ import { SiteChrome } from "@/components/site-chrome";
 import { UserProvider } from "@/components/user-provider";
 import { getProducts, toClientProduct } from "@/data/products";
 import { getPublicClientMessages } from "@/i18n/client-messages";
-import { isAppLocale, type AppLocale } from "@/i18n/routing";
-import { getMerchantTierStatus } from "@/lib/merchant-tier";
+import { isAppLocale, locales, type AppLocale } from "@/i18n/routing";
 import { OG_LOCALES, absoluteUrl, jsonLdScript } from "@/lib/seo";
 import { SITE_URL } from "@/lib/site-url";
-import {
-  getUserProfile,
-  getUserSession,
-  isConsentedMerchant,
-  toPublicUser,
-} from "@/lib/user-auth";
-import { getUserDiscountStatus } from "@/lib/user-discount";
 
 import "../globals.css";
 
-export const dynamic = "force-dynamic";
+// Public pages are rendered once and served from the cache (ISR). The layout
+// reads nothing from the request: the signed-in visitor is loaded in the
+// browser by UserProvider. Admin saves refresh the cache at once
+// (revalidatePublicContent); this is only the fallback interval.
+export const revalidate = 600;
+
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}
 
 type LayoutProps = Readonly<{
   children: React.ReactNode;
@@ -132,46 +132,6 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
   setRequestLocale(locale);
 
   const products = await getProducts(locale);
-  const session = await getUserSession();
-  const profile = session ? await getUserProfile(session.id) : null;
-  const initialUser = session
-    ? { ...toPublicUser(session), role: profile?.role ?? session.role }
-    : null;
-  // Merchant discount only applies once the merchant has accepted the terms.
-  const effectiveMerchantDiscountPercent = isConsentedMerchant(profile)
-    ? (
-        await getMerchantTierStatus(
-          profile!.id,
-          profile!.email,
-          profile!.merchantDiscountPercent,
-        )
-      ).poolPercent
-    : 0;
-  const initialProfile = profile
-    ? {
-        fullName: profile.fullName,
-        phone: profile.phone,
-        city: profile.city,
-        postalCode: profile.postalCode,
-        address: profile.address,
-        preferredOffice: profile.preferredOffice,
-        preferredLocker: profile.preferredLocker,
-        hasPassword: profile.hasPassword,
-        merchantDiscountPercent: profile.merchantDiscountPercent,
-        effectiveMerchantDiscountPercent,
-        merchantTermsAccepted: profile.merchantTermsAcceptedAt !== null,
-      }
-    : null;
-  const discountStatus = session ? await getUserDiscountStatus(session.email) : null;
-  const initialDiscount = discountStatus
-    ? {
-        totalSpentEur: discountStatus.totalSpentEur,
-        currentPercent: discountStatus.currentPercent,
-        nextTierThresholdEur: discountStatus.nextTier?.thresholdEur ?? null,
-        nextTierPercent: discountStatus.nextTier?.percent ?? null,
-        amountToNextTierEur: discountStatus.amountToNextTierEur,
-      }
-    : null;
 
   return (
     <html
@@ -186,11 +146,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
         <InteractionGuard />
         <NextIntlClientProvider messages={getPublicClientMessages(await getMessages())}>
           <ProductsProvider products={products.map(toClientProduct)}>
-            <UserProvider
-              initialUser={initialUser}
-              initialProfile={initialProfile}
-              initialDiscount={initialDiscount}
-            >
+            <UserProvider>
               <CartProvider>
                 <FavoritesProvider>
                   <SiteChrome>{children}</SiteChrome>

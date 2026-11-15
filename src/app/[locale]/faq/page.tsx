@@ -9,8 +9,6 @@ import { getPublishedFaqEntries } from "@/lib/faq";
 import { toPlainText } from "@/lib/faq-text";
 import { DEFAULT_OG_IMAGES, OG_LOCALES, buildAlternates, jsonLdScript, localizedUrl } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
-
 type FaqPageProps = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: FaqPageProps): Promise<Metadata> {

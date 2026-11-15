@@ -1,7 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import { useFavorites } from "@/components/favorites-provider";
 import { ProductCard } from "@/components/product-card";
@@ -70,16 +71,27 @@ function ChevronIcon() {
   );
 }
 
-type ProductsPageContentProps = {
-  /** From the URL (?q=, ?favorites=1), read on the server so the grid is in the HTML. */
-  initialQuery: string;
-  initialFavoritesOnly: boolean;
-};
+/**
+ * Passes ?q= and ?favorites=1 to the page. It renders nothing and sits in its
+ * own <Suspense>, so the product grid itself stays in the cached server HTML.
+ */
+function UrlFilterSync({
+  onChange,
+}: {
+  onChange: (query: string, favoritesOnly: boolean) => void;
+}) {
+  const searchParams = useSearchParams();
+  const query = (searchParams.get("q") ?? "").trim().toLowerCase();
+  const favoritesOnly = searchParams.get("favorites") === "1";
 
-export function ProductsPageContent({
-  initialQuery,
-  initialFavoritesOnly,
-}: ProductsPageContentProps) {
+  useEffect(() => {
+    onChange(query, favoritesOnly);
+  }, [onChange, query, favoritesOnly]);
+
+  return null;
+}
+
+export function ProductsPageContent() {
   const router = useRouter();
   const t = useTranslations("ProductsPage");
   const tProduct = useTranslations("Product");
@@ -109,14 +121,14 @@ export function ProductsPageContent({
   const [expandedFilter, setExpandedFilter] = useState<
     "brand" | "audience" | "badge" | null
   >("brand");
-  const [query, setQuery] = useState(initialQuery);
-  const [favoritesOnly, setFavoritesOnly] = useState(initialFavoritesOnly);
+  const [query, setQuery] = useState("");
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
 
-  // A new search from the navbar navigates here again with new props.
-  useEffect(() => {
-    setQuery(initialQuery);
-    setFavoritesOnly(initialFavoritesOnly);
-  }, [initialQuery, initialFavoritesOnly]);
+  // Also runs when a new search from the navbar navigates here again.
+  const applyUrlFilters = useCallback((nextQuery: string, nextFavoritesOnly: boolean) => {
+    setQuery(nextQuery);
+    setFavoritesOnly(nextFavoritesOnly);
+  }, []);
 
   const filteredProducts = useMemo(
     () =>
@@ -202,6 +214,9 @@ export function ProductsPageContent({
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_#fbf8fd_0%,_#f3edf7_45%,_#efe6f6_100%)]">
+      <Suspense fallback={null}>
+        <UrlFilterSync onChange={applyUrlFilters} />
+      </Suspense>
       <section className={pageSectionClassName}>
         <div className="mb-3">
           <SectionIntro
